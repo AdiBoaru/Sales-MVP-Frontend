@@ -1,0 +1,10 @@
+# SPA history fallback for Apache (Hostinger shared hosting).
+# Without this, hard navigation / refresh on /store, /product/:id, /Cart returns 404
+# because Apache looks for a filesystem path that doesn't exist. Serve index.html instead.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Don't rewrite real files or directories (assets, images, etc.)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

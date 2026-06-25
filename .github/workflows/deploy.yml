@@ -1,0 +1,61 @@
+name: Deploy shop to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel overlapping deploys.
+concurrency:
+  group: deploy-shop
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CHAT_API_BASE: ${{ secrets.VITE_CHAT_API_BASE }}
+          VITE_CHAT_PUBLIC_TOKEN: ${{ secrets.VITE_CHAT_PUBLIC_TOKEN }}
+
+      - name: Upload build artifact (manual fallback)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shop-dist
+          path: ./dist/
+          retention-days: 5
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 120000
+          # ⚠️ FIRST DEPLOY after the base44 removal: the server-dir may still hold
+          # stale base44-era index.html/assets. The action does an INCREMENTAL sync
+          # (it won't delete orphaned files). For the very first run, either clear the
+          # shop/ docroot manually in Hostinger File Manager, or uncomment the next line
+          # ONCE, run, then remove it:
+          # dangerous-clean-slate: true
+          local-dir: ./dist/
+          # ⚠️ On this Hostinger account public_html is NOT at the FTP root — it's under domains/.
+          server-dir: ./domains/nativextech.com/public_html/shop/

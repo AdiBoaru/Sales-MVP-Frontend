@@ -1,0 +1,64 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Electronics",
+        "Home & Garden",
+        "Fashion",
+        "Beauty & Personal Care",
+        "Sports & Outdoor",
+        "Automotive",
+        "Toys & Kids",
+        "Pet Supplies",
+        "Office & Business",
+        "Books & Media",
+        "Health & Wellness",
+        "Smart Home"
+      ]
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "original_price": {
+      "type": "number"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "reviews_count": {
+      "type": "number"
+    },
+    "badge": {
+      "type": "string",
+      "enum": [
+        "New",
+        "Trending",
+        "Bestseller",
+        ""
+      ]
+    },
+    "discount_percent": {
+      "type": "number"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "price"
+  ]
+}
