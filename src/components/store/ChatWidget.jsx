@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, RotateCcw, Plus, Star, Loader2, Check } from "lucide-react";
+import { Sparkles, X, Send, Plus, Star, Loader2, Check } from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
 import { addToCart } from "@/lib/cart";
 import { formatCurrency } from "@/utils";
@@ -170,7 +170,7 @@ export default function ChatWidget() {
           className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-violet-300 transition-colors"
         >
           <Sparkles className="w-4 h-4" />
-          <span className="hidden sm:inline">Întreabă pe {BRAND.assistant}</span>
+          <span className="hidden sm:inline">{BRAND.assistant}</span>
         </button>
       )}
 
@@ -180,27 +180,25 @@ export default function ChatWidget() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100 flex-shrink-0">
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleReset}
+                title="Începe un chat nou"
+                className="inline-flex items-center gap-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Chat nou
+              </button>
               <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">{BRAND.assistant}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleReset}
-                title="Chat nou"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setOpen(false)}
-                title="Închide"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setOpen(false)}
+              title="Închide"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Messages */}
@@ -255,6 +253,11 @@ export default function ChatWidget() {
               </div>
             )}
           </div>
+
+          {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}
+          <p className="text-[10px] leading-tight text-center text-muted-foreground bg-gray-50/50 px-4 pt-0.5 pb-1.5 flex-shrink-0">
+            Funcționez cu inteligență artificială, așa că pot greși uneori.
+          </p>
 
           {/* Input */}
           <form

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, MessageSquare, PenLine, ShoppingCart, Send, Gift, RotateCcw, BookOpen, HelpCircle, Truck, ShieldCheck } from "lucide-react";
+import { ArrowRight, MessageSquare, PenLine, ShoppingCart, Send, Gift, RotateCcw, BookOpen, HelpCircle, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { BRAND } from "@/lib/brand";
 
@@ -16,7 +16,7 @@ const steps = [
     num: 2,
     icon: PenLine,
     title: "Întreabă firesc",
-    desc: "Spune ce cauți cum i-ai spune unei prietene. Fără meniuri, fără cuvinte-cheie — doar limbaj firesc.",
+    desc: "Spune ce cauți cum i-ai spune unei prietene. Fără meniuri, fără cuvinte-cheie, doar limbaj firesc.",
     color: "bg-green-500",
   },
   {
@@ -32,7 +32,7 @@ const suggestions = [
   { icon: Gift, text: '„Caut un cadou sub 100 de lei"' },
   { icon: ShoppingCart, text: '„Adaugă în coș cel mai bine cotat produs"' },
   { icon: BookOpen, text: '„Ce-mi recomanzi pentru un buget de 200 de lei?"' },
-  { icon: HelpCircle, text: '„Am pielea uscată pe mâini — ce cremă sau rutină îmi recomanzi?"' },
+  { icon: HelpCircle, text: '„Am pielea uscată pe mâini, ce cremă sau rutină îmi recomanzi?"' },
   { icon: RotateCcw, text: '„Care e politica de retur?"' },
   { icon: Truck, text: '„Când îmi ajunge comanda?"' },
 ];
@@ -57,7 +57,7 @@ export default function Landing() {
           transition={{ duration: 0.6 }}
           className="text-4xl md:text-5xl font-bold font-heading tracking-tight leading-tight"
         >
-          Cumpărături alese inteligent —{" "}
+          Cumpărături alese inteligent.{" "}
           <span className="text-violet-600">{BRAND.assistant} găsește exact ce ți se potrivește.</span>
         </motion.h1>
         <motion.p
@@ -66,7 +66,7 @@ export default function Landing() {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="mt-5 text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg mx-auto"
         >
-          Spune-i Ariei ce cauți, pentru cine sau ce buget ai, iar ea alege din sute de produse atent selectate. Fără filtre complicate — doar o conversație firească.
+          Spune-i Ariei ce cauți, pentru cine sau ce buget ai, iar ea alege din sute de produse atent selectate. Fără filtre complicate, doar o conversație firească.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -147,12 +147,6 @@ export default function Landing() {
 
       {/* CTA */}
       <section className="py-14 px-4 text-center">
-        <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-5 py-2 mb-6">
-          <ShieldCheck className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-700 font-medium">
-            Produse 100% originale · Livrare rapidă în toată țara.
-          </span>
-        </div>
         <div>
           <Link
             to="/store"
@@ -162,7 +156,7 @@ export default function Landing() {
           </Link>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          {BRAND.assistant} te însoțește la fiecare pas — de la prima întrebare până la coș.
+          {BRAND.assistant} te însoțește la fiecare pas, de la prima întrebare până la coș.
         </p>
       </section>
     </div>
