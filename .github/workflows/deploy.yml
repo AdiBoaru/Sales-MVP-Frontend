@@ -41,7 +41,14 @@ jobs:
           path: ./dist/
           retention-days: 5
 
-      - name: Deploy via FTPS
+      # Hostinger's FTPS endpoint frequently times out on the FIRST connection
+      # ("Error: Timeout (control socket)"). The build is fine — it just needs a retry.
+      # We attempt up to 3 times; only the final attempt can fail the job.
+      # NOTE: ⚠️ public_html is NOT at the FTP root on this Hostinger account — it's under
+      # domains/. The sync is INCREMENTAL (orphaned files are not deleted).
+      - name: Deploy via FTPS (attempt 1)
+        id: ftp1
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -50,12 +57,41 @@ jobs:
           protocol: ftps
           port: 21
           timeout: 120000
-          # ⚠️ FIRST DEPLOY after the base44 removal: the server-dir may still hold
-          # stale base44-era index.html/assets. The action does an INCREMENTAL sync
-          # (it won't delete orphaned files). For the very first run, either clear the
-          # shop/ docroot manually in Hostinger File Manager, or uncomment the next line
-          # ONCE, run, then remove it:
-          # dangerous-clean-slate: true
           local-dir: ./dist/
-          # ⚠️ On this Hostinger account public_html is NOT at the FTP root — it's under domains/.
+          server-dir: ./domains/nativextech.com/public_html/shop/
+
+      - name: Wait before retry
+        if: steps.ftp1.outcome == 'failure'
+        run: sleep 15
+
+      - name: Deploy via FTPS (attempt 2)
+        id: ftp2
+        if: steps.ftp1.outcome == 'failure'
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 120000
+          local-dir: ./dist/
+          server-dir: ./domains/nativextech.com/public_html/shop/
+
+      - name: Wait before final retry
+        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
+        run: sleep 30
+
+      - name: Deploy via FTPS (attempt 3)
+        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 120000
+          local-dir: ./dist/
           server-dir: ./domains/nativextech.com/public_html/shop/
