@@ -39,7 +39,10 @@ function RichText({ text }) {
 }
 
 function ChatProductCard({ product, onAdd }) {
-  const handleAdd = () => {
+  const handleAdd = (e) => {
+    // Don't let the click bubble up to the card link (add ≠ navigate).
+    e.preventDefault();
+    e.stopPropagation();
     addToCart({
       product_id: null,
       product_name: product.name,
@@ -51,8 +54,8 @@ function ChatProductCard({ product, onAdd }) {
     onAdd?.();
   };
 
-  return (
-    <div className="flex gap-3 bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm">
+  const content = (
+    <>
       <div className="w-14 h-14 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
@@ -76,8 +79,27 @@ function ChatProductCard({ product, onAdd }) {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const baseClass = "flex gap-3 bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm";
+
+  // Whole card links to the product page (new tab keeps the chat open). No URL -> plain card.
+  if (product.url) {
+    return (
+      <a
+        href={product.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`Vezi ${product.name}`}
+        className={`${baseClass} hover:border-violet-300 hover:shadow-md transition-all cursor-pointer`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={baseClass}>{content}</div>;
 }
 
 // Progressive "thinking" status shown while waiting for Aria's reply.
