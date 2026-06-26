@@ -193,6 +193,9 @@ export default function ChatWidget() {
     setMessages([greeting()]);
   };
 
+  // Before the first user message we show a centered welcome screen instead of the thread.
+  const hasConversation = messages.some((m) => m.role === "user");
+
   return (
     <>
       {/* Floating button */}
@@ -210,20 +213,29 @@ export default function ChatWidget() {
       {open && (
         <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[400px] bg-white border-l border-gray-100 shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleReset}
-                title="Începe un chat nou"
-                className="inline-flex items-center gap-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Chat nou
-              </button>
+          <div className="relative flex items-center justify-between px-4 h-14 border-b border-gray-100 flex-shrink-0">
+            {/* Left: "new chat" — only once the user has sent a message */}
+            <div className="flex items-center">
+              {hasConversation && (
+                <button
+                  onClick={handleReset}
+                  title="Începe un chat nou"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Chat nou
+                </button>
+              )}
+            </div>
+
+            {/* Center: Aria logo + name (always centered) */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
               <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold">{BRAND.assistant}</span>
             </div>
+
+            {/* Right: close */}
             <button
               onClick={() => setOpen(false)}
               title="Închide"
@@ -233,7 +245,29 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Messages */}
+          {/* Welcome state — centered Aria, shown until the first user message */}
+          {!hasConversation ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-gray-50/50">
+              <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-200 mb-4">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-bold">Bună! Sunt {BRAND.assistant}</h3>
+              <p className="text-sm text-muted-foreground max-w-[260px] mt-1 mb-5">
+                Asistenta ta de cumpărături. Spune-mi ce cauți și îți găsesc produsele potrivite.
+              </p>
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {INITIAL_SUGGESTIONS.map((s, j) => (
+                  <button
+                    key={j}
+                    onClick={() => send(s)}
+                    className="text-xs bg-white border border-violet-200 text-violet-700 px-3 py-1.5 rounded-full hover:bg-violet-50 transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50/50">
             {messages.map((msg, i) => (
               <div key={i} className="space-y-2">
@@ -279,6 +313,7 @@ export default function ChatWidget() {
 
             {sending && <ThinkingIndicator />}
           </div>
+          )}
 
           {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}
           <p className="text-[10px] leading-tight text-center text-muted-foreground bg-gray-50/50 px-4 pt-0.5 pb-1.5 flex-shrink-0">
