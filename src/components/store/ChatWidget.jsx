@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, Plus, Star, Loader2, Check } from "lucide-react";
+import { Sparkles, X, Send, Plus, Star, Check } from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
 import { addToCart } from "@/lib/cart";
 import { formatCurrency } from "@/utils";
@@ -75,6 +75,38 @@ function ChatProductCard({ product, onAdd }) {
             <Plus className="w-3 h-3" /> Adaugă
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Progressive "thinking" status shown while waiting for Aria's reply.
+// Steps forward over time: Gândesc -> Caut -> Pregătesc răspunsul.
+const THINKING_STAGES = ["Gândesc", "Caut", "Pregătesc răspunsul"];
+
+function ThinkingIndicator() {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const toCaut = setTimeout(() => setStage(1), 1500);
+    const toPregatesc = setTimeout(() => setStage(2), 4500);
+    return () => {
+      clearTimeout(toCaut);
+      clearTimeout(toPregatesc);
+    };
+  }, []);
+
+  return (
+    <div className="flex justify-start">
+      <div className="flex items-center gap-2.5 bg-white border border-gray-100 rounded-2xl rounded-bl-md px-3.5 py-2.5 shadow-sm">
+        <span className="text-sm font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-400 to-violet-600 bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+          {THINKING_STAGES[stage]}
+        </span>
+        <span className="flex items-center gap-1 ml-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce" />
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce [animation-delay:0.2s]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce [animation-delay:0.4s]" />
+        </span>
       </div>
     </div>
   );
@@ -245,13 +277,7 @@ export default function ChatWidget() {
               </div>
             ))}
 
-            {sending && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-3.5 py-2.5">
-                  <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
-                </div>
-              </div>
-            )}
+            {sending && <ThinkingIndicator />}
           </div>
 
           {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}

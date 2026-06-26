@@ -83,11 +83,31 @@ module.exports = {
   				to: {
   					height: '0'
   				}
+  			},
+  			shimmer: {
+  				'0%': {
+  					backgroundPosition: '200% 0'
+  				},
+  				'100%': {
+  					backgroundPosition: '-200% 0'
+  				}
+  			},
+  			'thinking-bounce': {
+  				'0%, 80%, 100%': {
+  					transform: 'translateY(0)',
+  					opacity: '0.35'
+  				},
+  				'40%': {
+  					transform: 'translateY(-4px)',
+  					opacity: '1'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			shimmer: 'shimmer 2s linear infinite',
+  			'thinking-bounce': 'thinking-bounce 1.2s ease-in-out infinite'
   		}
   	}
   },
