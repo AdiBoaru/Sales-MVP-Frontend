@@ -276,11 +276,16 @@ Flux **sincron** pe `/web/chat`:
    (`izi-web-session`). **Serverul ține istoricul** conversației (cheie pe `visitor_id`);
    frontend-ul **NU** trimite istoricul.
 2. `POST /web/chat { token, visitor_id, sig, message, client_msg_id }`
-   → `{ content, products, suggestions }`.
+   → `{ content, products, suggestions, comparison? }`.
 - La **403** (sesiune expirată, ex. restart server) → re-bootstrap o dată automat.
 - `resetChatSession()` șterge sesiunea → „Chat nou" pornește o conversație curată.
 - `mapProduct(p)` aduce produsul botului la forma consumată de widget
-  (`name, price, currency, image_url, rating, url, reason`).
+  (`product_id, name, price, list_price?, currency, image_url, rating, review_count?,
+  badge?, url, reason`). Câmpurile noi sunt **aditive** — lipsesc curat când nu vin
+  (zero regresie pe răspunsurile vechi).
+- `mapComparison(c)` normalizează tabelul comparativ **opțional** (`columns` + `rows`);
+  întoarce `null` dacă lipsește/e malformat. Prețurile din `columns` sunt coerciate ca
+  la produs; `values` din `rows` vin deja localizate (`null` ⇒ „—" în UI).
 
 ### Config
 ```
@@ -306,6 +311,10 @@ server: { proxy: { '/web': {
 - Buton flotant dreapta-jos → panou lateral fix de 400px.
 - Mesaje cu `RichText` (escape HTML + doar `**bold**`), carduri de produs proprii,
   „suggestion chips".
+- Cardul de produs din chat (`ChatProductCard`) randează și: `badge` (tag colorat în colț),
+  `list_price` tăiat + „-X%" lângă preț, `review_count` lângă rating, `reason` sub nume.
+- Când răspunsul conține `comparison`, se randează `ComparisonTable` (un produs/coloană,
+  o dimensiune/rând) **în loc** de re-listarea cardurilor; sub 375px comută pe layout vertical.
 - „Adaugă în coș" din chat scrie în același `hamro-pasal-cart`.
 - Deschidere prin `?chat=1` (din navbar / alte pagini), apoi curăță param-ul.
 - **Fallback:** dacă botul nu e configurat → folosește stub-ul `InvokeLLM` din
