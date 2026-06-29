@@ -28,6 +28,22 @@ function greeting() {
   };
 }
 
+// Conversation persists across close/reopen and page navigation (the widget is
+// mounted per-page, so without this it would reset on every route change). The
+// bot keeps its own history server-side on visitor_id; this mirrors it for the UI.
+// Cleared only by "Chat nou" (handleReset), which also resets the server session.
+const MESSAGES_KEY = "aria-chat-messages";
+
+function loadMessages() {
+  try {
+    const raw = localStorage.getItem(MESSAGES_KEY);
+    const list = raw ? JSON.parse(raw) : null;
+    return Array.isArray(list) && list.length ? list : [greeting()];
+  } catch {
+    return [greeting()];
+  }
+}
+
 // Escape HTML, then render only **bold**.
 function RichText({ text }) {
   const escaped = String(text || "")
@@ -401,7 +417,7 @@ function CartView({ onBack }) {
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [messages, setMessages] = useState(/** @type {any[]} */ ([greeting()]));
+  const [messages, setMessages] = useState(/** @type {any[]} */ (loadMessages));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
@@ -436,6 +452,15 @@ export default function ChatWidget() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open, sending]);
+
+  // Mirror the conversation to localStorage so closing (X) or navigating keeps it.
+  useEffect(() => {
+    try {
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [messages]);
 
   const send = async (text) => {
     const message = (text ?? input).trim();
@@ -479,6 +504,11 @@ export default function ChatWidget() {
 
   const handleReset = () => {
     resetChatSession();
+    try {
+      localStorage.removeItem(MESSAGES_KEY);
+    } catch {
+      /* ignore */
+    }
     setMessages([greeting()]);
   };
 
