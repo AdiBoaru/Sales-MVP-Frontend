@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, Plus, Star, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Sparkles, X, Send, Plus, Minus, Star, Check, ShoppingCart, Trash2 } from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
-import { addToCart } from "@/lib/cart";
+import { addToCart, useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
 import { formatCurrency } from "@/utils";
 import { BRAND } from "@/lib/brand";
 
@@ -307,12 +308,104 @@ function ThinkingIndicator() {
   );
 }
 
+// In-chat shopping cart. Reads the shared cart live, so adding a product from a
+// chat card updates this list immediately. Editing (qty / remove) writes back to
+// the same localStorage cart used by the /Cart page and the header badges.
+function CartView({ onBack }) {
+  const items = useCart();
+  const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0);
+  const currency = items[0]?.currency || "RON";
+
+  if (items.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-gray-50/50">
+        <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
+          <ShoppingCart className="w-8 h-8 text-violet-600" />
+        </div>
+        <h3 className="text-lg font-bold">Coșul tău e gol</h3>
+        <p className="text-sm text-muted-foreground max-w-[260px] mt-1 mb-5">
+          Adaugă produse din recomandările lui {BRAND.assistant} și le vei vedea aici.
+        </p>
+        <button
+          onClick={onBack}
+          className="text-sm font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 px-4 py-2 rounded-full transition-colors"
+        >
+          Înapoi la chat
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gray-50/50">
+        {items.map((it) => (
+          <div key={it.key} className="flex gap-3 bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm">
+            <div className="w-14 h-14 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
+              {it.image_url ? (
+                <img src={it.image_url} alt={it.product_name} className="w-full h-full object-cover" />
+              ) : null}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold leading-snug line-clamp-2">{it.product_name}</p>
+              <p className="text-xs font-bold mt-0.5">{formatCurrency(it.price, it.currency)}</p>
+              <div className="flex items-center justify-between mt-1.5">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setQuantity(it.key, it.quantity - 1)}
+                    disabled={it.quantity <= 1}
+                    title="Scade cantitatea"
+                    className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-xs font-semibold w-5 text-center">{it.quantity}</span>
+                  <button
+                    onClick={() => setQuantity(it.key, it.quantity + 1)}
+                    title="Crește cantitatea"
+                    className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => removeItem(it.key)}
+                  title="Elimină din coș"
+                  className="text-muted-foreground hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Total + checkout — checkout lives on the full /Cart page (delivery form, payment). */}
+      <div className="border-t border-gray-100 bg-white p-3 flex-shrink-0 space-y-2.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Total</span>
+          <span className="font-bold">{formatCurrency(total, currency)}</span>
+        </div>
+        <Link
+          to="/Cart"
+          className="block w-full text-center bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Finalizează comanda
+        </Link>
+      </div>
+    </>
+  );
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
+  const [showCart, setShowCart] = useState(false);
   const [messages, setMessages] = useState(/** @type {any[]} */ ([greeting()]));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
+  const cartCount = useCartCount();
   const scrollRef = useRef(null);
   const toastTimer = useRef(/** @type {any} */ (null));
 
@@ -431,18 +524,37 @@ export default function ChatWidget() {
               <span className="font-bold">{BRAND.assistant}</span>
             </div>
 
-            {/* Right: close */}
-            <button
-              onClick={() => setOpen(false)}
-              title="Închide"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {/* Right: cart toggle + close */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowCart((s) => !s)}
+                title={showCart ? "Înapoi la chat" : "Vezi coșul"}
+                className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                  showCart ? "bg-violet-100 text-violet-700" : "text-muted-foreground hover:bg-gray-50"
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-violet-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                title="Închide"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* Welcome state — centered Aria, shown until the first user message */}
-          {!hasConversation ? (
+          {/* Cart view takes over the body when toggled from the header. */}
+          {showCart ? (
+            <CartView onBack={() => setShowCart(false)} />
+          ) : /* Welcome state — centered Aria, shown until the first user message */
+          !hasConversation ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-gray-50/50">
               <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-200 mb-4">
                 <Sparkles className="w-8 h-8 text-white" />
@@ -515,33 +627,38 @@ export default function ChatWidget() {
           </div>
           )}
 
-          {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}
-          <p className="text-[10px] leading-tight text-center text-muted-foreground bg-gray-50/50 px-4 pt-0.5 pb-1.5 flex-shrink-0">
-            Funcționez cu inteligență artificială, așa că pot greși uneori.
-          </p>
+          {/* Disclaimer + input belong to the chat; the cart view has its own footer. */}
+          {!showCart && (
+            <>
+              {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}
+              <p className="text-[10px] leading-tight text-center text-muted-foreground bg-gray-50/50 px-4 pt-0.5 pb-1.5 flex-shrink-0">
+                Funcționez cu inteligență artificială, așa că pot greși uneori.
+              </p>
 
-          {/* Input */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-            className="flex items-center gap-2 p-3 border-t border-gray-100 flex-shrink-0"
-          >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={`Scrie-i lui ${BRAND.assistant}...`}
-              className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300"
-            />
-            <button
-              type="submit"
-              disabled={sending || !input.trim()}
-              className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-colors"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+              {/* Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  send();
+                }}
+                className="flex items-center gap-2 p-3 border-t border-gray-100 flex-shrink-0"
+              >
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={`Scrie-i lui ${BRAND.assistant}...`}
+                  className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300"
+                />
+                <button
+                  type="submit"
+                  disabled={sending || !input.trim()}
+                  className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </>
+          )}
 
           {/* Add-to-cart confirmation toast */}
           {toast && (

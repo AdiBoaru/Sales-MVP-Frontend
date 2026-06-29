@@ -97,3 +97,20 @@ export function useCartCount() {
   }, []);
   return count;
 }
+
+// Live cart items. Same wiring as useCartCount, but returns the full list — for
+// UIs that render the cart inline (e.g. the chat widget's cart panel).
+export function useCart() {
+  const [items, setItems] = useState(() => (typeof window !== "undefined" ? getCart() : []));
+  useEffect(() => {
+    const sync = () => setItems(getCart());
+    sync();
+    window.addEventListener(EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return items;
+}
