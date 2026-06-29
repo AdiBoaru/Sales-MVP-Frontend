@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, MessageSquare, PenLine, ShoppingCart, Send, Gift, RotateCcw, BookOpen, HelpCircle, Truck } from "lucide-react";
+import { ArrowRight, MessageSquare, PenLine, ShoppingCart, Send, Gift, RotateCcw, BookOpen, HelpCircle, Truck, Sparkles, MessageCircle, PackageCheck, Clock, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { BRAND } from "@/lib/brand";
 
@@ -26,6 +26,35 @@ const steps = [
     desc: "Compară variantele, îți recomandă ce merită cu adevărat și pune produsul potrivit direct în coș.",
     color: "bg-violet-600",
   },
+];
+
+const benefits = [
+  {
+    icon: Sparkles,
+    title: "Recomandări cu adevărat personalizate",
+    desc: "Nu doar produse populare — alegeri potrivite pentru nevoia, bugetul și persoana ta.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Vorbești firesc, în română",
+    desc: `Ca și cum ai avea un consultant personal lângă tine, nu un formular de completat.`,
+  },
+  {
+    icon: ShoppingCart,
+    title: "Adaugă direct în coș",
+    desc: `${BRAND.assistant} pune produsele recomandate în coș, fără să cauți tu prin tot magazinul.`,
+  },
+  {
+    icon: HelpCircle,
+    title: "Răspunde la orice întrebare",
+    desc: "Buget, caracteristici, livrare, retur, comparații — tot ce vrei să știi înainte să cumperi.",
+  },
+];
+
+const trust = [
+  { icon: PackageCheck, text: "Produse originale" },
+  { icon: Clock, text: "Livrare rapidă în toată țara" },
+  { icon: ShieldCheck, text: "Retur simplu" },
 ];
 
 const suggestions = [
@@ -115,6 +144,37 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Why customers love Aria */}
+      <section className="py-14 px-4 max-w-4xl mx-auto">
+        <p className="text-center text-xs font-semibold tracking-widest text-violet-600 uppercase mb-2">
+          De ce o iubesc clienții
+        </p>
+        <h2 className="text-center text-2xl md:text-3xl font-bold font-heading mb-10">
+          Mai mult decât un magazin
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {benefits.map((b, i) => (
+            <motion.div
+              key={i}
+              custom={i}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="flex items-start gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-300"
+            >
+              <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                <b.icon className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base mb-1">{b.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Opening lines */}
       <section className="py-14 px-4 max-w-3xl mx-auto">
         <p className="text-center text-xs font-semibold tracking-widest text-violet-600 uppercase mb-2">
@@ -158,6 +218,14 @@ export default function Landing() {
         <p className="mt-4 text-xs text-muted-foreground">
           {BRAND.assistant} te însoțește la fiecare pas, de la prima întrebare până la coș.
         </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          {trust.map((t, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <t.icon className="w-4 h-4 text-green-500" />
+              {t.text}
+            </span>
+          ))}
+        </div>
       </section>
     </div>
   );
