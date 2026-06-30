@@ -1,0 +1,223 @@
+[
+  {
+    "case": "text_empty",
+    "note": "Empty reply (silent handoff) -> graceful fallback, no blank bubble, no crash.",
+    "payload": { "content": "", "products": [], "suggestions": [] },
+    "assert": { "emptyFallback": true, "noBubble": true, "productCards": 0, "comparisonTable": false }
+  },
+  {
+    "case": "text_clarify",
+    "note": "One text bubble, no cards/chips.",
+    "payload": { "content": "Ce tip de ten ai — gras, mixt sau uscat?", "products": [], "suggestions": [] },
+    "assert": { "textPresent": ["Ce tip de ten ai — gras, mixt sau uscat?"], "productCards": 0, "comparisonTable": false }
+  },
+  {
+    "case": "simple_products",
+    "note": "Bare card: name+price+image+link, content above.",
+    "payload": {
+      "content": "Uite produsele 👇",
+      "suggestions": [],
+      "products": [{ "product_id": "p1", "name": "Produs A", "price": 61.99, "url": "https://x/p1", "image_url": "https://x/a.jpg" }]
+    },
+    "assert": { "textPresent": ["Uite produsele", "Produs A", "Lei"], "productCards": 1, "linkHrefs": ["https://x/p1"] }
+  },
+  {
+    "case": "rich_full",
+    "note": "list_price struck + derived discount, badge, rating(count), reason, 6 chips, 2-paragraph content.",
+    "payload": {
+      "content": "Pentru ten uscat, uite ce merge.\n\nCând alegi, uită-te la textură și la confort.",
+      "suggestions": ["Una mai ieftină", "Ceva fără parfum", "Compară primele două", "Pentru ten gras", "Cu SPF", "Trimite-mi linkul"],
+      "products": [
+        { "product_id": "p1", "name": "Crema A", "price": 58.99, "list_price": 79.99, "rating": 4.8, "review_count": 120, "reason": "pentru ten uscat — hidratează intens", "badge": "Top Favorit", "image_url": "https://x/a.jpg", "url": "https://x/p1" },
+        { "product_id": "p2", "name": "Crema B", "price": 42.0, "rating": 4.6, "review_count": 54, "reason": "opțiune mai accesibilă", "badge": "Super Preț", "image_url": "https://x/b.jpg", "url": "https://x/p2" }
+      ]
+    },
+    "assert": {
+      "textPresent": ["Pentru ten uscat, uite ce merge.", "Când alegi, uită-te la textură și la confort.", "Crema A", "Crema B", "Top Favorit", "Super Preț", "4.8", "(120)", "pentru ten uscat — hidratează intens", "opțiune mai accesibilă", "79,99", "Una mai ieftină", "Trimite-mi linkul"],
+      "productCards": 2,
+      "discountBadge": true,
+      "lineBreak": true
+    }
+  },
+  {
+    "case": "rich_card_minimal",
+    "note": "Only id/name/price -> no rating/badge/reason/image/link, no 'undefined'/'null'.",
+    "payload": { "content": "O singură potrivire:", "suggestions": [], "products": [{ "product_id": "p1", "name": "Produs minimal", "price": 30.0 }] },
+    "assert": { "textPresent": ["O singură potrivire:", "Produs minimal", "Lei"], "productCards": 1, "linkHrefs": [] }
+  },
+  {
+    "case": "rich_pick_in_content",
+    "note": "'👉 Recomandarea mea' arrives inside content as normal text; disclaimer visible.",
+    "payload": {
+      "content": "Pentru ten uscat, uite opțiunile.\n\n👉 Recomandarea mea: Crema A — pentru confort imediat.\n\nFuncționez cu inteligență artificială, așa că pot greși uneori.",
+      "suggestions": [],
+      "products": [{ "product_id": "p1", "name": "Crema A", "price": 58.99 }]
+    },
+    "assert": { "textPresent": ["👉 Recomandarea mea: Crema A", "Funcționez cu inteligență artificială"], "productCards": 1 }
+  },
+  {
+    "case": "comparison_2col_nulls",
+    "note": "Renders a TABLE not cards; header = columns; null cell -> '—'; chips present.",
+    "payload": {
+      "content": "Iată diferențele principale.",
+      "suggestions": ["Adaugă Crema A", "Adaugă Crema B", "Ceva mai ieftin"],
+      "products": [{ "product_id": "p1", "name": "Crema A", "price": 58.99, "image_url": "https://x/a.jpg" }, { "product_id": "p2", "name": "Crema B", "price": 88.99 }],
+      "comparison": {
+        "columns": [{ "product_id": "p1", "name": "Crema A", "price": 58.99, "rating": 4.8, "image_url": "https://x/a.jpg" }, { "product_id": "p2", "name": "Crema B", "price": 88.99, "rating": 4.6 }],
+        "rows": [
+          { "label": "Preț", "values": ["58.99 lei", "88.99 lei"] },
+          { "label": "Rating", "values": ["4.8★", "4.6★"] },
+          { "label": "Disponibilitate", "values": ["În stoc", "Stoc limitat"] },
+          { "label": "Avantaje", "values": ["hidratează intens; fără parfum", "bogată"] },
+          { "label": "De luat în calcul", "values": ["tub mic", null] },
+          { "label": "Brand", "values": ["BrandX", "BrandY"] }
+        ]
+      }
+    },
+    "assert": { "comparisonTable": true, "columnHeaders": 3, "dash": true, "productCards": 0, "textPresent": ["Iată diferențele principale.", "Crema A", "Crema B", "58,99", "Adaugă Crema A"] }
+  },
+  {
+    "case": "comparison_3col_sparse",
+    "note": "3 columns, only 2 rows, valid.",
+    "payload": {
+      "content": "Comparație.",
+      "suggestions": [],
+      "comparison": {
+        "columns": [{ "product_id": "p1", "name": "A", "price": 10 }, { "product_id": "p2", "name": "B", "price": 20 }, { "product_id": "p3", "name": "C", "price": 30 }],
+        "rows": [{ "label": "Preț", "values": ["10 lei", "20 lei", "30 lei"] }, { "label": "Rating", "values": ["4.5★", "4.7★", "4.2★"] }]
+      },
+      "products": [{ "product_id": "p1", "name": "A", "price": 10 }, { "product_id": "p2", "name": "B", "price": 20 }, { "product_id": "p3", "name": "C", "price": 30 }]
+    },
+    "assert": { "comparisonTable": true, "columnHeaders": 4, "productCards": 0, "textPresent": ["Preț", "Rating"] }
+  },
+  {
+    "case": "comparison_listprice",
+    "note": "Column with list_price -> struck original next to price.",
+    "payload": {
+      "content": "Comparație cu reduceri.",
+      "suggestions": [],
+      "comparison": {
+        "columns": [{ "product_id": "p1", "name": "A", "price": 50, "list_price": 80 }, { "product_id": "p2", "name": "B", "price": 60 }],
+        "rows": [{ "label": "Preț", "values": ["50.00 lei (de la 80.00)", "60.00 lei"] }]
+      },
+      "products": [{ "product_id": "p1", "name": "A", "price": 50, "list_price": 80 }, { "product_id": "p2", "name": "B", "price": 60 }]
+    },
+    "assert": { "comparisonTable": true, "productCards": 0, "textPresent": ["80,00", "de la 80.00"] }
+  },
+  {
+    "case": "comparison_longnames",
+    "note": "Long names render in full (no JS truncation); mobile stacks via CSS.",
+    "payload": {
+      "content": "Comparație nume lungi.",
+      "suggestions": [],
+      "comparison": {
+        "columns": [{ "product_id": "p1", "name": "Fond de ten rezistent la transfer cu acoperire medie-mare 30ml", "price": 66.89 }, { "product_id": "p2", "name": "Fond de ten infuzat cu acid hialuronic care se adaptează la nuanță 30ml", "price": 58.0 }],
+        "rows": [{ "label": "Preț", "values": ["66.89 lei", "58.00 lei"] }]
+      },
+      "products": []
+    },
+    "assert": { "comparisonTable": true, "productCards": 0, "textPresent": ["Fond de ten rezistent la transfer cu acoperire medie-mare 30ml", "Fond de ten infuzat cu acid hialuronic care se adaptează la nuanță 30ml"] }
+  },
+  {
+    "case": "offer_open_url",
+    "note": "open_url offer -> a link button to the url.",
+    "payload": {
+      "content": "Uite linkul 👇",
+      "suggestions": [],
+      "products": [{ "product_id": "p1", "name": "A", "price": 10, "url": "https://x/p1" }],
+      "offer": { "kind": "open_url", "label": "Vezi produsul", "url": "https://x/p1" }
+    },
+    "assert": { "textPresent": ["Vezi produsul"], "productCards": 1, "linkHrefs": ["https://x/p1"] }
+  },
+  {
+    "case": "offer_quick_reply",
+    "note": "quick_reply offer -> a button that sends payload (not a url).",
+    "payload": { "content": "Vrei să continui?", "suggestions": [], "products": [], "offer": { "kind": "quick_reply", "label": "Da, comand", "payload": "Da, vreau să comand" } },
+    "assert": { "textPresent": ["Vrei să continui?", "Da, comand"], "productCards": 0 }
+  },
+  {
+    "case": "offer_checkout",
+    "note": "checkout offer -> internal link to the cart route.",
+    "payload": { "content": "Ești gata de comandă?", "suggestions": [], "products": [], "offer": { "kind": "checkout", "label": "Finalizează comanda" } },
+    "assert": { "textPresent": ["Finalizează comanda"], "linkHrefs": ["/Cart"] }
+  },
+  {
+    "case": "offer_book",
+    "note": "book offer -> external link to a booking url.",
+    "payload": { "content": "Vrei o programare?", "suggestions": [], "products": [], "offer": { "kind": "book", "label": "Programează o ședință", "url": "https://x/book" } },
+    "assert": { "textPresent": ["Programează o ședință"], "linkHrefs": ["https://x/book"] }
+  },
+  {
+    "case": "locale_en_rich",
+    "note": "EN content + chips passed through verbatim; '4.8 (30)'.",
+    "payload": {
+      "content": "For dry skin, here are some options.\n\nI run on artificial intelligence, so I can be wrong sometimes.",
+      "suggestions": ["A cheaper one", "Compare the first two"],
+      "products": [{ "product_id": "p1", "name": "Cream A", "price": 12.99, "rating": 4.8, "review_count": 30, "reason": "deeply hydrating" }]
+    },
+    "assert": { "textPresent": ["For dry skin, here are some options.", "I run on artificial intelligence", "Cream A", "4.8", "(30)", "deeply hydrating", "A cheaper one", "Compare the first two"], "productCards": 1 }
+  },
+  {
+    "case": "locale_hu_comparison",
+    "note": "HU table labels rendered verbatim (already localized by backend).",
+    "payload": {
+      "content": "Íme a fő különbségek.",
+      "suggestions": [],
+      "comparison": {
+        "columns": [{ "product_id": "p1", "name": "A", "price": 10 }, { "product_id": "p2", "name": "B", "price": 20 }],
+        "rows": [{ "label": "Ár", "values": ["10 lei", "20 lei"] }, { "label": "Értékelés", "values": ["4.5★", "4.7★"] }]
+      },
+      "products": []
+    },
+    "assert": { "comparisonTable": true, "productCards": 0, "textPresent": ["Íme a fő különbségek.", "Ár", "Értékelés"] }
+  },
+  {
+    "case": "forward_compat_unknown",
+    "note": "Unknown top-level + card keys ignored without crash; badge still renders.",
+    "payload": {
+      "content": "Test compat.",
+      "suggestions": [],
+      "products": [{ "product_id": "p1", "name": "A", "price": 10, "badge": "Nou", "experimental_field": { "x": 1 } }],
+      "future_top_key": true
+    },
+    "assert": { "textPresent": ["Test compat.", "Nou"], "productCards": 1, "textAbsent": ["experimental_field", "future_top_key"] }
+  },
+  {
+    "case": "emag_rich_full",
+    "note": "Extended contract: badges[].tone, highlights[], meta[], details (Spune-mi mai multe).",
+    "payload": {
+      "content": "Pentru ten gras 👇",
+      "suggestions": [],
+      "products": [{
+        "product_id": "p1",
+        "name": "Fluid matifiant X",
+        "price": 82.5,
+        "list_price": 99,
+        "currency": "RON",
+        "rating": 4.81,
+        "review_count": 1234,
+        "reason": "controlează sebumul",
+        "image_url": "https://x/x.jpg",
+        "url": "https://x/p1",
+        "badges": [{ "label": "genius", "tone": "info" }, { "label": "Super Preț", "tone": "danger" }],
+        "highlights": [{ "text": "Comandă până la 18:00, livrare mâine", "tone": "success", "icon": "truck" }, { "text": "-100 Lei în Coș", "tone": "warning", "icon": "tag" }],
+        "meta": [{ "label": "Livrare", "value": "Marți, 7 Iul." }],
+        "details": "**Compoziție:** acid salicilic + zinc."
+      }]
+    },
+    "assert": {
+      "textPresent": ["Fluid matifiant X", "genius", "Super Preț", "Comandă până la 18:00, livrare mâine", "-100 Lei în Coș", "Livrare:", "Marți, 7 Iul.", "controlează sebumul", "4.81", "(1.234)", "99,00"],
+      "textAbsent": ["acid salicilic + zinc"],
+      "productCards": 1,
+      "discountBadge": true,
+      "moreDetails": true,
+      "linkHrefs": ["https://x/p1"]
+    }
+  },
+  {
+    "case": "products_empty",
+    "note": "products:[] with content -> text only, no cards/table.",
+    "payload": { "content": "Momentan n-am găsit produse, dar pot căuta altceva.", "products": [], "suggestions": ["Caută altceva"] },
+    "assert": { "textPresent": ["Momentan n-am găsit produse", "Caută altceva"], "productCards": 0, "comparisonTable": false }
+  }
+]

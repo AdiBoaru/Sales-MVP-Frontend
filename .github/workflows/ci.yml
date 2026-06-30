@@ -1,0 +1,38 @@
+name: CI
+
+# Regression net: lint + contract-conformance tests + build on every push and PR.
+# The chat UI is proven against the full render_web contract (test/fixtures), so a
+# payload shape that stops rendering faithfully fails here before it can ship.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test (contract conformance)
+        run: npm test
+
+      - name: Build
+        run: npm run build

@@ -91,6 +91,53 @@ function parsePrice(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Visual extras are GENERIC and additive: the bot owns the content (and picks a
+// `tone`/`icon`), the frontend owns the palette/layout. Unknown tones/icons degrade
+// safely in the UI, so nothing here needs to know the shop's domain.
+
+// [{ label, tone }] — colored pills at the top of a card. Accepts bare strings too,
+// and falls back to the legacy single `badge` string for old bot replies.
+function normalizeBadges(badges, legacyBadge) {
+  const out = [];
+  if (Array.isArray(badges)) {
+    for (const b of badges) {
+      if (typeof b === "string" && b.trim()) out.push({ label: b.trim() });
+      else if (b && typeof b.label === "string" && b.label.trim())
+        out.push({ label: b.label.trim(), tone: typeof b.tone === "string" ? b.tone : undefined });
+    }
+  }
+  if (out.length === 0 && typeof legacyBadge === "string" && legacyBadge.trim())
+    out.push({ label: legacyBadge.trim() });
+  return out;
+}
+
+// [{ text, tone, icon }] — promo / delivery / urgency rows. Accepts bare strings.
+function normalizeHighlights(highlights) {
+  if (!Array.isArray(highlights)) return [];
+  const out = [];
+  for (const h of highlights) {
+    if (typeof h === "string" && h.trim()) out.push({ text: h.trim() });
+    else if (h && typeof h.text === "string" && h.text.trim())
+      out.push({
+        text: h.text.trim(),
+        tone: typeof h.tone === "string" ? h.tone : undefined,
+        icon: typeof h.icon === "string" ? h.icon : undefined,
+      });
+  }
+  return out;
+}
+
+// [{ label, value }] — key/value lines (e.g. delivery date). Label optional.
+function normalizeMeta(meta) {
+  if (!Array.isArray(meta)) return [];
+  const out = [];
+  for (const m of meta) {
+    if (m && m.value != null && String(m.value).trim())
+      out.push({ label: typeof m.label === "string" ? m.label : "", value: String(m.value).trim() });
+  }
+  return out;
+}
+
 // Normalize a bot product into the shape the widget consumes. All fields beyond
 // name/price are optional — read defensively, a missing one just isn't rendered.
 export function mapProduct(p) {
@@ -108,10 +155,13 @@ export function mapProduct(p) {
     rating: p.rating ?? null,
     // Shown next to the rating as "(120)"; kept only when there are real reviews.
     review_count: Number.isFinite(reviewCount) && reviewCount > 0 ? reviewCount : null,
-    // Short corner tag, e.g. "Top Favorit" / "Super Preț" (already localized).
-    badge: typeof p.badge === "string" ? p.badge.trim() : "",
     url: p.url || p.product_url || "",
     reason: p.reason || "", // one-line "why it fits", rendered under the name
+    // Generic visual extras (see helpers above). Empty arrays / "" render nothing.
+    badges: normalizeBadges(p.badges, p.badge),
+    highlights: normalizeHighlights(p.highlights),
+    meta: normalizeMeta(p.meta),
+    details: typeof p.details === "string" ? p.details : "", // "Spune-mi mai multe" body
   };
 }
 
@@ -142,6 +192,44 @@ export function mapComparison(c) {
   return { columns, rows };
 }
 
+// Normalize an optional call-to-action button. Returns null when absent/invalid so
+// the UI renders nothing. `kind` drives behavior; unknown kinds are dropped. URL-
+// bearing kinds need a url, quick_reply needs a payload — otherwise we drop the offer
+// rather than render a dead button.
+const OFFER_KINDS = new Set(["open_url", "checkout", "quick_reply", "book"]);
+export function mapOffer(o) {
+  if (!o || typeof o.kind !== "string" || !OFFER_KINDS.has(o.kind)) return null;
+  const label = typeof o.label === "string" ? o.label.trim() : "";
+  if (!label) return null;
+  const offer = { kind: o.kind, label };
+  if (o.kind === "open_url" || o.kind === "book") {
+    const url = o.url || o.product_url || "";
+    if (!url) return null;
+    offer.url = url;
+  } else if (o.kind === "quick_reply") {
+    const payload = typeof o.payload === "string" ? o.payload.trim() : "";
+    if (!payload) return null;
+    offer.payload = payload;
+  } else if (o.kind === "checkout") {
+    if (o.url) offer.url = o.url; // optional; UI defaults to the internal /Cart route
+  }
+  return offer;
+}
+
+// Pure normalization of a /web/chat reply into the shape the widget renders. Shared
+// by sendChatMessage AND the contract-conformance tests, so tests exercise the REAL
+// mapping (not a hand-rolled copy). Every field is additive — missing => not rendered.
+export function normalizeReply(data) {
+  const d = data || {};
+  return {
+    content: typeof d.content === "string" ? d.content : "",
+    products: Array.isArray(d.products) ? d.products.map(mapProduct).filter(Boolean) : [],
+    suggestions: Array.isArray(d.suggestions) ? d.suggestions.filter((s) => typeof s === "string") : [],
+    comparison: mapComparison(d.comparison),
+    offer: mapOffer(d.offer),
+  };
+}
+
 async function postChat(session, message, clientMsgId) {
   return fetch(url("/web/chat"), {
     method: "POST",
@@ -156,7 +244,7 @@ async function postChat(session, message, clientMsgId) {
   });
 }
 
-// Send a message; returns { content, products, suggestions, comparison }.
+// Send a message; returns { content, products, suggestions, comparison, offer }.
 export async function sendChatMessage(message) {
   let session = await ensureSession();
   const clientMsgId = newClientMsgId();
@@ -172,11 +260,5 @@ export async function sendChatMessage(message) {
 
   if (!res.ok) throw new Error(`chat failed: ${res.status}`);
 
-  const data = await res.json();
-  return {
-    content: data.content || "",
-    products: Array.isArray(data.products) ? data.products.map(mapProduct).filter(Boolean) : [],
-    suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
-    comparison: mapComparison(data.comparison),
-  };
+  return normalizeReply(await res.json());
 }

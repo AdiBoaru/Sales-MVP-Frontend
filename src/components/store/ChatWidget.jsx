@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, X, Send, Plus, Minus, Star, Check, ShoppingCart, Trash2 } from "lucide-react";
+import { Sparkles, X, Send, Plus, Minus, Check, ShoppingCart, Trash2 } from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
-import { addToCart, useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
+import { useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
 import { formatCurrency } from "@/utils";
 import { BRAND } from "@/lib/brand";
+import ChatMessage from "@/components/store/ChatMessage";
+import { demoMessages } from "@/components/store/chatDemo";
 
 const ARIA_OPEN_EVENT = "aria:open";
 
@@ -44,253 +46,13 @@ function loadMessages() {
   }
 }
 
-// Escape HTML, then render only **bold**.
-function RichText({ text }) {
-  const escaped = String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n/g, "<br/>");
-  return <span dangerouslySetInnerHTML={{ __html: escaped }} />;
-}
-
-// Best-effort color for a product badge. Labels arrive already localized (ro/en/hu),
-// so we keyword-match loosely and fall back to violet for anything unrecognized.
-function badgeClasses(badge) {
-  const b = badge.toLowerCase();
-  if (/(preț|pret|price|reducere|discount|sale|super|szuper|akció|ár)/.test(b))
-    return "bg-emerald-100 text-emerald-700";
-  if (/(favorit|favourite|top|popular|bestseller|kedvenc|népszerű)/.test(b))
-    return "bg-orange-100 text-orange-700";
-  return "bg-violet-100 text-violet-700";
-}
-
-function ChatProductCard({ product, onAdd }) {
-  const handleAdd = (e) => {
-    // Don't let the click bubble up to the card link (add ≠ navigate).
-    e.preventDefault();
-    e.stopPropagation();
-    addToCart({
-      product_id: null,
-      product_name: product.name,
-      price: product.price,
-      currency: product.currency,
-      image_url: product.image_url,
-      url: product.url,
-    });
-    onAdd?.();
-  };
-
-  // Optional discount: strike the original price, show the saved percentage.
-  const hasDiscount = product.list_price != null && product.list_price > product.price;
-  const discountPct = hasDiscount
-    ? Math.round(((product.list_price - product.price) / product.list_price) * 100)
-    : 0;
-
-  const content = (
-    <>
-      <div className="w-14 h-14 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-        ) : null}
-      </div>
-      <div className="flex-1 min-w-0">
-        {/* Reserve room on the right so a corner badge doesn't overlap the name. */}
-        <p className={`text-xs font-semibold leading-snug line-clamp-2 ${product.badge ? "pr-16" : ""}`}>
-          {product.name}
-        </p>
-        {product.reason && (
-          <p className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">
-            {product.reason}
-          </p>
-        )}
-        {product.rating != null && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            <span className="text-[10px] text-muted-foreground">
-              {product.rating}
-              {product.review_count > 0 && ` (${product.review_count.toLocaleString("ro-RO")})`}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap">
-            <span className="text-xs font-bold whitespace-nowrap">
-              {formatCurrency(product.price, product.currency)}
-            </span>
-            {hasDiscount && (
-              <span className="text-[10px] text-muted-foreground line-through whitespace-nowrap">
-                {formatCurrency(product.list_price, product.currency)}
-              </span>
-            )}
-            {hasDiscount && discountPct > 0 && (
-              <span className="text-[9px] font-bold text-emerald-600 whitespace-nowrap">-{discountPct}%</span>
-            )}
-          </div>
-          <button
-            onClick={handleAdd}
-            className="inline-flex items-center gap-1 shrink-0 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-semibold px-2 py-1 rounded-md transition-colors"
-          >
-            <Plus className="w-3 h-3" /> Adaugă
-          </button>
-        </div>
-      </div>
-      {product.badge && (
-        <span
-          className={`absolute top-2 right-2.5 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded-md ${badgeClasses(product.badge)}`}
-        >
-          {product.badge}
-        </span>
-      )}
-    </>
-  );
-
-  const baseClass = "relative flex gap-3 bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm";
-
-  // Whole card links to the product page (new tab keeps the chat open). No URL -> plain card.
-  if (product.url) {
-    return (
-      <a
-        href={product.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={`Vezi ${product.name}`}
-        className={`${baseClass} hover:border-violet-300 hover:shadow-md transition-all cursor-pointer`}
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return <div className={baseClass}>{content}</div>;
-}
-
-// Inline price for a comparison column: current price (bold) + optional struck list price.
-function ComparisonPrice({ price, listPrice, currency }) {
-  const hasDiscount = listPrice != null && listPrice > price;
-  return (
-    <span className="inline-flex items-baseline justify-center gap-1 flex-wrap">
-      <span className="font-bold whitespace-nowrap">{formatCurrency(price, currency)}</span>
-      {hasDiscount && (
-        <span className="text-[10px] text-muted-foreground line-through whitespace-nowrap">
-          {formatCurrency(listPrice, currency)}
-        </span>
-      )}
-    </span>
-  );
-}
-
-// Product-comparison table — rendered only when the bot returns a `comparison`.
-// Each column is one product; each row is one dimension, with values[i] under
-// column i (null/empty -> "—"). Below 375px it stacks per product (no truncation).
-function ComparisonTable({ comparison }) {
-  const columns = comparison?.columns ?? [];
-  const rows = comparison?.rows ?? [];
-  if (columns.length === 0) return null;
-
-  const cell = (v) => (v == null || v === "" ? "—" : v);
-
-  const ProductHead = ({ col }) => {
-    const head = (
-      <>
-        <div className="w-12 h-12 mx-auto rounded-lg bg-gray-50 overflow-hidden">
-          {col.image_url ? (
-            <img src={col.image_url} alt={col.name} className="w-full h-full object-cover" />
-          ) : null}
-        </div>
-        <p className="text-[11px] font-semibold leading-snug mt-1 line-clamp-2">{col.name}</p>
-        <div className="mt-0.5 text-[11px]">
-          <ComparisonPrice price={col.price} listPrice={col.list_price} currency={col.currency} />
-        </div>
-      </>
-    );
-    return col.url ? (
-      <a
-        href={col.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block hover:opacity-90 transition-opacity"
-      >
-        {head}
-      </a>
-    ) : (
-      head
-    );
-  };
-
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-      {/* Wide layout: comparison grid */}
-      <div className="hidden min-[375px]:block overflow-x-auto">
-        <table className="w-full text-[11px] border-collapse">
-          <thead>
-            <tr>
-              <th className="w-14 p-2" />
-              {columns.map((col, i) => (
-                <th key={i} className="p-2 text-center align-bottom border-l border-gray-100">
-                  <ProductHead col={col} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, r) => (
-              <tr key={r} className="border-t border-gray-100">
-                <td className="p-2 align-top font-semibold text-muted-foreground">{row.label}</td>
-                {columns.map((_, i) => (
-                  <td key={i} className="p-2 align-top text-center border-l border-gray-100">
-                    {cell(row.values?.[i])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Narrow layout (<375px): one block per product, nothing truncated */}
-      <div className="min-[375px]:hidden divide-y divide-gray-100">
-        {columns.map((col, i) => (
-          <div key={i} className="p-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
-                {col.image_url ? (
-                  <img src={col.image_url} alt={col.name} className="w-full h-full object-cover" />
-                ) : null}
-              </div>
-              <div className="min-w-0">
-                {col.url ? (
-                  <a
-                    href={col.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold leading-snug line-clamp-2 hover:text-violet-700"
-                  >
-                    {col.name}
-                  </a>
-                ) : (
-                  <p className="text-xs font-semibold leading-snug line-clamp-2">{col.name}</p>
-                )}
-                <div className="mt-0.5 text-[11px]">
-                  <ComparisonPrice price={col.price} listPrice={col.list_price} currency={col.currency} />
-                </div>
-              </div>
-            </div>
-            <dl className="mt-2 space-y-1">
-              {rows.map((row, r) => (
-                <div key={r} className="flex items-start justify-between gap-3 text-[11px]">
-                  <dt className="font-medium text-muted-foreground flex-shrink-0">{row.label}</dt>
-                  <dd className="text-right">{cell(row.values?.[i])}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Demo mode: open the store with `?demo=1` (dev only) to seed the chat with a rich
+// sample conversation, so the card's visual layer can be reviewed against the design
+// without waiting on the Python bot. Never active in a production build.
+const DEMO =
+  typeof window !== "undefined" &&
+  import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get("demo") === "1";
 
 // Progressive "thinking" status shown while waiting for Aria's reply.
 // Steps forward over time: Gândesc -> Caut -> Pregătesc răspunsul.
@@ -415,9 +177,9 @@ function CartView({ onBack }) {
 }
 
 export default function ChatWidget() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(DEMO);
   const [showCart, setShowCart] = useState(false);
-  const [messages, setMessages] = useState(/** @type {any[]} */ (loadMessages));
+  const [messages, setMessages] = useState(/** @type {any[]} */ (DEMO ? demoMessages : loadMessages));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
@@ -454,7 +216,9 @@ export default function ChatWidget() {
   }, [messages, open, sending]);
 
   // Mirror the conversation to localStorage so closing (X) or navigating keeps it.
+  // Skipped in demo mode so the sample thread never overwrites a real conversation.
   useEffect(() => {
+    if (DEMO) return;
     try {
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
     } catch {
@@ -482,16 +246,8 @@ export default function ChatWidget() {
         return;
       }
       const reply = await sendChatMessage(message);
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          content: reply.content,
-          products: reply.products,
-          suggestions: reply.suggestions,
-          comparison: reply.comparison,
-        },
-      ]);
+      // reply already normalized: { content, products, suggestions, comparison, offer }.
+      setMessages((m) => [...m, { role: "assistant", ...reply }]);
     } catch (err) {
       setMessages((m) => [
         ...m,
@@ -608,49 +364,14 @@ export default function ChatWidget() {
           ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50/50">
             {messages.map((msg, i) => (
-              <div key={i} className="space-y-2">
-                <div className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                  <div
-                    className={`max-w-[85%] text-sm leading-relaxed px-3.5 py-2.5 rounded-2xl ${
-                      msg.role === "user"
-                        ? "bg-violet-600 text-white rounded-br-md"
-                        : "bg-white border border-gray-100 rounded-bl-md"
-                    }`}
-                  >
-                    <RichText text={msg.content} />
-                  </div>
-                </div>
-
-                {/* A comparison renders a TABLE (not the products re-listed as cards);
-                    the table header IS the compared products, so we don't duplicate them. */}
-                {msg.comparison ? (
-                  <ComparisonTable comparison={msg.comparison} />
-                ) : msg.products?.length > 0 ? (
-                  <div className="space-y-2">
-                    {msg.products.map((p, j) => (
-                      <ChatProductCard
-                        key={j}
-                        product={p}
-                        onAdd={() => showToast("Produsul a fost adăugat în coș")}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-
-                {msg.suggestions?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {msg.suggestions.map((s, j) => (
-                      <button
-                        key={j}
-                        onClick={() => send(s)}
-                        className="text-xs bg-white border border-violet-200 text-violet-700 px-3 py-1.5 rounded-full hover:bg-violet-50 transition-colors"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ChatMessage
+                key={i}
+                message={msg}
+                isFirst={i === 0}
+                onSuggestion={send}
+                onQuickReply={send}
+                onToast={showToast}
+              />
             ))}
 
             {sending && <ThinkingIndicator />}
