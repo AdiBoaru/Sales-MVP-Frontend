@@ -187,29 +187,139 @@ export default function ChatProductCard({ product, onAdd }) {
     ? { href: product.url, target: "_blank", rel: "noopener noreferrer", title: `Vezi ${product.name}` }
     : null;
 
+  // The tall vertical layout only looks balanced when the bot sends `highlights`
+  // (delivery / voucher / urgency rows) to fill it. With today's sparse replies it
+  // reads as a half-empty image block, so we render a COMPACT card by default and
+  // upgrade to the full eMAG layout automatically once highlights start arriving.
+  const rich = highlights.length > 0;
+
+  const heartBtn = (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleWish();
+      }}
+      title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
+      className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:bg-gray-50 transition-colors"
+    >
+      <Heart className={`w-3.5 h-3.5 ${wished ? "fill-rose-500 text-rose-500" : ""}`} />
+    </button>
+  );
+
+  const ratingRow = product.rating != null && (
+    <div className="flex items-center gap-1">
+      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+      <span className="text-[10px] font-semibold">{product.rating}</span>
+      {product.review_count > 0 && (
+        <span className="text-[10px] text-muted-foreground">({product.review_count.toLocaleString("ro-RO")})</span>
+      )}
+    </div>
+  );
+
+  const priceBlock = (
+    <div className="min-w-0">
+      <Price value={product.price} currency={product.currency} className="text-base" />
+      {hasDiscount && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground line-through">
+            {Number(product.list_price).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+            {CURRENCY_LABEL[product.currency] || product.currency}
+          </span>
+          {discountPct > 0 && <span className="text-[9px] font-bold text-emerald-600">-{discountPct}%</span>}
+        </div>
+      )}
+    </div>
+  );
+
+  const addBtn = (
+    <button
+      onClick={handleAdd}
+      title="Adaugă în coș"
+      className="shrink-0 w-9 h-9 rounded-lg bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center shadow-sm shadow-violet-200 transition-colors"
+    >
+      <ShoppingCart className="w-4 h-4" />
+    </button>
+  );
+
+  const detailsBlock = product.details && (
+    <div className="mt-2 border-t border-gray-100 pt-1.5">
+      <button
+        onClick={() => setShowDetails((s) => !s)}
+        aria-expanded={showDetails}
+        className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 hover:text-violet-900 transition-colors"
+      >
+        Spune-mi mai multe
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+      </button>
+      {showDetails && (
+        <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          <RichText text={product.details} />
+        </div>
+      )}
+    </div>
+  );
+
+  const badgesRow = badges.length > 0 && (
+    <div className="flex flex-wrap gap-1">
+      {badges.map((b, i) => (
+        <Badge key={i} label={b.label} tone={b.tone} />
+      ))}
+    </div>
+  );
+
+  // `extra` reserves right padding so text clears the floating heart.
+  const nameEl = (extra) =>
+    linkProps ? (
+      <a {...linkProps} className="block">
+        <p className={`text-xs font-semibold leading-snug line-clamp-2 hover:text-violet-700 transition-colors ${extra}`}>
+          {product.name}
+        </p>
+      </a>
+    ) : (
+      <p className={`text-xs font-semibold leading-snug line-clamp-2 ${extra}`}>{product.name}</p>
+    );
+
+  // ── Compact card — default for today's sparse data (small filled image, dense info) ──
+  if (!rich) {
+    return (
+      <div className="relative bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm">
+        <div className="absolute top-1.5 right-1.5 z-10">{heartBtn}</div>
+        <div className="flex gap-3">
+          {linkProps ? (
+            <a {...linkProps} className="shrink-0">
+              <CardImage product={product} compact />
+            </a>
+          ) : (
+            <CardImage product={product} compact />
+          )}
+          <div className="flex-1 min-w-0">
+            {badgesRow && <div className="mb-1 pr-7">{badgesRow}</div>}
+            {nameEl(badges.length ? "" : "pr-7")}
+            {ratingRow && <div className="mt-0.5">{ratingRow}</div>}
+            {product.reason && (
+              <p className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{product.reason}</p>
+            )}
+            <div className="flex items-end justify-between gap-2 mt-1.5">
+              {priceBlock}
+              {addBtn}
+            </div>
+            <MetaList items={meta} />
+          </div>
+        </div>
+        {detailsBlock}
+      </div>
+    );
+  }
+
+  // ── Full vertical eMAG card — once the bot sends highlights (matches the target) ──
   return (
     <div className="relative bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-      {/* Top row: badges (left) + wishlist heart (right) */}
       <div className="flex items-start justify-between gap-2 mb-2 min-h-[20px]">
-        <div className="flex flex-wrap gap-1">
-          {badges.map((b, i) => (
-            <Badge key={i} label={b.label} tone={b.tone} />
-          ))}
-        </div>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWish();
-          }}
-          title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
-          className="shrink-0 -mt-0.5 -mr-0.5 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-gray-50 transition-colors"
-        >
-          <Heart className={`w-4 h-4 ${wished ? "fill-rose-500 text-rose-500" : ""}`} />
-        </button>
+        {badgesRow || <span />}
+        {heartBtn}
       </div>
 
-      {/* Image */}
       {linkProps ? (
         <a {...linkProps} className="block">
           <CardImage product={product} />
@@ -218,106 +328,41 @@ export default function ChatProductCard({ product, onAdd }) {
         <CardImage product={product} />
       )}
 
-      {/* Rating */}
-      {product.rating != null && (
-        <div className="flex items-center gap-1 mt-2">
-          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-          <span className="text-[11px] font-semibold">{product.rating}</span>
-          {product.review_count > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              ({product.review_count.toLocaleString("ro-RO")})
-            </span>
-          )}
-        </div>
-      )}
+      {ratingRow && <div className="mt-2">{ratingRow}</div>}
 
-      {/* Highlights (delivery / voucher / urgency …) */}
-      {highlights.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1.5">
-          {highlights.map((h, i) => (
-            <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-1 mt-1.5">
+        {highlights.map((h, i) => (
+          <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
+        ))}
+      </div>
 
-      {/* Name */}
-      {linkProps ? (
-        <a {...linkProps} className="block mt-1.5">
-          <p className="text-xs font-semibold leading-snug line-clamp-2 hover:text-violet-700 transition-colors">
-            {product.name}
-          </p>
-        </a>
-      ) : (
-        <p className="text-xs font-semibold leading-snug line-clamp-2 mt-1.5">{product.name}</p>
-      )}
+      <div className="mt-1.5">{nameEl("")}</div>
 
-      {/* Reason ("why it fits") */}
       {product.reason && (
         <p className="text-[10px] text-muted-foreground leading-snug mt-1 line-clamp-2">{product.reason}</p>
       )}
 
-      {/* Price + add-to-cart */}
       <div className="flex items-end justify-between gap-2 mt-2">
-        <div className="min-w-0">
-          <Price value={product.price} currency={product.currency} className="text-lg" />
-          {hasDiscount && (
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] text-muted-foreground line-through">
-                {Number(product.list_price).toLocaleString(LOCALE, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                {CURRENCY_LABEL[product.currency] || product.currency}
-              </span>
-              {discountPct > 0 && (
-                <span className="text-[9px] font-bold text-emerald-600">-{discountPct}%</span>
-              )}
-            </div>
-          )}
-        </div>
-        <button
-          onClick={handleAdd}
-          title="Adaugă în coș"
-          className="shrink-0 w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center shadow-sm shadow-violet-200 transition-colors"
-        >
-          <ShoppingCart className="w-[18px] h-[18px]" />
-        </button>
+        {priceBlock}
+        {addBtn}
       </div>
 
-      {/* Meta (key/value lines, e.g. delivery date) */}
       <MetaList items={meta} />
-
-      {/* "Spune-mi mai multe" — expandable details, only when the bot provides them */}
-      {product.details && (
-        <div className="mt-2.5 border-t border-gray-100 pt-2">
-          <button
-            onClick={() => setShowDetails((s) => !s)}
-            aria-expanded={showDetails}
-            className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 hover:text-violet-900 transition-colors"
-          >
-            Spune-mi mai multe
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-          </button>
-          {showDetails && (
-            <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
-              <RichText text={product.details} />
-            </div>
-          )}
-        </div>
-      )}
+      {detailsBlock}
     </div>
   );
 }
 
-// Square-ish image with a graceful empty state (muted icon) so cards stay aligned
-// whether or not the bot returns an image_url.
-function CardImage({ product }) {
+// Product image — small square in compact mode (fills via object-cover, like the store
+// grid), full-width banner in rich mode. Muted icon when the bot returns no image_url.
+function CardImage({ product, compact }) {
+  const box = compact ? "w-20 h-20 shrink-0" : "w-full h-32";
   return (
-    <div className="w-full h-32 rounded-lg bg-gray-50 overflow-hidden flex items-center justify-center">
+    <div className={`${box} rounded-lg bg-gray-50 overflow-hidden flex items-center justify-center`}>
       {product.image_url ? (
-        <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
+        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
       ) : (
-        <Package className="w-8 h-8 text-gray-300" />
+        <Package className={`${compact ? "w-6 h-6" : "w-8 h-8"} text-gray-300`} />
       )}
     </div>
   );
