@@ -126,11 +126,16 @@ export function mapProduct(row) {
 
 const PRODUCT_SELECT = "*, product_images(url,alt,position)";
 
+// Lighter column set for grid/list views — omits the heavy `description` body
+// (only the detail page needs it), which noticeably shrinks the list payload.
+const LIST_SELECT =
+  "id,name,slug,short_description,currency,price,sale_price,availability,status,stock_total,rating,review_count,product_url, product_images(url,alt,position)";
+
 // ── Public API ────────────────────────────────────────────────────────────────
 /** @param {{ search?: string, category?: string, sort?: string, limit?: number, offset?: number }} [opts] */
 export async function listProducts({ search, category, sort, limit = 24, offset = 0 } = {}) {
   if (!supabase) return [];
-  let query = supabase.from("products").select(PRODUCT_SELECT).eq("status", "active");
+  let query = supabase.from("products").select(LIST_SELECT).eq("status", "active");
   query = applySearchFilter(query, search);
   query = applyCategoryFilter(query, category);
   query = applySort(query, sort);

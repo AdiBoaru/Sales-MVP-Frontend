@@ -11,6 +11,29 @@ import { BRAND } from "@/lib/brand";
 
 const ITEMS_PER_PAGE = 12;
 
+// Module-level caches survive route changes within the session (stale-while-revalidate):
+// re-entering the store or revisiting a filter shows results instantly while the
+// network request refreshes them in the background.
+const listCache = new Map(); // key -> { products, total }
+let categoryCountsCache = null;
+
+function ProductCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col animate-pulse">
+      <div className="aspect-square bg-gray-100" />
+      <div className="p-4 flex flex-col gap-2 flex-1">
+        <div className="h-2 w-1/3 bg-gray-100 rounded" />
+        <div className="h-3 w-4/5 bg-gray-100 rounded" />
+        <div className="h-3 w-3/5 bg-gray-100 rounded" />
+        <div className="mt-3 flex items-center justify-between">
+          <div className="h-4 w-16 bg-gray-100 rounded" />
+          <div className="h-7 w-20 bg-gray-100 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const sortOptions = [
   { label: "Recomandate", value: "featured" },
   { label: "Preț crescător", value: "price_asc" },
@@ -40,9 +63,13 @@ export default function Store() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Category badge counts (once).
+  // Category badge counts (once) — show cached instantly, then revalidate.
   useEffect(() => {
-    countCategories().then(setCategoryCounts);
+    if (categoryCountsCache) setCategoryCounts(categoryCountsCache);
+    countCategories().then((c) => {
+      categoryCountsCache = c;
+      setCategoryCounts(c);
+    });
   }, []);
 
   // Reset to page 1 when filters change.
@@ -50,16 +77,28 @@ export default function Store() {
     setCurrentPage(1);
   }, [debouncedSearch, category, sort]);
 
-  // Fetch products + count (server-side).
+  // Fetch products + count (server-side), with stale-while-revalidate cache.
   useEffect(() => {
     let active = true;
-    setLoading(true);
     const params = { search: debouncedSearch, category, sort };
+    const key = JSON.stringify({ ...params, currentPage });
+
+    // Cache hit → render immediately, no spinner; still refetch to revalidate.
+    const cached = listCache.get(key);
+    if (cached) {
+      setProducts(cached.products);
+      setTotal(cached.total);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     Promise.all([
       listProducts({ ...params, limit: ITEMS_PER_PAGE, offset: (currentPage - 1) * ITEMS_PER_PAGE }),
       countProducts(params),
     ])
       .then(([list, count]) => {
+        listCache.set(key, { products: list, total: count });
         if (!active) return;
         setProducts(list);
         setTotal(count);
@@ -189,8 +228,10 @@ export default function Store() {
 
             {/* Product grid */}
             {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-4 border-gray-200 border-t-violet-600 rounded-full animate-spin" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20">
