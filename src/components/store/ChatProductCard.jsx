@@ -424,29 +424,43 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
   // ── Grid tile — secondary products in a multi-product reply, 2-up ──
   if (variant === "grid") {
     return (
-      <div className="relative flex flex-col gap-1.5 p-2.5 bg-white border border-[var(--aria-border)] rounded-[14px] shadow-[0_2px_8px_rgba(27,24,38,0.04)]">
-        <div className="absolute top-2 right-2 z-10">{heartBtn}</div>
-        {linkProps ? (
-          <a {...linkProps}>
+      <div className="relative flex flex-col gap-1.5 p-2.5 bg-white border border-[var(--aria-border)] rounded-[14px] shadow-[0_2px_8px_rgba(27,24,38,0.04)] h-full">
+        {/* Badges overlay the image (top-left) and the save heart the top-right, so a
+            badge never adds a row that shifts the text/price/cart down — every card in
+            the row lines up regardless of how many badges (or how long a name) it has. */}
+        <div className="relative">
+          {linkProps ? (
+            <a {...linkProps}>
+              <CardImage product={product} variant="grid" />
+            </a>
+          ) : (
             <CardImage product={product} variant="grid" />
-          </a>
-        ) : (
-          <CardImage product={product} variant="grid" />
-        )}
-        {badgesRow && <div className="pr-6">{badgesRow}</div>}
-        {product.brand && (
-          <span className="block text-[9px] uppercase tracking-[0.14em] text-[var(--aria-text-5)] pr-6">{product.brand}</span>
-        )}
-        {nameEl("pr-6 min-h-[2.2em]")}
-        {ratingRow}
-        <div className="flex items-center justify-between gap-2">
-          <Price value={product.price} currency={product.currency} className="text-sm text-[var(--aria-text)]" />
-          <ScorePill score={product.score} />
+          )}
+          <div className="absolute top-2 right-2 z-10">{heartBtn}</div>
+          {badges.length > 0 && (
+            <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1 max-w-[calc(100%-2.75rem)] drop-shadow-sm">
+              {badges.map((b, i) => (
+                <Badge key={i} label={b.label} tone={b.tone} />
+              ))}
+            </div>
+          )}
         </div>
+        {product.brand && (
+          <span className="block text-[9px] uppercase tracking-[0.14em] text-[var(--aria-text-5)]">{product.brand}</span>
+        )}
+        {nameEl("min-h-[2.2em]")}
+        {ratingRow}
         {product.reason && (
           <p className="text-[10px] text-[var(--aria-text-4)] leading-snug line-clamp-2">{product.reason}</p>
         )}
-        <div className="flex items-center justify-end">{addBtn}</div>
+        {/* Pinned to the bottom (mt-auto) so the price + cart line up across all cards. */}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <Price value={product.price} currency={product.currency} className="text-sm text-[var(--aria-text)]" />
+            <ScorePill score={product.score} />
+          </div>
+          {addBtn}
+        </div>
       </div>
     );
   }
