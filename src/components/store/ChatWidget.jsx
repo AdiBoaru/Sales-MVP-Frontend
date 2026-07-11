@@ -317,6 +317,14 @@ function SavedDrawer({ onClose }) {
   );
 }
 
+// Scroll `container` so the top of `node` sits near the top of the viewport (small
+// pad above it). For the last, long bot reply this reads from the start; for a short
+// reply the browser clamps scrollTop and it just stays fully visible.
+function scrollNodeToTop(container, node, pad = 10) {
+  const top = node.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+  container.scrollTop = Math.max(0, top - pad);
+}
+
 // Ghost microphone button in the composer (matches the design's mic + send pair).
 // Wired to the browser Web Speech API and feature-detected: it renders ONLY where
 // dictation actually works, so there's never a dead control. Dictated text is
@@ -380,6 +388,10 @@ export default function ChatWidget() {
   const cartCount = useCartCount();
   const wishlist = useWishlist();
   const scrollRef = useRef(null);
+  const lastMsgRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  // Message-count baseline: seeded from the initial thread so the first render never
+  // "top-aligns" a pre-existing reply; updated on every change below.
+  const prevLenRef = useRef(messages.length);
   const toastTimer = useRef(/** @type {any} */ (null));
 
   // "Rețin" memory bar: the accumulated, de-duplicated search criteria the bot has
@@ -418,9 +430,36 @@ export default function ChatWidget() {
     return () => window.removeEventListener(ARIA_OPEN_EVENT, onOpen);
   }, []);
 
+  // On open, jump to the latest (bottom) — the panel remounts each time, so scrollTop
+  // starts at 0 otherwise.
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, open, sending]);
+    if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [open]);
+
+  // Scroll behavior on new messages:
+  //   • a NEW bot reply -> align the TOP of that message to the top of the viewport, so
+  //     the reader starts at its beginning (long hero/routine replies used to jump to
+  //     the very bottom, hiding the start).
+  //   • your own message, the thinking indicator, or anything else -> the conventional
+  //     jump-to-bottom.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const grew = messages.length > prevLenRef.current;
+    prevLenRef.current = messages.length; // keep the baseline current (incl. reset/shrink)
+    const last = messages[messages.length - 1];
+    if (grew && last?.role === "assistant" && lastMsgRef.current) {
+      // A new bot reply: align its top so the reader starts at the beginning (long
+      // hero/routine replies used to jump to the very bottom). One frame's delay lets
+      // the freshly-rendered reply settle to its final height first.
+      requestAnimationFrame(() => {
+        if (scrollRef.current && lastMsgRef.current) scrollNodeToTop(scrollRef.current, lastMsgRef.current);
+      });
+    } else {
+      // Your own message, the thinking indicator, or a reset: conventional bottom.
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, sending]);
 
   // Mirror the conversation to localStorage so closing (X) or navigating keeps it.
   // Skipped in demo mode so the sample thread never overwrites a real conversation.
@@ -455,7 +494,7 @@ export default function ChatWidget() {
       const reply = await sendChatMessage(message);
       // reply already normalized: { content, products, suggestions, comparison, offer }.
       setMessages((m) => [...m, { role: "assistant", ...reply }]);
-    } catch (err) {
+    } catch {
       setMessages((m) => [
         ...m,
         { role: "assistant", content: "A apărut o eroare. Mai încearcă o dată în câteva momente." },
@@ -606,14 +645,15 @@ export default function ChatWidget() {
           ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-4 bg-[var(--aria-bg)]">
             {visibleMessages.map((msg, i) => (
-              <ChatMessage
-                key={i}
-                message={msg}
-                isFirst={i === 0}
-                onSuggestion={send}
-                onQuickReply={send}
-                onToast={showToast}
-              />
+              <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
+                <ChatMessage
+                  message={msg}
+                  isFirst={i === 0}
+                  onSuggestion={send}
+                  onQuickReply={send}
+                  onToast={showToast}
+                />
+              </div>
             ))}
 
             {sending && <ThinkingIndicator />}
