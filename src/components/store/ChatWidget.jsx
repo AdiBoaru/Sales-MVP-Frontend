@@ -61,13 +61,17 @@ function isInitialWelcomeMessage(message, index) {
   );
 }
 
-// Demo mode: open the store with `?demo=1` (dev only) to seed the chat with a rich
-// sample conversation, so the card's visual layer can be reviewed against the design
-// without waiting on the Python bot. Never active in a production build.
-const DEMO =
-  typeof window !== "undefined" &&
-  import.meta.env.DEV &&
-  new URLSearchParams(window.location.search).get("demo") === "1";
+// Preview / demo seeding — opens the widget with a rich sample conversation so the
+// full design (understanding, routine, no-results, status, confidence, delta…) can be
+// reviewed against the spec without waiting on the Python bot. Both flags seed a
+// CLIENT-SIDE thread only: they never call the backend and never overwrite the saved
+// conversation. `?preview=1` works everywhere (incl. production, for live visual review
+// on a phone); `?demo=1` stays dev-only.
+const DEMO = (() => {
+  if (typeof window === "undefined") return false;
+  const p = new URLSearchParams(window.location.search);
+  return p.get("preview") === "1" || (import.meta.env.DEV && p.get("demo") === "1");
+})();
 
 // Progressive "thinking" timeline shown while waiting for Aria's reply. Steps are
 // generic process copy (not fabricated product facts — the bot doesn't stream real

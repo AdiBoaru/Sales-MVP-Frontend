@@ -8,3 +8,18 @@
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
+
+# Cache policy. Without this, LiteSpeed serves index.html with no Cache-Control, so
+# browsers cache it heuristically and keep loading an OLD index.html that points at
+# stale (already-replaced) asset hashes — a new deploy then "doesn't show" even after
+# a hard refresh. So: never cache the HTML entry (always revalidate → new deploys are
+# picked up on the next load), but cache the content-hashed assets for a long time
+# (their filename changes on every build, so this is always safe).
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(?:js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|svg|webp|avif|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
