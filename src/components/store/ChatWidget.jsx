@@ -577,8 +577,8 @@ export default function ChatWidget() {
                  left-aligned intro + vertical list of suggested prompts (not centered pills). */
           !hasConversation ? (
             <div className="flex-1 overflow-y-auto flex flex-col justify-center gap-5 min-[380px]:gap-6 px-4 min-[380px]:px-6 py-6 min-[380px]:py-8 bg-[var(--aria-bg)]">
-              <AriaMark size={52} innerSize={38} />
-              <div className="flex flex-col gap-2">
+              <AriaMark size={52} innerSize={38} className="mx-auto" />
+              <div className="flex flex-col items-center gap-2 text-center">
                 <h3 className="aria-heading text-2xl text-[var(--aria-text)]">Bună! Sunt {BRAND.assistant}.</h3>
                 <p className="text-[13.5px] leading-relaxed text-[var(--aria-text-4)] max-w-[320px]">
                   Spune-mi ce cauți. Analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva —
