@@ -1,9 +1,9 @@
 // Single source of truth for brand identity.
-// Visual identity stays "Aurva" (design), assistant is "Aria" (wired to the izi bot),
-// but content/locale is Romanian and currency is RON (real catalog).
+// Brand + assistant are both "Aria" (assistant wired to the izi bot); content/locale
+// is Romanian and currency is RON (real catalog).
 export const BRAND = {
-  name: "Aurva",
-  logoText: "Aurva",
+  name: "Aria",
+  logoText: "Aria",
   tagline: "Cosmetice & îngrijire",
   assistant: "Aria",
   supportPhone: "",

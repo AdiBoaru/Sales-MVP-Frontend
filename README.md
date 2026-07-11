@@ -1,4 +1,4 @@
-# Aurva — magazin de cosmetice
+# Aria — magazin de cosmetice
 
 Storefront public (vizitatori anonimi) construit cu **Vite + React + Tailwind**, peste:
 - **Supabase** — catalog read-only (anon key + RLS public-read). Vezi `src/api/catalog.js`.

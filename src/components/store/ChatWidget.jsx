@@ -509,7 +509,7 @@ export default function ChatWidget() {
               <div className="min-w-0">
                 <div className="aria-heading text-base leading-tight text-[var(--aria-text)]">{BRAND.assistant}</div>
                 <div className="hidden min-[360px]:block text-[10.5px] leading-tight tracking-[0.04em] text-[var(--aria-text-3)] truncate">
-                  Consultant de cumpărături · {BRAND.name}
+                  Consultant de cumpărături
                 </div>
               </div>
               {hasConversation && (
