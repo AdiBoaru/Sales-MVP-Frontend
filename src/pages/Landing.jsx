@@ -1,232 +1,173 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, MessageSquare, PenLine, ShoppingCart, Send, Gift, RotateCcw, BookOpen, HelpCircle, Truck, Sparkles, MessageCircle, PackageCheck, Clock, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  MessageSquareText,
+  MousePointerClick,
+  Search,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { BRAND } from "@/lib/brand";
 
-const steps = [
+const demoSteps = [
   {
-    num: 1,
-    icon: MessageSquare,
-    title: `Deschide chatul ${BRAND.assistant}`,
-    desc: `Apasă „Întreabă pe ${BRAND.assistant}" și pornești o conversație cu asistenta ta personală de cumpărături.`,
-    color: "bg-violet-600",
+    icon: ShoppingBag,
+    title: "Intră în magazinul demo",
+    desc: "Vei vedea un magazin online de test, pregătit special pentru simularea unei experiențe asistate de AI.",
   },
   {
-    num: 2,
-    icon: PenLine,
-    title: "Întreabă firesc",
-    desc: "Spune ce cauți cum i-ai spune unei prietene. Fără meniuri, fără cuvinte-cheie, doar limbaj firesc.",
-    color: "bg-green-500",
+    icon: Search,
+    title: "Explorează produsele",
+    desc: "Alege un scenariu simplu: caută un produs, compară variante sau pornește de la o nevoie concretă.",
   },
   {
-    num: 3,
-    icon: ShoppingCart,
-    title: `Lasă ${BRAND.assistant} să aleagă`,
-    desc: "Compară variantele, îți recomandă ce merită cu adevărat și pune produsul potrivit direct în coș.",
-    color: "bg-violet-600",
+    icon: MessageSquareText,
+    title: `Testează chatul ${BRAND.assistant}`,
+    desc: "Scrie întrebări ca un client real și urmărește cum asistentul oferă recomandări, explicații și suport de cumpărare.",
   },
 ];
 
-const benefits = [
-  {
-    icon: Sparkles,
-    title: "Recomandări cu adevărat personalizate",
-    desc: "Nu doar produse populare — alegeri potrivite pentru nevoia, bugetul și persoana ta.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Vorbești firesc, în română",
-    desc: `Ca și cum ai avea un consultant personal lângă tine, nu un formular de completat.`,
-  },
-  {
-    icon: ShoppingCart,
-    title: "Adaugă direct în coș",
-    desc: `${BRAND.assistant} pune produsele recomandate în coș, fără să cauți tu prin tot magazinul.`,
-  },
-  {
-    icon: HelpCircle,
-    title: "Răspunde la orice întrebare",
-    desc: "Buget, caracteristici, livrare, retur, comparații — tot ce vrei să știi înainte să cumperi.",
-  },
+const testIdeas = [
+  "Caut un cadou sub 100 de lei.",
+  "Ce produs mi se potrivește pentru piele uscată?",
+  "Compară două opțiuni și recomandă-mi una.",
+  "Adaugă în coș produsul cel mai potrivit.",
 ];
 
-const trust = [
-  { icon: PackageCheck, text: "Produse originale" },
-  { icon: Clock, text: "Livrare rapidă în toată țara" },
-  { icon: ShieldCheck, text: "Retur simplu" },
-];
-
-const suggestions = [
-  { icon: Gift, text: '„Caut un cadou sub 100 de lei"' },
-  { icon: ShoppingCart, text: '„Adaugă în coș cel mai bine cotat produs"' },
-  { icon: BookOpen, text: '„Ce-mi recomanzi pentru un buget de 200 de lei?"' },
-  { icon: HelpCircle, text: '„Am pielea uscată pe mâini, ce cremă sau rutină îmi recomanzi?"' },
-  { icon: RotateCcw, text: '„Care e politica de retur?"' },
-  { icon: Truck, text: '„Când îmi ajunge comanda?"' },
+const highlights = [
+  "Demo pregătit pentru testare rapidă",
+  "Magazin online + chat AI în aceeași experiență",
+  "Fără configurare și fără cont suplimentar",
 ];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (/** @type {number} */ i) => ({
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" },
+    transition: { delay: i * 0.08, duration: 0.45, ease: "easeOut" },
   }),
 };
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-white to-green-50/40">
-      {/* Hero */}
-      <section className="pt-16 pb-12 px-4 text-center max-w-2xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl md:text-5xl font-bold font-heading tracking-tight leading-tight"
-        >
-          Cumpărături alese inteligent.{" "}
-          <span className="text-violet-600">{BRAND.assistant} găsește exact ce ți se potrivește.</span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="mt-5 text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg mx-auto"
-        >
-          Spune-i Ariei ce cauți, pentru cine sau ce buget ai, iar ea alege din sute de produse atent selectate. Fără filtre complicate, doar o conversație firească.
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-8"
-        >
-          <Link
-            to="/store"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-8 py-3.5 rounded-full transition-all duration-200 shadow-lg shadow-violet-200 hover:shadow-violet-300 text-base"
+    <main className="min-h-screen bg-gradient-to-b from-white via-white to-violet-50/50 text-foreground">
+      <section className="px-4 py-10 md:py-16">
+        <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700"
           >
-            Intră în magazin <ArrowRight className="w-4 h-4" />
-          </Link>
-        </motion.div>
-        <p className="mt-4 text-xs text-muted-foreground tracking-wide">
-          Testează chatbotul &nbsp;·&nbsp; Întreabă orice, fără cont
-        </p>
-      </section>
+            <Bot className="h-4 w-4" />
+            Acces demo AI Sales Assistant
+          </motion.div>
 
-      {/* How it works */}
-      <section className="py-14 px-4 max-w-4xl mx-auto">
-        <p className="text-center text-xs font-semibold tracking-widest text-violet-600 uppercase mb-2">
-          Atât de simplu
-        </p>
-        <h2 className="text-center text-2xl md:text-3xl font-bold font-heading mb-10">Cum funcționează</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {steps.map((step, i) => (
-            <motion.div
-              key={step.num}
-              custom={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`${step.color} w-10 h-10 rounded-xl flex items-center justify-center`}>
-                  <step.icon className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <h3 className="font-semibold text-base mb-1.5">{step.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Why customers love Aria */}
-      <section className="py-14 px-4 max-w-4xl mx-auto">
-        <p className="text-center text-xs font-semibold tracking-widest text-violet-600 uppercase mb-2">
-          De ce o iubesc clienții
-        </p>
-        <h2 className="text-center text-2xl md:text-3xl font-bold font-heading mb-10">
-          Mai mult decât un magazin
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {benefits.map((b, i) => (
-            <motion.div
-              key={i}
-              custom={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="flex items-start gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-300"
-            >
-              <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
-                <b.icon className="w-5 h-5 text-violet-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-base mb-1">{b.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Opening lines */}
-      <section className="py-14 px-4 max-w-3xl mx-auto">
-        <p className="text-center text-xs font-semibold tracking-widest text-violet-600 uppercase mb-2">
-          Idei de pornire
-        </p>
-        <h2 className="text-center text-2xl md:text-3xl font-bold font-heading mb-1">Întreab-o pe {BRAND.assistant}...</h2>
-        <p className="text-center text-sm text-muted-foreground mb-8">
-          Exemple reale pe care i le poți cere oricând în magazin.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {suggestions.map((s, i) => (
-            <motion.div
-              key={i}
-              custom={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-4 py-3.5 hover:border-violet-200 hover:shadow-sm transition-all duration-200 group cursor-default"
-            >
-              <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 transition-colors">
-                <s.icon className="w-4 h-4 text-violet-600" />
-              </div>
-              <span className="text-sm text-foreground flex-1">{s.text}</span>
-              <Send className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-violet-400 transition-colors" />
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-14 px-4 text-center">
-        <div>
-          <Link
-            to="/store"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-10 py-4 rounded-full transition-all duration-200 shadow-lg shadow-violet-200 hover:shadow-violet-300 text-base"
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="mt-7 max-w-3xl font-heading text-4xl font-bold leading-tight tracking-tight md:text-6xl"
           >
-            Începe acum <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          {BRAND.assistant} te însoțește la fiecare pas, de la prima întrebare până la coș.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {trust.map((t, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <t.icon className="w-4 h-4 text-green-500" />
-              {t.text}
+            Testează experiența unui magazin online asistat de AI
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.16 }}
+            className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg"
+          >
+            Acest website este mediul de testare primit după înscrierea la demo.
+            În câteva minute poți explora magazinul, conversa cu {BRAND.assistant} și vedea cum AI-ul susține decizia de cumpărare.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, delay: 0.24 }}
+            className="mt-8 flex flex-col items-center gap-3 sm:flex-row"
+          >
+            <Link
+              to="/store"
+              className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-200 transition-all duration-200 hover:bg-violet-700 hover:shadow-violet-300"
+            >
+              Începe testarea <ArrowRight className="h-4 w-4" />
+            </Link>
+            <span className="text-sm text-muted-foreground">
+              Magazin demo + chat AI
             </span>
+          </motion.div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            {highlights.map((item) => (
+              <span key={item} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-14">
+        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
+          {demoSteps.map((step, i) => (
+            <motion.article
+              key={step.title}
+              custom={i}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-40px" }}
+              className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+            >
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <step.icon className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-lg font-semibold">{step.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+            </motion.article>
           ))}
         </div>
       </section>
-    </div>
+
+      <section className="px-4 pb-16">
+        <div className="mx-auto grid max-w-5xl gap-6 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm md:grid-cols-[1fr_1.15fr] md:p-8">
+          <div>
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <MousePointerClick className="h-5 w-5" />
+            </div>
+            <h2 className="font-heading text-2xl font-bold">Cum să testezi demo-ul</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Folosește chatul ca și cum ai fi un client care vrea să cumpere mai rapid și mai informat.
+              Poți cere recomandări, comparații, detalii despre produse sau ajutor pentru adăugarea în coș.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            {testIdeas.map((idea, i) => (
+              <motion.div
+                key={idea}
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-left text-sm"
+              >
+                <Sparkles className="h-4 w-4 flex-shrink-0 text-violet-600" />
+                <span>{idea}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

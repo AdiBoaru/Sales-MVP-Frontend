@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:100%;height:100%;display:grid;place-items:center;overflow:hidden">
+
+  <sc-if value="{{ isDropper }}" hint-placeholder-val="{{ true }}">
+    <svg viewBox="0 0 120 164" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 6px 10px rgba(27,24,38,.16))">
+      <rect x="53" y="3" width="14" height="19" rx="6" fill="{{ cap }}"></rect>
+      <rect x="42" y="20" width="36" height="17" rx="4" fill="{{ cap }}"></rect>
+      <rect x="52" y="36" width="16" height="9" fill="{{ glass }}"></rect>
+      <rect x="30" y="44" width="60" height="112" rx="16" fill="{{ glass }}"></rect>
+      <path d="M30 94 L90 94 L90 140 A16 16 0 0 1 74 156 L46 156 A16 16 0 0 1 30 140 Z" fill="{{ liquid }}"></path>
+      <rect x="38" y="52" width="9" height="82" rx="4.5" fill="#ffffff" opacity="0.42"></rect>
+      <rect x="40" y="100" width="40" height="36" rx="6" fill="#ffffff" opacity="0.94"></rect>
+      <rect x="46" y="110" width="28" height="4" rx="2" fill="{{ label }}"></rect>
+      <rect x="46" y="119" width="19" height="3" rx="1.5" fill="{{ label }}" opacity="0.55"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{ isBottle }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 120 164" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 6px 10px rgba(27,24,38,.16))">
+      <rect x="47" y="5" width="26" height="25" rx="4" fill="{{ cap }}"></rect>
+      <rect x="54" y="28" width="12" height="9" fill="{{ glass }}"></rect>
+      <rect x="34" y="35" width="52" height="121" rx="13" fill="{{ glass }}"></rect>
+      <path d="M34 86 L86 86 L86 143 A13 13 0 0 1 73 156 L47 156 A13 13 0 0 1 34 143 Z" fill="{{ liquid }}"></path>
+      <rect x="41" y="45" width="9" height="90" rx="4.5" fill="#ffffff" opacity="0.42"></rect>
+      <rect x="43" y="94" width="34" height="40" rx="6" fill="#ffffff" opacity="0.94"></rect>
+      <rect x="49" y="105" width="22" height="4" rx="2" fill="{{ label }}"></rect>
+      <rect x="49" y="114" width="15" height="3" rx="1.5" fill="{{ label }}" opacity="0.55"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{ isPump }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 120 164" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 6px 10px rgba(27,24,38,.16))">
+      <rect x="52" y="3" width="20" height="10" rx="2.5" fill="{{ cap }}"></rect>
+      <rect x="42" y="7" width="12" height="6" rx="1.5" fill="{{ cap }}"></rect>
+      <rect x="48" y="13" width="24" height="17" rx="2.5" fill="{{ cap }}"></rect>
+      <rect x="33" y="30" width="54" height="126" rx="9" fill="{{ glass }}"></rect>
+      <path d="M33 80 L87 80 L87 147 A9 9 0 0 1 78 156 L42 156 A9 9 0 0 1 33 147 Z" fill="{{ liquid }}"></path>
+      <rect x="40" y="40" width="9" height="98" rx="4.5" fill="#ffffff" opacity="0.38"></rect>
+      <rect x="42" y="94" width="36" height="42" rx="6" fill="#ffffff" opacity="0.94"></rect>
+      <rect x="48" y="105" width="24" height="4" rx="2" fill="{{ label }}"></rect>
+      <rect x="48" y="114" width="16" height="3" rx="1.5" fill="{{ label }}" opacity="0.55"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{ isTube }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 120 164" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 6px 10px rgba(27,24,38,.16))">
+      <rect x="55" y="6" width="10" height="11" rx="2" fill="{{ cap }}"></rect>
+      <path d="M44 30 Q60 15 76 30 L80 44 L40 44 Z" fill="{{ glass }}"></path>
+      <rect x="38" y="42" width="44" height="98" rx="7" fill="{{ glass }}"></rect>
+      <path d="M38 84 L82 84 L82 133 A7 7 0 0 1 75 140 L45 140 A7 7 0 0 1 38 133 Z" fill="{{ liquid }}"></path>
+      <rect x="45" y="50" width="8" height="82" rx="4" fill="#ffffff" opacity="0.42"></rect>
+      <rect x="45" y="68" width="30" height="42" rx="6" fill="#ffffff" opacity="0.92"></rect>
+      <rect x="51" y="80" width="19" height="4" rx="2" fill="{{ label }}"></rect>
+      <rect x="51" y="89" width="13" height="3" rx="1.5" fill="{{ label }}" opacity="0.55"></rect>
+      <rect x="34" y="138" width="52" height="20" rx="4" fill="{{ cap }}"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{ isJar }}" hint-placeholder-val="{{ false }}">
+    <svg viewBox="0 0 120 164" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 6px 10px rgba(27,24,38,.16))">
+      <rect x="30" y="34" width="60" height="30" rx="9" fill="{{ cap }}"></rect>
+      <rect x="35" y="39" width="50" height="7" rx="3.5" fill="#ffffff" opacity="0.22"></rect>
+      <rect x="34" y="62" width="52" height="82" rx="12" fill="{{ glass }}"></rect>
+      <path d="M34 104 L86 104 L86 132 A12 12 0 0 1 74 144 L46 144 A12 12 0 0 1 34 132 Z" fill="{{ liquid }}"></path>
+      <rect x="41" y="72" width="8" height="58" rx="4" fill="#ffffff" opacity="0.4"></rect>
+      <rect x="44" y="92" width="32" height="36" rx="6" fill="#ffffff" opacity="0.92"></rect>
+      <rect x="50" y="103" width="20" height="4" rx="2" fill="{{ label }}"></rect>
+      <rect x="50" y="112" width="14" height="3" rx="1.5" fill="{{ label }}" opacity="0.55"></rect>
+    </svg>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:96,&quot;height&quot;:120},&quot;sku&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;vitc&quot;,&quot;options&quot;:[&quot;vitc&quot;,&quot;ha&quot;,&quot;essence&quot;,&quot;toner_sage&quot;,&quot;toner_rose&quot;,&quot;foundation&quot;,&quot;spf&quot;,&quot;cleanser&quot;,&quot;cream&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  recipes = {
+    vitc:       { shape: 'dropper', glass: '#F6E6C2', liquid: '#EAA33C', cap: '#332A1B', label: '#C67E1E' },
+    ha:         { shape: 'dropper', glass: '#DBEFF7', liquid: '#6FB9DE', cap: '#27414F', label: '#3E8FBC' },
+    essence:    { shape: 'dropper', glass: '#F5E8F4', liquid: '#D79BD3', cap: '#402A40', label: '#B061AC' },
+    toner_sage: { shape: 'bottle',  glass: '#E4F0E4', liquid: '#A7D2AA', cap: '#33453A', label: '#77AC7C' },
+    toner_rose: { shape: 'bottle',  glass: '#F7E4EC', liquid: '#E7A9C2', cap: '#472B39', label: '#C87199' },
+    foundation: { shape: 'pump',    glass: '#F2E5D8', liquid: '#D6A97F', cap: '#3A2C21', label: '#B07E4F' },
+    spf:        { shape: 'tube',    glass: '#E7F1FB', liquid: '#8DBFEE', cap: '#284867', label: '#3B7FC2' },
+    cleanser:   { shape: 'tube',    glass: '#E1F2EE', liquid: '#82CFC1', cap: '#234A44', label: '#329787' },
+    cream:      { shape: 'jar',     glass: '#F1ECF7', liquid: '#E5DBF2', cap: '#3A3350', label: '#8878B6' }
+  };
+
+  renderVals() {
+    const r = this.recipes[this.props.sku] || this.recipes.vitc;
+    return {
+      glass: r.glass, liquid: r.liquid, cap: r.cap, label: r.label,
+      isDropper: r.shape === 'dropper',
+      isBottle: r.shape === 'bottle',
+      isPump: r.shape === 'pump',
+      isTube: r.shape === 'tube',
+      isJar: r.shape === 'jar'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -219,5 +219,84 @@
     "note": "products:[] with content -> text only, no cards/table.",
     "payload": { "content": "Momentan n-am găsit produse, dar pot căuta altceva.", "products": [], "suggestions": ["Caută altceva"] },
     "assert": { "textPresent": ["Momentan n-am găsit produse", "Caută altceva"], "productCards": 0, "comparisonTable": false }
+  },
+  {
+    "case": "understanding_reco_changes",
+    "note": "Understanding card (k/v chips + note) + a hero re-recommendation with brand and a 'Ce s-a schimbat' delta block.",
+    "payload": {
+      "content": "",
+      "suggestions": [],
+      "understanding": {
+        "chips": [{ "k": "Efect", "v": "imediat" }, { "k": "Buget", "v": "sub 100 lei" }],
+        "note": "Am potrivit recomandarea la ce contează pentru tine."
+      },
+      "products": [{
+        "product_id": "p1", "brand": "DERMIA", "name": "HA5 · Ser Hidratant", "price": 95, "list_price": 115, "currency": "RON",
+        "rating": 4.8, "review_count": 1644, "score": 9.3, "why": "Cinci tipuri de acid hialuronic.", "url": "https://x/ha5",
+        "changes": [{ "delta": "−34 lei", "label": "preț față de recomandarea anterioară", "tone": "good" }, { "delta": "fără SPF", "label": "adaugă separat protecția solară", "tone": "warn" }]
+      }]
+    },
+    "assert": {
+      "textPresent": ["Am înțeles ce cauți", "Efect", "imediat", "Buget", "Am potrivit recomandarea", "DERMIA", "HA5 · Ser Hidratant", "Ce s-a schimbat", "−34 lei", "preț față de recomandarea anterioară", "fără SPF"],
+      "productCards": 1,
+      "linkHrefs": ["https://x/ha5"]
+    }
+  },
+  {
+    "case": "status_confidence",
+    "note": "In-text stock status rows (ok/warn) + a message-level confidence bar.",
+    "payload": {
+      "content": "Da — și livrarea e rapidă:",
+      "suggestions": [],
+      "status": [
+        { "name": "HA5 · Ser Hidratant", "sub": "Livrare mâine, până la ora 18", "badge": "În stoc", "tone": "ok" },
+        { "name": "SPF 50 Mineral", "sub": "Livrare în 2–3 zile", "badge": "Stoc limitat · 4 buc", "tone": "warn" }
+      ],
+      "confidence": 88
+    },
+    "assert": {
+      "textPresent": ["Da — și livrarea e rapidă:", "HA5 · Ser Hidratant", "Livrare mâine, până la ora 18", "În stoc", "Stoc limitat · 4 buc", "Stoc verificat în timp real", "Încredere în recomandare", "88%"],
+      "productCards": 0,
+      "comparisonTable": false
+    }
+  },
+  {
+    "case": "routine_timeline",
+    "note": "Full routine: numbered steps, each with role/why and a product (no add-to-cart button — save-only).",
+    "payload": {
+      "content": "Uite rutina, pas cu pas:",
+      "suggestions": [],
+      "routine": {
+        "title": "Rutina esențială · 3 pași",
+        "total": "209 lei",
+        "note": "Ordinea de aplicare dimineața: 1 → 3.",
+        "steps": [
+          { "role": "Pasul 1 · Curățare", "why": "Gel fără sulfați.", "product": { "product_id": "c1", "brand": "DERMIA", "name": "Gel de Curățare Blând", "price": 45, "currency": "RON", "score": 9.0 } },
+          { "role": "Pasul 2 · Hidratare", "why": "Serul face munca grea.", "product": { "product_id": "c2", "brand": "DERMIA", "name": "HA5 · Ser Hidratant", "price": 95, "currency": "RON", "score": 9.3 } },
+          { "role": "Pasul 3 · Sigilare", "why": "Ceramidele refac bariera.", "product": { "product_id": "c3", "brand": "HYDRA", "name": "Cremă Ceramide", "price": 69, "currency": "RON", "score": 9.1 } }
+        ]
+      }
+    },
+    "assert": {
+      "textPresent": ["Rutina esențială · 3 pași", "Total 209 lei", "Pasul 1 · Curățare", "Gel de Curățare Blând", "Pasul 3 · Sigilare", "Cremă Ceramide", "AI 9", "Ordinea de aplicare dimineața"],
+      "productCards": 0,
+      "comparisonTable": false
+    }
+  },
+  {
+    "case": "no_results_refusal",
+    "note": "Honest refusal card — amber, with the fixed 'adevărul' footnote; no fabricated product.",
+    "payload": {
+      "suggestions": ["Efect real în timp: retinol"],
+      "no_results": {
+        "title": "Niciun ser nu șterge ridurile în 3 zile",
+        "text": "Ridurile se atenuează în săptămâni, nu în zile."
+      }
+    },
+    "assert": {
+      "textPresent": ["Niciun ser nu șterge ridurile în 3 zile", "Ridurile se atenuează în săptămâni", "Prefer să-ți spun adevărul decât să-ți vând orice.", "Efect real în timp: retinol"],
+      "productCards": 0,
+      "comparisonTable": false
+    }
   }
 ]

@@ -1,11 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, X, Send, Plus, Minus, Check, ShoppingCart, Trash2 } from "lucide-react";
+import {
+  Sparkles, X, Send, Plus, Minus, Check, ShoppingCart, Trash2,
+  ChevronDown, Bookmark, ArrowRight, Mic,
+} from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
-import { useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
+import { addToCart, useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
+import { useWishlist, removeWish } from "@/lib/wishlist";
 import { formatCurrency } from "@/utils";
 import { BRAND } from "@/lib/brand";
 import ChatMessage from "@/components/store/ChatMessage";
+import AriaMark from "@/components/store/AriaMark";
 import { demoMessages } from "@/components/store/chatDemo";
 
 const ARIA_OPEN_EVENT = "aria:open";
@@ -46,6 +51,16 @@ function loadMessages() {
   }
 }
 
+function isInitialWelcomeMessage(message, index) {
+  return (
+    index === 0 &&
+    message?.role === "assistant" &&
+    !message.products &&
+    !message.comparison &&
+    !message.offer
+  );
+}
+
 // Demo mode: open the store with `?demo=1` (dev only) to seed the chat with a rich
 // sample conversation, so the card's visual layer can be reviewed against the design
 // without waiting on the Python bot. Never active in a production build.
@@ -54,33 +69,67 @@ const DEMO =
   import.meta.env.DEV &&
   new URLSearchParams(window.location.search).get("demo") === "1";
 
-// Progressive "thinking" status shown while waiting for Aria's reply.
-// Steps forward over time: Gândesc -> Caut -> Pregătesc răspunsul.
-const THINKING_STAGES = ["Gândesc", "Caut", "Pregătesc răspunsul"];
+// Progressive "thinking" timeline shown while waiting for Aria's reply. Steps are
+// generic process copy (not fabricated product facts — the bot doesn't stream real
+// reasoning steps today), revealed in sequence; collapsible while running, like the
+// design prototype's timeline card.
+const THINKING_STEPS = ["Analizez cerința ta", "Caut în catalogul magazinului", "Pregătesc răspunsul"];
 
 function ThinkingIndicator() {
   const [stage, setStage] = useState(0);
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
-    const toCaut = setTimeout(() => setStage(1), 1500);
-    const toPregatesc = setTimeout(() => setStage(2), 4500);
+    const toStep1 = setTimeout(() => setStage(1), 1500);
+    const toStep2 = setTimeout(() => setStage(2), 4500);
     return () => {
-      clearTimeout(toCaut);
-      clearTimeout(toPregatesc);
+      clearTimeout(toStep1);
+      clearTimeout(toStep2);
     };
   }, []);
 
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-2.5 bg-white border border-gray-100 rounded-2xl rounded-bl-md px-3.5 py-2.5 shadow-sm">
-        <span className="text-sm font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-400 to-violet-600 bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
-          {THINKING_STAGES[stage]}
-        </span>
-        <span className="flex items-center gap-1 ml-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce" />
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce [animation-delay:0.2s]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-thinking-bounce [animation-delay:0.4s]" />
-        </span>
+      <div className="w-full max-w-[85%] min-[380px]:w-[248px] bg-white border border-[var(--aria-border)] rounded-2xl rounded-bl-md shadow-sm overflow-hidden aria-msg-in">
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left"
+        >
+          <span className="w-[13px] h-[13px] rounded-full border-2 border-[rgba(124,58,237,0.2)] border-t-[#7C3AED] aria-think-spinner shrink-0" />
+          <span className="flex-1 text-xs font-medium truncate text-[var(--aria-purple)]">
+            {THINKING_STEPS[stage]}…
+          </span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-[var(--aria-text-5)] shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+        {expanded && (
+          <div className="px-3.5 pb-3 flex flex-col gap-1.5">
+            {THINKING_STEPS.map((label, i) => (
+              <div key={i} className="flex items-center gap-2">
+                {i < stage ? (
+                  <Check className="w-3 h-3 text-[var(--aria-purple)] shrink-0" strokeWidth={3} />
+                ) : i === stage ? (
+                  <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg aria-think-dot shrink-0" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full border border-[#C9C4D8] shrink-0" />
+                )}
+                <span
+                  className={`text-[11px] ${
+                    i === stage
+                      ? "text-[var(--aria-text)] font-medium"
+                      : i < stage
+                        ? "text-[var(--aria-text-4)]"
+                        : "text-[var(--aria-text-5)]"
+                  }`}
+                >
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -96,17 +145,17 @@ function CartView({ onBack }) {
 
   if (items.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-gray-50/50">
-        <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
-          <ShoppingCart className="w-8 h-8 text-violet-600" />
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-[var(--aria-bg)]">
+        <div className="w-16 h-16 rounded-2xl bg-[rgba(124,58,237,0.1)] flex items-center justify-center mb-4">
+          <ShoppingCart className="w-8 h-8 text-[var(--aria-purple)]" />
         </div>
-        <h3 className="text-lg font-bold">Coșul tău e gol</h3>
-        <p className="text-sm text-muted-foreground max-w-[260px] mt-1 mb-5">
+        <h3 className="aria-heading text-lg text-[var(--aria-text)]">Coșul tău e gol</h3>
+        <p className="text-sm text-[var(--aria-text-4)] max-w-[260px] mt-1 mb-5">
           Adaugă produse din recomandările lui {BRAND.assistant} și le vei vedea aici.
         </p>
         <button
           onClick={onBack}
-          className="text-sm font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 px-4 py-2 rounded-full transition-colors"
+          className="text-sm font-semibold text-[var(--aria-purple)] bg-[rgba(124,58,237,0.07)] hover:bg-[rgba(124,58,237,0.12)] px-4 py-2 rounded-full transition-colors"
         >
           Înapoi la chat
         </button>
@@ -116,10 +165,10 @@ function CartView({ onBack }) {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gray-50/50">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-[var(--aria-bg)]">
         {items.map((it) => (
-          <div key={it.key} className="flex gap-3 bg-white border border-gray-100 rounded-xl p-2.5 shadow-sm">
-            <div className="w-14 h-14 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
+          <div key={it.key} className="flex gap-3 bg-white border border-[var(--aria-border)] rounded-xl p-2.5 shadow-sm">
+            <div className="w-14 h-14 rounded-lg bg-[var(--aria-surface-2)] overflow-hidden flex-shrink-0">
               {it.image_url ? (
                 <img src={it.image_url} alt={it.product_name} className="w-full h-full object-cover" />
               ) : null}
@@ -133,7 +182,7 @@ function CartView({ onBack }) {
                     onClick={() => setQuantity(it.key, it.quantity - 1)}
                     disabled={it.quantity <= 1}
                     title="Scade cantitatea"
-                    className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    className="w-6 h-6 rounded-md border border-[var(--aria-border)] flex items-center justify-center hover:bg-[var(--aria-surface-2)] disabled:opacity-40 transition-colors"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
@@ -141,7 +190,7 @@ function CartView({ onBack }) {
                   <button
                     onClick={() => setQuantity(it.key, it.quantity + 1)}
                     title="Crește cantitatea"
-                    className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    className="w-6 h-6 rounded-md border border-[var(--aria-border)] flex items-center justify-center hover:bg-[var(--aria-surface-2)] transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -160,14 +209,14 @@ function CartView({ onBack }) {
       </div>
 
       {/* Total + checkout — checkout lives on the full /Cart page (delivery form, payment). */}
-      <div className="border-t border-gray-100 bg-white p-3 flex-shrink-0 space-y-2.5">
+      <div className="border-t border-[var(--aria-border-2)] bg-white p-3 flex-shrink-0 space-y-2.5">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Total</span>
-          <span className="font-bold">{formatCurrency(total, currency)}</span>
+          <span className="text-[var(--aria-text-4)]">Total</span>
+          <span className="aria-heading text-[var(--aria-text)]">{formatCurrency(total, currency)}</span>
         </div>
         <Link
           to="/Cart"
-          className="block w-full text-center bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+          className="block w-full text-center aria-gradient-bg hover:opacity-90 text-white text-sm font-semibold py-2.5 rounded-xl transition-opacity"
         >
           Finalizează comanda
         </Link>
@@ -176,16 +225,170 @@ function CartView({ onBack }) {
   );
 }
 
+// Bottom-sheet drawer listing saved (wishlisted) products, with a running total.
+// Slides up over the conversation; closes on backdrop click or the X.
+function SavedDrawer({ onClose }) {
+  const items = useWishlist();
+  const total = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const currency = items[0]?.currency || "RON";
+  const addAllToCart = () => {
+    for (const it of items) {
+      addToCart({
+        product_id: null,
+        product_name: it.name,
+        price: it.price,
+        currency: it.currency,
+        image_url: it.image_url,
+        url: it.url,
+      });
+    }
+    onClose();
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      className="absolute inset-0 z-20 flex flex-col justify-end bg-black/30 backdrop-blur-[2px] aria-msg-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-t-2xl shadow-2xl border-t border-[var(--aria-border)] max-h-[75%] flex flex-col"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--aria-border-2)] flex-shrink-0">
+          <span className="aria-heading text-sm text-[var(--aria-text)]">Lista ta salvată</span>
+          <button
+            onClick={onClose}
+            title="Închide"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--aria-text-4)] hover:bg-[var(--aria-surface-2)]"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {items.length === 0 ? (
+          <p className="text-xs text-[var(--aria-text-3)] px-4 py-6 text-center">
+            Nimic salvat încă. Apasă pe inimă pe orice recomandare.
+          </p>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {items.map((it) => (
+                <div key={it.key} className="flex items-center gap-3 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-xl p-2">
+                  <div className="w-11 h-11 rounded-lg bg-white overflow-hidden flex-shrink-0 border border-[var(--aria-border-2)]">
+                    {it.image_url ? (
+                      <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
+                    ) : null}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold leading-snug line-clamp-2 text-[var(--aria-text)]">{it.name}</p>
+                    <p className="aria-heading text-xs mt-0.5 text-[var(--aria-text)]">{formatCurrency(it.price, it.currency)}</p>
+                  </div>
+                  <button
+                    onClick={() => removeWish(it.key)}
+                    title="Elimină din listă"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--aria-text-5)] hover:bg-[var(--aria-border-2)] transition-colors shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-[var(--aria-border-2)] p-3 flex-shrink-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--aria-text-4)]">Total estimat</span>
+                <span className="aria-heading text-sm text-[var(--aria-text)]">{formatCurrency(total, currency)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={addAllToCart}
+                className="w-full py-3 rounded-xl aria-gradient-bg text-white text-[13px] font-semibold shadow-[0_6px_20px_rgba(109,40,217,0.3)] hover:opacity-90 transition-opacity"
+              >
+                Adaugă tot în coș
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Ghost microphone button in the composer (matches the design's mic + send pair).
+// Wired to the browser Web Speech API and feature-detected: it renders ONLY where
+// dictation actually works, so there's never a dead control. Dictated text is
+// appended to the input for the user to review before sending.
+function MicButton({ onTranscript, disabled }) {
+  const [listening, setListening] = useState(false);
+  const recRef = useRef(/** @type {any} */ (null));
+  const w = /** @type {any} */ (typeof window !== "undefined" ? window : {});
+  const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+  if (!SR) return null;
+
+  const toggle = () => {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "ro-RO";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const t = e.results?.[0]?.[0]?.transcript;
+      if (t) onTranscript(t.trim());
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    setListening(true);
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={disabled}
+      title={listening ? "Ascult… apasă pentru stop" : "Dictează"}
+      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+        listening
+          ? "text-[var(--aria-purple)] bg-[rgba(124,58,237,0.1)]"
+          : "text-[var(--aria-text-3)] hover:bg-[var(--aria-border-2)]"
+      }`}
+    >
+      <Mic className="w-4 h-4" />
+    </button>
+  );
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(DEMO);
   const [showCart, setShowCart] = useState(false);
-  const [messages, setMessages] = useState(/** @type {any[]} */ (DEMO ? demoMessages : loadMessages));
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [messages, setMessages] = useState(() => (DEMO ? demoMessages() : loadMessages()));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
   const cartCount = useCartCount();
+  const wishlist = useWishlist();
   const scrollRef = useRef(null);
   const toastTimer = useRef(/** @type {any} */ (null));
+
+  // "Rețin" memory bar: the accumulated, de-duplicated search criteria the bot has
+  // extracted so far (e.g. "sub 600 lei", "ANC"). Derived from message history
+  // (not separate state) so it survives reload/reset for free and never drifts.
+  const criteria = useMemo(() => {
+    const seen = [];
+    for (const m of messages) {
+      if (m.role !== "assistant" || !Array.isArray(m.criteria)) continue;
+      for (const c of m.criteria) if (!seen.includes(c)) seen.push(c);
+    }
+    return seen;
+  }, [messages]);
 
   // Briefly show a confirmation toast (e.g. after adding a product to the cart).
   const showToast = (msg) => {
@@ -270,6 +473,9 @@ export default function ChatWidget() {
 
   // Before the first user message we show a centered welcome screen instead of the thread.
   const hasConversation = messages.some((m) => m.role === "user");
+  const visibleMessages = hasConversation
+    ? messages.filter((msg, i) => !isInitialWelcomeMessage(msg, i))
+    : messages;
 
   return (
     <>
@@ -277,7 +483,7 @@ export default function ChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-violet-300 transition-colors"
+          className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 aria-gradient-bg hover:opacity-90 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-violet-300/60 transition-opacity"
         >
           <Sparkles className="w-4 h-4" />
           <span className="hidden sm:inline">{BRAND.assistant}</span>
@@ -286,42 +492,53 @@ export default function ChatWidget() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[400px] bg-white border-l border-gray-100 shadow-2xl flex flex-col">
+        <div className="aria-widget fixed inset-y-0 right-0 z-50 w-full max-w-full sm:w-[452px] bg-white border-l border-[var(--aria-border-2)] shadow-2xl flex flex-col">
+          {/* Brand accent bar */}
+          <div className="h-[2px] aria-gradient-bg flex-shrink-0" />
+
           {/* Header */}
-          <div className="relative flex items-center justify-between px-4 h-14 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 min-[380px]:gap-3 px-3 min-[380px]:px-[18px] py-3 min-[380px]:py-3.5 border-b border-[var(--aria-border-2)] flex-shrink-0">
             {/* Left: "new chat" — only once the user has sent a message */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-2 min-[380px]:gap-3 min-w-0 flex-1">
+              <AriaMark size={30} className="min-[380px]:hidden" />
+              <AriaMark size={34} className="hidden min-[380px]:grid" />
+              <div className="min-w-0">
+                <div className="aria-heading text-base leading-tight text-[var(--aria-text)]">{BRAND.assistant}</div>
+                <div className="hidden min-[360px]:block text-[10.5px] leading-tight tracking-[0.04em] text-[var(--aria-text-3)] truncate">
+                  Consultant de cumpărături · {BRAND.name}
+                </div>
+              </div>
               {hasConversation && (
                 <button
                   onClick={handleReset}
                   title="Începe un chat nou"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors"
+                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(124,58,237,0.07)] hover:bg-[rgba(124,58,237,0.12)] px-2.5 py-1 rounded-full transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Chat nou
                 </button>
               )}
             </div>
 
-            {/* Center: Aria logo + name (always centered) */}
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
-              <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold">{BRAND.assistant}</span>
-            </div>
-
-            {/* Right: cart toggle + close */}
-            <div className="flex items-center gap-1">
+            {/* Right: saved + cart toggle + close */}
+            <div className="flex items-center gap-0.5 min-[380px]:gap-1 shrink-0">
+              <button
+                onClick={() => setSavedOpen((s) => !s)}
+                title="Lista salvată"
+                className="relative inline-flex items-center gap-1 min-[380px]:gap-1.5 h-8 px-2 min-[380px]:px-3 rounded-full border border-[var(--aria-border-3)] bg-white text-[12px] font-medium text-[var(--aria-text-2)] hover:border-[var(--aria-purple)] transition-colors"
+              >
+                <Bookmark className="w-4 h-4" />
+                <span>{wishlist.length}</span>
+              </button>
               <button
                 onClick={() => setShowCart((s) => !s)}
                 title={showCart ? "Înapoi la chat" : "Vezi coșul"}
                 className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  showCart ? "bg-violet-100 text-violet-700" : "text-muted-foreground hover:bg-gray-50"
+                  showCart ? "bg-[rgba(124,58,237,0.1)] text-[var(--aria-purple)]" : "text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
                 }`}
               >
                 <ShoppingCart className="w-4 h-4" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-violet-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 aria-gradient-bg text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
@@ -329,41 +546,62 @@ export default function ChatWidget() {
               <button
                 onClick={() => setOpen(false)}
                 title="Închide"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-gray-50"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
+          {/* "Rețin" memory bar — the criteria Aria has extracted so far. Hidden
+              until the bot actually sends `criteria` on a reply. */}
+          {criteria.length > 0 && !showCart && (
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--aria-border-2)] bg-[var(--aria-surface-2)] overflow-x-auto flex-shrink-0">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--aria-text-3)] shrink-0">Rețin</span>
+              {criteria.map((c, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(124,58,237,0.07)] border border-[rgba(124,58,237,0.22)] rounded-full text-[11px] text-[var(--aria-purple)] whitespace-nowrap shrink-0"
+                >
+                  <span className="w-1 h-1 rounded-full bg-[#38BDF8] shrink-0" />
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Cart view takes over the body when toggled from the header. */}
           {showCart ? (
             <CartView onBack={() => setShowCart(false)} />
-          ) : /* Welcome state — centered Aria, shown until the first user message */
+          ) : /* Welcome state — shown until the first user message, matching the design's
+                 left-aligned intro + vertical list of suggested prompts (not centered pills). */
           !hasConversation ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-gray-50/50">
-              <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-200 mb-4">
-                <Sparkles className="w-8 h-8 text-white" />
+            <div className="flex-1 overflow-y-auto flex flex-col justify-center gap-5 min-[380px]:gap-6 px-4 min-[380px]:px-6 py-6 min-[380px]:py-8 bg-[var(--aria-bg)]">
+              <AriaMark size={52} innerSize={38} />
+              <div className="flex flex-col gap-2">
+                <h3 className="aria-heading text-2xl text-[var(--aria-text)]">Bună! Sunt {BRAND.assistant}.</h3>
+                <p className="text-[13.5px] leading-relaxed text-[var(--aria-text-4)] max-w-[320px]">
+                  Spune-mi ce cauți. Analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva —
+                  nu doar ce.
+                </p>
               </div>
-              <h3 className="text-lg font-bold">Bună! Sunt {BRAND.assistant}</h3>
-              <p className="text-sm text-muted-foreground max-w-[260px] mt-1 mb-5">
-                Asistenta ta de cumpărături. Spune-mi ce cauți și îți găsesc produsele potrivite.
-              </p>
-              <div className="flex flex-wrap gap-1.5 justify-center">
+              <div className="flex flex-col gap-2">
                 {INITIAL_SUGGESTIONS.map((s, j) => (
                   <button
                     key={j}
                     onClick={() => send(s)}
-                    className="text-xs bg-white border border-violet-200 text-violet-700 px-3 py-1.5 rounded-full hover:bg-violet-50 transition-colors"
+                    className="flex items-center gap-3 text-left px-3.5 min-[380px]:px-4 py-3 min-[380px]:py-3.5 bg-white border border-[var(--aria-border)] rounded-[13px] text-[13px] text-[var(--aria-text-2)] shadow-sm hover:border-[var(--aria-purple)] hover:shadow-md transition-all"
                   >
-                    {s}
+                    <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg shrink-0" />
+                    <span className="flex-1">{s}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[var(--aria-text-5)] shrink-0" />
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50/50">
-            {messages.map((msg, i) => (
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-4 bg-[var(--aria-bg)]">
+            {visibleMessages.map((msg, i) => (
               <ChatMessage
                 key={i}
                 message={msg}
@@ -381,32 +619,38 @@ export default function ChatWidget() {
           {/* Disclaimer + input belong to the chat; the cart view has its own footer. */}
           {!showCart && (
             <>
-              {/* AI disclaimer — pinned at the bottom of the conversation area, centered */}
-              <p className="text-[10px] leading-tight text-center text-muted-foreground bg-gray-50/50 px-4 pt-0.5 pb-1.5 flex-shrink-0">
-                Funcționez cu inteligență artificială, așa că pot greși uneori.
+              {/* Scope disclaimer — pinned at the bottom of the conversation area, centered */}
+              <p className="text-[10px] leading-tight text-center text-[var(--aria-text-5)] bg-[var(--aria-bg)] px-4 pt-0.5 pb-1.5 flex-shrink-0">
+                {BRAND.assistant} caută doar în catalogul acestui magazin · recomandări argumentate
               </p>
 
-              {/* Input */}
+              {/* Input — single pill containing the field + send button, like the design. */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   send();
                 }}
-                className="flex items-center gap-2 p-3 border-t border-gray-100 flex-shrink-0"
+                className="px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-[var(--aria-border-2)] bg-white flex-shrink-0"
               >
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={`Scrie-i lui ${BRAND.assistant}...`}
-                  className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300"
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !input.trim()}
-                  className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 pl-4 pr-1.5 py-1 bg-[var(--aria-surface-2)] border border-[var(--aria-border)] rounded-full focus-within:border-[var(--aria-purple)] transition-colors">
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Întreabă orice despre produse..."
+                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2"
+                  />
+                  <MicButton
+                    disabled={sending}
+                    onTranscript={(t) => setInput((v) => (v.trim() ? `${v.trim()} ${t}` : t))}
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !input.trim()}
+                    className="w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-90"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
               </form>
             </>
           )}
@@ -420,6 +664,9 @@ export default function ChatWidget() {
               </div>
             </div>
           )}
+
+          {/* Saved-products bottom sheet — overlays the conversation, never the cart view. */}
+          {savedOpen && !showCart && <SavedDrawer onClose={() => setSavedOpen(false)} />}
         </div>
       )}
     </>

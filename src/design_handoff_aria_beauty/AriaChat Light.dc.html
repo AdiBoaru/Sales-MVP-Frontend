@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAF9FC;font-family:'Hanken Grotesk','Inter',Arial,sans-serif}
+a{color:#6D28D9;text-decoration:none}a:hover{color:#7C3AED}
+@keyframes ariaFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ariaPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@keyframes ariaSpin{to{transform:rotate(360deg)}}
+@keyframes ariaGlowL{0%,100%{box-shadow:0 0 12px rgba(124,58,237,.22)}50%{box-shadow:0 0 18px rgba(56,189,248,.22)}}
+@keyframes ariaBar{from{width:0}}
+.aria-scroll-l::-webkit-scrollbar{width:5px}
+.aria-scroll-l::-webkit-scrollbar-thumb{background:#DDD9E8;border-radius:99px}
+.aria-scroll-l::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+<div style="position:relative;display:flex;flex-direction:column;height:100%;min-height:0;background:#FAF9FC;color:#4B4756;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;overflow:hidden">
+
+  <!-- ═══ Header ═══ -->
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #ECE9F4;background:rgba(255,255,255,.92)">
+    <div style="width:34px;height:34px;flex:none;display:grid;place-items:center">
+      <div style="width:24px;height:24px;border-radius:7px;transform:rotate(45deg);background:#fff;border:2px solid transparent;background-image:linear-gradient(#ffffff,#ffffff),linear-gradient(135deg,#6D28D9,#7C3AED,#38BDF8);background-origin:border-box;background-clip:padding-box,border-box;display:grid;place-items:center;animation:ariaGlowL 4s ease-in-out infinite">
+        <div style="transform:rotate(-45deg);width:7px;height:7px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <div style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.02em;color:#1B1826;line-height:1.2">Aria</div>
+      <div style="font-size:10.5px;color:#8B8798;letter-spacing:.04em">Consultant de frumusețe · {{ merchantSub }}</div>
+    </div>
+    <button onClick="{{ toggleSaved }}" style="position:relative;display:flex;align-items:center;gap:7px;padding:7px 12px;background:#fff;border:1px solid #E0DCEC;border-radius:9999px;color:#4B4756;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#7C3AED">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <span>{{ savedCount }}</span>
+    </button>
+  </div>
+
+  <!-- ═══ Context memory bar ═══ -->
+  <sc-if value="{{ ctxVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 18px;border-bottom:1px solid #EFEDF6;background:#F6F4FB;overflow-x:auto;animation:ariaFadeUp .35s ease both">
+      <span style="flex:none;font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8B8798">Rețin</span>
+      <sc-for list="{{ ctx }}" as="c" hint-placeholder-count="0">
+        <span style="flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.22);border-radius:9999px;font-size:11px;color:#6D28D9;white-space:nowrap">
+          <span style="width:4px;height:4px;border-radius:99px;background:#38BDF8"></span>{{ c }}
+        </span>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ═══ Conversation ═══ -->
+  <div class="aria-scroll-l" ref="{{ setScroll }}" style="flex:1;min-height:0;overflow-y:auto;padding:20px 18px 10px;display:flex;flex-direction:column;gap:16px">
+
+    <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="1">
+      <div style="animation:ariaFadeUp .4s ease both">
+
+        <!-- Welcome -->
+        <sc-if value="{{ m.isWelcome }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:18px;padding:22px 4px 6px">
+            <div style="width:52px;height:52px;display:grid;place-items:center">
+              <div style="width:38px;height:38px;border-radius:11px;transform:rotate(45deg);background:#fff;border:2.5px solid transparent;background-image:linear-gradient(#ffffff,#ffffff),linear-gradient(135deg,#6D28D9,#7C3AED,#38BDF8);background-origin:border-box;background-clip:padding-box,border-box;display:grid;place-items:center;animation:ariaGlowL 4s ease-in-out infinite">
+                <div style="transform:rotate(-45deg);width:11px;height:11px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:24px;letter-spacing:-0.02em;color:#1B1826;line-height:1.15">Bună! Sunt Aria.</div>
+              <div style="font-size:13.5px;line-height:1.6;color:#7A7589;max-width:340px">Spune-mi ce cauți în îngrijire sau machiaj. Analizez formulele, compar opțiunile și îți explic exact de ce recomand ceva — nu doar ce.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ m.prompts }}" as="pr" hint-placeholder-count="4">
+                <button onClick="{{ pr.go }}" style="display:flex;align-items:center;gap:12px;text-align:left;padding:13px 15px;background:#fff;border:1px solid #E7E4F0;border-radius:13px;color:#4B4756;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;line-height:1.4;cursor:pointer;box-shadow:0 1px 4px rgba(27,24,38,.04);transition:border-color .2s,box-shadow .2s" style-hover="border-color:#7C3AED;box-shadow:0 4px 16px rgba(124,58,237,.12)">
+                  <span style="flex:none;width:6px;height:6px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></span>
+                  <span style="flex:1">{{ pr.label }}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A5A1B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- User -->
+        <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:flex-end">
+            <div style="max-width:80%;padding:11px 16px;background:linear-gradient(135deg,#6D28D9,#7C3AED);border-radius:16px 16px 4px 16px;font-size:13.5px;line-height:1.5;color:#fff;box-shadow:0 4px 14px rgba(109,40,217,.25)">{{ m.text }}</div>
+          </div>
+        </sc-if>
+
+        <!-- Thinking timeline -->
+        <sc-if value="{{ m.isThinking }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #E7E4F0;border-radius:14px;background:#F6F4FB;overflow:hidden">
+            <button onClick="{{ m.toggle }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:transparent;border:none;cursor:pointer;text-align:left;font-family:'Hanken Grotesk','Inter',Arial,sans-serif">
+              <sc-if value="{{ m.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M20 6L9 17l-5-5"></path></svg>
+              </sc-if>
+              <sc-if value="{{ m.running }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:none;width:13px;height:13px;border-radius:99px;border:2px solid rgba(124,58,237,.2);border-top-color:#7C3AED;animation:ariaSpin .8s linear infinite"></div>
+              </sc-if>
+              <span style="flex:1;font-size:12px;font-weight:500;letter-spacing:.02em;color:{{ m.headColor }}">{{ m.headLabel }}</span>
+              <sc-if value="{{ m.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A5A1B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M6 9l6 6 6-6"></path></svg>
+              </sc-if>
+            </button>
+            <sc-if value="{{ m.showSteps }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:9px;padding:2px 14px 13px 15px">
+                <sc-for list="{{ m.steps }}" as="st" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <sc-if value="{{ st.isDone }}" hint-placeholder-val="{{ true }}">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M20 6L9 17l-5-5"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ st.isActive }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:none;width:7px;height:7px;margin:0 2px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8);animation:ariaPulse 1s ease-in-out infinite"></span>
+                    </sc-if>
+                    <sc-if value="{{ st.isPending }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:none;width:7px;height:7px;margin:0 2px;border-radius:99px;border:1.5px solid #C9C4D8"></span>
+                    </sc-if>
+                    <span style="font-size:12px;color:{{ st.color }}">{{ st.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- Understanding card -->
+        <sc-if value="{{ m.isUnderstand }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid rgba(124,58,237,.18);border-radius:14px;background:linear-gradient(160deg,rgba(124,58,237,.06),rgba(56,189,248,.04) 70%),#fff">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#6D28D9">Am înțeles ce cauți</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ m.chips }}" as="c" hint-placeholder-count="3">
+                <span style="display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;background:#F6F4FB;border:1px solid #E7E4F0;border-radius:9999px;font-size:11.5px">
+                  <span style="color:#8B8798">{{ c.k }}</span><span style="color:#1B1826;font-weight:500">{{ c.v }}</span>
+                </span>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:#8B8798;line-height:1.5">{{ m.note }}</div>
+          </div>
+        </sc-if>
+
+        <!-- AI text / status / confidence -->
+        <sc-if value="{{ m.isText }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;padding:15px 17px;border:1px solid #E7E4F0;border-radius:16px 16px 16px 4px;background:#fff;max-width:94%;box-shadow:0 2px 10px rgba(27,24,38,.05)">
+            <sc-if value="{{ m.hasTitle }}" hint-placeholder-val="{{ false }}">
+              <div style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:15px;color:#1B1826;letter-spacing:-0.01em">{{ m.title }}</div>
+            </sc-if>
+            <sc-for list="{{ m.body }}" as="p" hint-placeholder-count="1">
+              <div style="font-size:13.5px;line-height:1.65;color:#4B4756">{{ p }}</div>
+            </sc-for>
+            <sc-if value="{{ m.hasStatus }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ m.status }}" as="s" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:11px">
+                    <span style="flex:none;width:8px;height:8px;border-radius:99px;background:{{ s.dot }}"></span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                      <span style="font-size:12.5px;font-weight:600;color:#1B1826">{{ s.name }}</span>
+                      <span style="font-size:11px;color:#8B8798">{{ s.sub }}</span>
+                    </div>
+                    <span style="flex:none;padding:3px 9px;border-radius:9999px;background:{{ s.bg }};font-size:10.5px;font-weight:600;color:{{ s.tone }}">{{ s.badge }}</span>
+                  </div>
+                </sc-for>
+                <div style="font-size:10.5px;color:#A5A1B2">Stoc verificat în timp real, acum câteva secunde</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.hasConf }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:2px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8B8798">Încredere în recomandare</span>
+                  <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:14px;color:#6D28D9">{{ m.conf }}%</span>
+                </div>
+                <div style="height:5px;border-radius:99px;background:#EFEDF6;overflow:hidden">
+                  <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#6D28D9,#7C3AED,#38BDF8);width:{{ m.confW }};animation:ariaBar 1s ease both"></div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- Recommendation hero card -->
+        <sc-if value="{{ m.isReco }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #E7E4F0;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 12px 36px rgba(109,40,217,.1)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px 0">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(90deg,#6D28D9,#0284C7);-webkit-background-clip:text;background-clip:text;color:transparent">{{ m.badge }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:9999px;background:rgba(56,189,248,.1);border:1px solid rgba(2,132,199,.25)">
+                <span style="font-size:9.5px;font-weight:600;letter-spacing:.08em;color:#8B8798">SCOR AI</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:14px;color:#0284C7">{{ m.p.score }}</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:11px;padding:12px 16px 14px">
+              <div style="display:flex;gap:12px;align-items:stretch">
+                <div style="flex:none;width:84px;height:84px;border-radius:11px;background:radial-gradient(closest-side at 50% 45%,rgba(124,58,237,.12),rgba(246,244,251,0) 90%),#F6F4FB;border:1px solid #ECE9F4;display:grid;place-items:center;position:relative">
+                  <dc-import name="Aria Product" sku="{{ m.p.sku }}" hint-size="80px,80px" style="width:80px;height:80px"></dc-import>
+                  <sc-if value="{{ m.hasDisc }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;right:-6px;top:-6px;padding:2px 7px;border-radius:9999px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);font-size:9.5px;font-weight:700;color:#189A4A">{{ m.p.disc }}</span>
+                  </sc-if>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px">
+                  <span style="font-size:9.5px;font-weight:600;letter-spacing:.16em;color:#8B8798">{{ m.p.brand }}</span>
+                  <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.01em;color:#1B1826;line-height:1.2">{{ m.p.name }}</span>
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><path d="M12 2l3 6.6 7 .8-5.2 4.8L18.3 21 12 17.5 5.7 21l1.5-6.8L2 9.4l7-.8z"></path></svg>
+                    <span style="font-size:11.5px;font-weight:600;color:#1B1826">{{ m.p.rating }}</span>
+                    <span style="font-size:11px;color:#8B8798">({{ m.p.reviews }})</span>
+                    <span style="width:3px;height:3px;border-radius:99px;background:#D5D1E0"></span>
+                    <span style="font-size:11px;font-weight:600;color:#189A4A">{{ m.p.stock }}</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;gap:7px;margin-top:2px">
+                    <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:19px;color:#1B1826">{{ m.p.price }}</span>
+                    <sc-if value="{{ m.hasDisc }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:12px;color:#A5A1B2;text-decoration:line-through">{{ m.p.old }}</span>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ m.p.chips }}" as="h" hint-placeholder-count="3">
+                  <span style="padding:3px 9px;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.18);border-radius:8px;font-size:10.5px;color:#6D28D9">{{ h }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;padding:12px 13px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:12px">
+                <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#6D28D9">De ce am ales-o pentru tine</span>
+                <span style="font-size:12.5px;line-height:1.6;color:#4B4756">{{ m.p.why }}</span>
+              </div>
+              <sc-if value="{{ m.hasChanges }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:7px;padding:12px 13px;background:rgba(56,189,248,.06);border:1px solid rgba(2,132,199,.18);border-radius:12px">
+                  <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#0284C7">Ce s-a schimbat față de recomandarea anterioară</span>
+                  <sc-for list="{{ m.changes }}" as="ch" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:baseline;gap:8px">
+                      <span style="flex:none;font-size:11px;font-weight:700;color:{{ ch.tone }}">{{ ch.delta }}</span>
+                      <span style="font-size:12px;color:#7A7589">{{ ch.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="border:1px solid #ECE9F4;border-radius:11px;overflow:hidden">
+                <button onClick="{{ m.expand }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 13px;background:#F9F8FC;border:none;cursor:pointer;font-family:'Hanken Grotesk','Inter',Arial,sans-serif">
+                  <span style="font-size:11.5px;font-weight:500;color:#7A7589">Pentru cine e · argumente pro și contra</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A5A1B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+                <sc-if value="{{ m.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 13px 0;background:#fff;border-top:1px solid #ECE9F4">
+                    <div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:11px">
+                      <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#189A4A">Ideală pentru</span>
+                      <span style="font-size:11.5px;line-height:1.45;color:#4B4756">{{ m.p.best }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:11px">
+                      <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C77700">Evită dacă</span>
+                      <span style="font-size:11.5px;line-height:1.45;color:#4B4756">{{ m.p.avoid }}</span>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 13px;background:#fff">
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{ m.p.pros }}" as="pp" hint-placeholder-count="2">
+                        <div style="display:flex;gap:7px;align-items:baseline"><span style="flex:none;font-size:11px;font-weight:700;color:#189A4A">+</span><span style="font-size:11.5px;line-height:1.45;color:#4B4756">{{ pp }}</span></div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{ m.p.cons }}" as="cc" hint-placeholder-count="1">
+                        <div style="display:flex;gap:7px;align-items:baseline"><span style="flex:none;font-size:11px;font-weight:700;color:#C77700">−</span><span style="font-size:11.5px;line-height:1.45;color:#7A7589">{{ cc }}</span></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:2px">
+                <button onClick="{{ m.save }}" style="flex:none;display:flex;align-items:center;gap:7px;padding:10px 14px;background:{{ m.saveBg }};border:1px solid {{ m.saveBorder }};border-radius:11px;color:{{ m.saveColor }};font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="{{ m.saveFill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                  {{ m.saveLabel }}
+                </button>
+                <button onClick="{{ m.ask }}" style="flex:none;padding:10px 14px;background:#fff;border:1px solid #E0DCEC;border-radius:11px;color:#4B4756;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#7C3AED;color:#6D28D9">Întreabă Aria</button>
+                <button style="flex:1;padding:10px 14px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:11px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(109,40,217,.3)" style-hover="filter:brightness(1.08)">Vezi produsul ↗</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Product grid cluster -->
+        <sc-if value="{{ m.isGrid }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8B8798">{{ m.title }}</span>
+              <span style="font-size:10.5px;color:#A5A1B2">{{ m.sub }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ m.items }}" as="g" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #E7E4F0;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(27,24,38,.04);position:relative;transition:box-shadow .2s,border-color .2s" style-hover="border-color:rgba(124,58,237,.35);box-shadow:0 8px 24px rgba(109,40,217,.12)">
+                  <button onClick="{{ g.save }}" style="position:absolute;top:9px;right:9px;width:28px;height:28px;display:grid;place-items:center;background:#fff;border:1px solid #ECE9F4;border-radius:99px;cursor:pointer;z-index:2" style-hover="border-color:#7C3AED">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ g.heartFill }}" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                  </button>
+                  <div style="height:88px;border-radius:10px;background:radial-gradient(closest-side at 50% 55%,rgba(124,58,237,.1),rgba(246,244,251,0) 90%),#F6F4FB;border:1px solid #EFEDF6;display:grid;place-items:center;position:relative">
+                    <sc-if value="{{ g.hasTag }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute;left:6px;top:6px;padding:2px 8px;border-radius:9999px;background:{{ g.tagBg }};border:1px solid {{ g.tagBorder }};font-size:8.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:{{ g.tagColor }};backdrop-filter:blur(4px);z-index:2">{{ g.tag }}</span>
+                    </sc-if>
+                    <dc-import name="Aria Product" sku="{{ g.sku }}" hint-size="78px,78px" style="width:78px;height:78px"></dc-import>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:1px;min-height:36px">
+                    <span style="font-size:9px;letter-spacing:.14em;color:#A5A1B2">{{ g.brand }}</span>
+                    <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:13.5px;color:#1B1826;line-height:1.25">{{ g.name }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><path d="M12 2l3 6.6 7 .8-5.2 4.8L18.3 21 12 17.5 5.7 21l1.5-6.8L2 9.4l7-.8z"></path></svg>
+                    <span style="font-size:11px;font-weight:600;color:#4B4756">{{ g.rating }}</span>
+                    <span style="font-size:10px;color:#A5A1B2">({{ g.reviews }})</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px">
+                    <div style="display:flex;align-items:baseline;gap:6px">
+                      <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:15.5px;color:#1B1826">{{ g.price }}</span>
+                      <sc-if value="{{ g.hasOld }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:10.5px;color:#B9B5C6;text-decoration:line-through">{{ g.old }}</span>
+                      </sc-if>
+                    </div>
+                    <span style="flex:none;padding:2px 8px;border-radius:9999px;background:rgba(56,189,248,.1);font-size:10px;font-weight:700;color:#0284C7">AI {{ g.score }}</span>
+                  </div>
+                  <span style="font-size:10.5px;line-height:1.45;color:#7A7589">{{ g.line }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Routine steps -->
+        <sc-if value="{{ m.isRoutine }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;padding:16px;border:1px solid #E7E4F0;border-radius:18px;background:#fff;box-shadow:0 6px 24px rgba(27,24,38,.06)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(90deg,#6D28D9,#0284C7);-webkit-background-clip:text;background-clip:text;color:transparent">{{ m.title }}</span>
+              <span style="flex:none;font-size:11px;font-weight:600;color:#6D28D9">Total {{ m.total }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ m.steps }}" as="st" hint-placeholder-count="3">
+                <div style="display:flex;gap:12px">
+                  <div style="flex:none;display:flex;flex-direction:column;align-items:center;width:26px">
+                    <span style="flex:none;width:24px;height:24px;border-radius:99px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);color:#fff;font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:12px;display:grid;place-items:center">{{ st.n }}</span>
+                    <sc-if value="{{ st.hasLine }}" hint-placeholder-val="{{ true }}">
+                      <span style="flex:1;width:2px;min-height:14px;background:linear-gradient(180deg,rgba(124,58,237,.35),rgba(56,189,248,.25));border-radius:99px;margin:3px 0"></span>
+                    </sc-if>
+                  </div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-bottom:14px">
+                    <div style="display:flex;flex-direction:column;gap:1px">
+                      <span style="font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6D28D9">{{ st.role }}</span>
+                      <span style="font-size:11px;line-height:1.45;color:#8B8798">{{ st.why }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:11px">
+                      <div style="flex:none;width:42px;height:42px;border-radius:9px;background:radial-gradient(closest-side at 50% 50%,rgba(124,58,237,.1),rgba(246,244,251,0) 90%),#F3F1F8;border:1px solid #ECE9F4;display:grid;place-items:center">
+                        <dc-import name="Aria Product" sku="{{ st.sku }}" hint-size="42px,42px" style="width:40px;height:40px"></dc-import>
+                      </div>
+                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                        <span style="font-size:9px;letter-spacing:.14em;color:#A5A1B2">{{ st.brand }}</span>
+                        <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:12.5px;color:#1B1826;line-height:1.25">{{ st.name }}</span>
+                      </div>
+                      <div style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                        <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:13.5px;color:#1B1826">{{ st.price }}</span>
+                        <span style="padding:1px 7px;border-radius:9999px;background:rgba(56,189,248,.1);font-size:9px;font-weight:700;color:#0284C7">AI {{ st.score }}</span>
+                      </div>
+                      <button onClick="{{ st.save }}" style="flex:none;width:28px;height:28px;display:grid;place-items:center;background:#fff;border:1px solid #ECE9F4;border-radius:99px;cursor:pointer" style-hover="border-color:#7C3AED">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ st.heartFill }}" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size:11px;color:#8B8798;line-height:1.5">{{ m.note }}</span>
+          </div>
+        </sc-if>
+
+        <!-- Comparison module -->
+        <sc-if value="{{ m.isCompare }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid #E7E4F0;border-radius:18px;background:#fff;box-shadow:0 6px 24px rgba(27,24,38,.06)">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(90deg,#6D28D9,#0284C7);-webkit-background-clip:text;background-clip:text;color:transparent">Comparație directă</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:2px;padding:12px;background:rgba(124,58,237,.05);border:1px solid rgba(124,58,237,.28);border-radius:12px">
+                <span style="font-size:9.5px;letter-spacing:.12em;color:#6D28D9;font-weight:700">A</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:13.5px;color:#1B1826;line-height:1.25">{{ m.a.name }}</span>
+                <span style="font-size:12px;color:#7A7589">{{ m.a.price }} · AI {{ m.a.score }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;padding:12px;background:rgba(56,189,248,.06);border:1px solid rgba(2,132,199,.25);border-radius:12px">
+                <span style="font-size:9.5px;letter-spacing:.12em;color:#0284C7;font-weight:700">B</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:13.5px;color:#1B1826;line-height:1.25">{{ m.b.name }}</span>
+                <span style="font-size:12px;color:#7A7589">{{ m.b.price }} · AI {{ m.b.score }}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ m.dims }}" as="d" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid #F1EFF7">
+                  <div style="display:flex;align-items:center;gap:6px;justify-content:flex-start">
+                    <sc-if value="{{ d.winA }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:5px;height:5px;border-radius:99px;background:#7C3AED"></span></sc-if>
+                    <span style="font-size:12px;font-weight:{{ d.aW }};color:{{ d.aC }}">{{ d.a }}</span>
+                  </div>
+                  <span style="font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#A5A1B2;text-align:center">{{ d.label }}</span>
+                  <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+                    <span style="font-size:12px;font-weight:{{ d.bW }};color:{{ d.bC }}">{{ d.b }}</span>
+                    <sc-if value="{{ d.winB }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:5px;height:5px;border-radius:99px;background:#0284C7"></span></sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;padding:13px 14px;border-radius:13px;background:linear-gradient(160deg,rgba(124,58,237,.07),rgba(56,189,248,.05));border:1px solid rgba(124,58,237,.22)">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6D28D9">Verdictul Ariei</span>
+              <span style="font-size:12.5px;line-height:1.6;color:#4B4756">{{ m.verdict }}</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;height:5px;border-radius:99px;background:rgba(124,58,237,.12);overflow:hidden">
+                  <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#6D28D9,#7C3AED,#38BDF8);width:{{ m.confW }};animation:ariaBar 1s ease both"></div>
+                </div>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:13px;color:#6D28D9">{{ m.conf }}%</span>
+              </div>
+              <button onClick="{{ m.pick }}" style="align-self:flex-start;padding:9px 16px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:10px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(109,40,217,.25)" style-hover="filter:brightness(1.08)">Alege pentru mine</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- No results -->
+        <sc-if value="{{ m.isNoResults }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:11px;padding:15px 17px;border:1px solid rgba(245,158,11,.35);border-radius:16px;background:rgba(245,158,11,.06)">
+            <div style="display:flex;align-items:center;gap:9px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C77700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:14.5px;color:#1B1826">{{ m.title }}</span>
+            </div>
+            <span style="font-size:13px;line-height:1.65;color:#4B4756">{{ m.text }}</span>
+            <span style="font-size:11px;color:#8B8798">Prefer să-ți spun adevărul decât să-ți vând orice.</span>
+          </div>
+        </sc-if>
+
+        <!-- Follow-up chips -->
+        <sc-if value="{{ m.isChips }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:2px">
+            <sc-for list="{{ m.items }}" as="ch" hint-placeholder-count="3">
+              <button onClick="{{ ch.go }}" style="padding:8px 14px;background:#fff;border:1px solid #E0DCEC;border-radius:9999px;color:#6D28D9;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 1px 3px rgba(27,24,38,.04);transition:border-color .2s" style-hover="border-color:#7C3AED;background:rgba(124,58,237,.05)">{{ ch.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </sc-for>
+    <div style="flex:none;height:6px"></div>
+  </div>
+
+  <!-- ═══ Composer ═══ -->
+  <div style="flex:none;display:flex;flex-direction:column;gap:7px;padding:12px 16px 14px;border-top:1px solid #ECE9F4;background:#fff">
+    <div style="display:flex;align-items:center;gap:9px;padding:5px 6px 5px 16px;background:#F6F4FB;border:1px solid #E7E4F0;border-radius:9999px" style-focus="border-color:#7C3AED">
+      <input value="{{ typed }}" onChange="{{ onType }}" onKeyDown="{{ onKey }}" placeholder="Întreabă orice despre îngrijire sau machiaj…" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#1B1826;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;padding:8px 0"></input>
+      <button style="flex:none;width:34px;height:34px;display:grid;place-items:center;background:transparent;border:none;cursor:pointer;border-radius:99px" style-hover="background:#ECE9F4">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8798" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"></path></svg>
+      </button>
+      <button onClick="{{ onSend }}" style="flex:none;width:36px;height:36px;display:grid;place-items:center;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:99px;cursor:pointer;box-shadow:0 4px 14px rgba(109,40,217,.3)" style-hover="filter:brightness(1.1)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+      </button>
+    </div>
+    <span style="font-size:10px;color:#A5A1B2;text-align:center">Aria caută doar în catalogul acestui magazin · recomandări argumentate</span>
+  </div>
+
+  <!-- ═══ Saved drawer ═══ -->
+  <sc-if value="{{ savedOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(27,24,38,.35);backdrop-filter:blur(4px)">
+      <div onClick="{{ toggleSaved }}" style="flex:1"></div>
+      <div style="flex:none;display:flex;flex-direction:column;gap:13px;padding:18px 18px 22px;background:#fff;border-top:1px solid #ECE9F4;border-radius:20px 20px 0 0;box-shadow:0 -12px 48px rgba(27,24,38,.18);animation:ariaFadeUp .3s ease both">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;color:#1B1826">Trusa ta salvată</span>
+          <button onClick="{{ toggleSaved }}" style="width:30px;height:30px;display:grid;place-items:center;background:#F6F4FB;border:1px solid #E7E4F0;border-radius:99px;cursor:pointer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A7589" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <sc-if value="{{ savedEmpty }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:12.5px;color:#8B8798;padding:8px 0 14px">Nimic salvat încă. Apasă „Salvează" pe orice recomandare.</span>
+        </sc-if>
+        <sc-for list="{{ savedItems }}" as="sv" hint-placeholder-count="0">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:#F9F8FC;border:1px solid #ECE9F4;border-radius:12px">
+            <div style="flex:none;width:40px;height:44px;border-radius:9px;background:#fff;border:1px solid #ECE9F4;display:grid;place-items:center;overflow:hidden">
+              <dc-import name="Aria Product" sku="{{ sv.sku }}" hint-size="40px,44px" style="width:38px;height:44px"></dc-import>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:12.5px;font-weight:600;color:#1B1826">{{ sv.name }}</span>
+              <span style="font-size:11px;color:#8B8798">{{ sv.brand }}</span>
+            </div>
+            <span style="flex:none;font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:13.5px;color:#1B1826">{{ sv.price }}</span>
+            <button onClick="{{ sv.remove }}" style="flex:none;width:26px;height:26px;display:grid;place-items:center;background:transparent;border:none;cursor:pointer;border-radius:99px" style-hover="background:#ECE9F4">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A5A1B2" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ savedAny }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px">
+            <span style="font-size:12px;color:#7A7589">Total estimat</span>
+            <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:17px;color:#1B1826">{{ savedTotal }}</span>
+          </div>
+          <button style="padding:12px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:12px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(109,40,217,.3)" style-hover="filter:brightness(1.08)">Adaugă tot în coș</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:820},&quot;merchantName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Aria&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Widget&quot;},&quot;thinkSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:650,&quot;min&quot;:250,&quot;max&quot;:1200,&quot;step&quot;:50,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Comportament AI&quot;}}">
+class Component extends DCLogic {
+  state = {
+    msgs: [{ id: 'w', type: 'welcome' }],
+    typed: '',
+    saved: {},
+    savedOpen: false,
+    expanded: {},
+    ctx: [],
+    busy: false,
+    journey: null,
+    lastReco: null
+  };
+
+  uid = 1;
+
+  products = {
+    S:  { id: 'S', brand: 'DERMIA', name: 'C10 · Ser Vitamina C', sku: 'vitc', price: '89 lei', priceN: 89, old: '109 lei', disc: '−18%', rating: '4,6', reviews: '894', score: '8,9',
+      why: 'Formulă cu 10% vitamina C stabilizată (SAP, nu acid ascorbic pur) și fără parfum — blândă cu tenul sensibil, dar suficient de activă pentru luminozitate. E sub bugetul tău și are cel mai mic procent de reacții raportate din categorie.',
+      chips: ['10% vit. C stabilizată', 'Fără parfum', 'pH 5,5 · blând', '30 ml'],
+      best: 'Ten sensibil, primul contact cu vitamina C', avoid: 'Ai deja o rutină cu retinol dimineața',
+      pros: ['Formulă blândă, testată dermatologic', 'Ambalaj opac, pompă airless', 'Sub bugetul de 100 de lei'],
+      cons: ['Efect vizibil abia după 3–4 săptămâni', 'Procent mai mic decât serurile „pro"'],
+      stock: 'În stoc' },
+    S6: { id: 'S6', brand: 'GLOW LAB', name: 'Ser Vitamina C 15%', sku: 'vitc', price: '129 lei', priceN: 129, rating: '4,4', reviews: '623', score: '8,5',
+      line: 'Concentrație mai mare, pentru ten deja obișnuit' },
+    S2: { id: 'S2', brand: 'DERMIA', name: 'Gel de Curățare Blând', sku: 'cleanser', price: '45 lei', priceN: 45, rating: '4,7', reviews: '1 203', score: '9,0',
+      line: 'Pasul 1 · fără sulfați, nu usucă' },
+    S3: { id: 'S3', brand: 'CALM BOTANIC', name: 'Toner Calmant fără Alcool', sku: 'toner_sage', price: '59 lei', priceN: 59, old: '69 lei', rating: '4,5', reviews: '742', score: '8,6',
+      line: 'Pasul 2 · pregătește pielea pentru ser' },
+    TR: { id: 'TR', brand: 'HYDRA', name: 'Toner Hidratant Trandafir', sku: 'toner_rose', price: '65 lei', priceN: 65, rating: '4,6', reviews: '610', score: '8,7',
+      line: 'Hidratare + calmare, pentru ten uscat' },
+    S4: { id: 'S4', brand: 'HYDRA', name: 'Cremă Ceramide', sku: 'cream', price: '69 lei', priceN: 69, rating: '4,8', reviews: '2 011', score: '9,1',
+      line: 'Pasul 4 · sigilează hidratarea, barieră refăcută' },
+    S5: { id: 'S5', brand: 'SOLARIA', name: 'SPF 50 Mineral, fără parfum', sku: 'spf', price: '79 lei', priceN: 79, rating: '4,6', reviews: '1 530', score: '8,8',
+      why: 'SPF 50 mineral (oxid de zinc), fără parfum și fără reziduu alb vizibil — testat sub machiaj. Din 26 de produse, e singurul cu textură lejeră care nu face pilling peste ser și fond de ten.',
+      chips: ['SPF 50 · mineral', 'Fără parfum', 'Sub machiaj', 'Fără reziduu alb'],
+      best: 'Purtare zilnică, ten sensibil, peste vitamina C', avoid: 'Vrei un finish foarte luminos (acesta e mat-natural)',
+      pros: ['Protecție largă UVA/UVB', 'Nu înțeapă ochii', 'Se așază perfect sub fond de ten'],
+      cons: ['Textură mată, nu luminoasă', 'Reaplicare la 2–3 ore la soare'],
+      line: 'Pasul 5 · obligatoriu peste vitamina C', stock: 'În stoc' },
+    R2: { id: 'R2', brand: 'CALM BOTANIC', name: 'Esență cu Acid Hialuronic', sku: 'essence', price: '75 lei', priceN: 75, rating: '4,6', reviews: '918', score: '8,9',
+      line: 'Strat de hidratare sub ser' },
+    R3: { id: 'R3', brand: 'DERMIA', name: 'HA5 · Ser Hidratant', sku: 'ha', price: '95 lei', priceN: 95, old: '115 lei', rating: '4,8', reviews: '1 644', score: '9,3',
+      why: 'Cinci tipuri de acid hialuronic cu greutăți moleculare diferite — hidratează în profunzime, nu doar la suprafață. Fără parfum, cu efect de „umplere" vizibil imediat: tocmai de asta ți-l recomand pentru un rezultat pe care îl vezi azi, onest.',
+      chips: ['5 tipuri de HA', 'Fără parfum', 'Efect imediat', '30 ml'],
+      best: 'Ten deshidratat, efect vizibil rapid', avoid: 'Cauți tratament pentru riduri profunde',
+      pros: ['Hidratare pe mai multe niveluri', 'Se folosește dimineața și seara', 'Textură lejeră, absorbție rapidă'],
+      cons: ['Hidratarea cere reaplicare zilnică', 'Nu înlocuiește crema de sigilare'],
+      line: '5 tipuri de acid hialuronic, fără parfum', stock: 'În stoc' },
+    F:  { id: 'F', brand: 'VELVET', name: 'Skin Tint · Acoperire Medie', sku: 'foundation', price: '119 lei', priceN: 119, old: '139 lei', disc: '−14%', rating: '4,7', reviews: '1 402', score: '9,0',
+      why: 'Acoperire medie modulabilă cu finish natural, SPF 20 inclus și 30 de nuanțe cu subtonuri clar marcate — te-am potrivit la subtonul tău, nu doar la deschiderea pielii. Cel mai bine cotat din cele 42 analizate pentru purtare zilnică.',
+      chips: ['Acoperire medie', 'Finish natural', 'SPF 20 inclus', '30 de nuanțe'],
+      best: 'Purtare zilnică, aspect „piele reală"', avoid: 'Vrei acoperire totală pentru evenimente',
+      pros: ['Nuanțe cu subton clar definit', 'SPF 20 inclus', 'Nu se așază pe liniile fine'],
+      cons: ['Acoperire medie, nu totală', 'Finish natural, ușor luminos'],
+      stock: 'În stoc' },
+    F2: { id: 'F2', brand: 'VELVET', name: 'Matte Long-Wear 16h', sku: 'foundation', price: '129 lei', priceN: 129, rating: '4,5', reviews: '980', score: '8,6',
+      line: 'Finish mat, ten gras, rezistă 16h' },
+    F3: { id: 'F3', brand: 'GLOW LAB', name: 'Luminous Serum Foundation', sku: 'foundation', price: '139 lei', priceN: 139, rating: '4,6', reviews: '1 120', score: '8,8',
+      line: 'Efect luminos, hidratant, acoperire redusă' }
+  };
+
+  setScrollRef = (el) => { this.scrollEl = el; };
+
+  scrollDown() {
+    setTimeout(() => { if (this.scrollEl) this.scrollEl.scrollTop = this.scrollEl.scrollHeight + 9999; }, 60);
+  }
+
+  push(m) {
+    const id = 'm' + (this.uid++);
+    this.setState(s => ({ msgs: [...s.msgs, { id, ...m }] }));
+    this.scrollDown();
+    return id;
+  }
+
+  updateMsg(id, fn) {
+    this.setState(s => ({ msgs: s.msgs.map(mm => mm.id === id ? fn(mm) : mm) }));
+  }
+
+  speed() { const v = Number(this.props.thinkSpeed); return isFinite(v) && v > 100 ? v : 650; }
+
+  runThinking(steps, summary, onDone) {
+    const id = this.push({ type: 'thinking', steps: steps.map((la, i) => ({ label: la, st: i === 0 ? 'active' : 'pending' })), done: false, summary });
+    let i = 0;
+    const iv = setInterval(() => {
+      i++;
+      this.updateMsg(id, mm => ({ ...mm, steps: mm.steps.map((st, j) => ({ ...st, st: j < i ? 'done' : (j === i ? 'active' : 'pending') })) }));
+      this.scrollDown();
+      if (i >= steps.length) {
+        clearInterval(iv);
+        this.updateMsg(id, mm => ({ ...mm, done: true }));
+        setTimeout(onDone, 350);
+      }
+    }, this.speed());
+  }
+
+  pushChips(items) {
+    this.push({ type: 'chips', items });
+  }
+
+  // ── Serum vitamina C (clarificare 1 pas) ──
+  startSkincare(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'skin' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: ser cu vitamina C', 'Caut în catalog — 34 de formule găsite', 'Verific forma de vitamina C și pH-ul'],
+        'Analiză inițială · 1,1 s',
+        () => {
+          this.push({ type: 'text', title: 'O întrebare înainte să aleg', body: ['Formulele de vitamina C diferă mult în funcție de piele. Ce tip de ten ai?'] });
+          this.pushChips([
+            { label: 'Ten sensibil', action: 'skin', arg: 'sensibil' },
+            { label: 'Ten mixt sau gras', action: 'skin', arg: 'mixt' },
+            { label: 'Nu știu — ajută-mă', action: 'skin', arg: 'nu știu, ajută-mă' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  answerSkin(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Ten ' + arg });
+    setTimeout(() => {
+      this.runThinking(
+        ['Rețin: ten ' + arg, 'Exclud formulele cu parfum și alcool', 'Compar concentrații și pH — 34 → 6 → 1'],
+        'Am ales din 34 de formule · 2,0 s',
+        () => {
+          this.setState({ ctx: ['ten ' + arg, 'fără parfum', 'sub 100 lei'], lastReco: 'S' });
+          this.lastRoutine = { pids: ['S', 'S2', 'S3', 'S4', 'S5'], total: '341 lei' };
+          this.push({ type: 'reco', pid: 'S', badge: 'Potrivit pentru tenul tău' });
+          setTimeout(() => {
+            this.push({ type: 'grid', title: 'Rutina completă pentru tenul tău', sub: 'pașii complementari', items: [
+              { pid: 'S2' },
+              { pid: 'S3' },
+              { pid: 'S4' },
+              { pid: 'S5', tag: 'Esențial', tone: 'purple' }
+            ]});
+            this.pushChips([
+              { label: 'Salvează toată rutina', action: 'saveRoutine' },
+              { label: 'Compară cu un ser mai puternic', action: 'compare' },
+              { label: 'Cum îl folosesc corect?', action: 'howto' }
+            ]);
+            this.setState({ busy: false });
+          }, 550);
+        }
+      );
+    }, 400);
+  }
+
+  // ── Fond de ten (2 clarificări) ──
+  startFoundation(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'foundation' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: fond de ten, acoperire medie', 'Caut în catalog — 42 de fonduri găsite', 'Am nevoie de 2 detalii ca să nimeresc nuanța'],
+        'Analiză inițială · 1,2 s',
+        () => {
+          this.push({ type: 'text', title: 'Două întrebări scurte', body: ['Nuanța și textura contează cel mai mult la un fond de ten. Prima: ce finish preferi?'] });
+          this.pushChips([
+            { label: 'Natural', action: 'fq1', arg: 'natural' },
+            { label: 'Mat', action: 'fq1', arg: 'mat' },
+            { label: 'Luminos', action: 'fq1', arg: 'luminos' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  answerFQ1(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.fFinish = arg;
+    this.push({ type: 'user', text: 'Finish ' + arg });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Am reținut. Și a doua: care e subtonul pielii tale?'] });
+      this.pushChips([
+        { label: 'Cald (auriu)', action: 'fq2', arg: 'cald' },
+        { label: 'Rece (rozaliu)', action: 'fq2', arg: 'rece' },
+        { label: 'Neutru', action: 'fq2', arg: 'neutru' }
+      ]);
+      this.setState({ busy: false });
+    }, 500);
+  }
+
+  answerFQ2(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Subton ' + arg });
+    const finish = this.fFinish || 'natural';
+    const pid = finish === 'mat' ? 'F2' : (finish === 'luminos' ? 'F3' : 'F');
+    const alt = ['F', 'F2', 'F3'].filter(x => x !== pid).map(x => ({ pid: x }));
+    setTimeout(() => {
+      this.runThinking(
+        ['Rețin: finish ' + finish + ', subton ' + arg, 'Filtrez după acoperire medie și subton', 'Aleg nuanța potrivită din paleta disponibilă'],
+        'Am analizat 42 de fonduri · 2,1 s',
+        () => {
+          this.setState({ ctx: ['acoperire medie', 'finish ' + finish, 'subton ' + arg], lastReco: pid });
+          this.push({ type: 'understand', chips: [
+            { k: 'Acoperire', v: 'medie' },
+            { k: 'Finish', v: finish },
+            { k: 'Subton', v: arg }
+          ], note: 'Am potrivit nuanța la subtonul tău — nu doar la deschiderea pielii.' });
+          this.push({ type: 'reco', pid, badge: 'Nuanța potrivită pentru tine' });
+          setTimeout(() => {
+            this.push({ type: 'grid', title: 'Alte fonduri analizate', sub: 'după aceleași criterii', items: alt });
+            this.pushChips([
+              { label: 'Compară primele două', action: 'compare' },
+              { label: 'E în stoc?', action: 'stock' },
+              { label: 'Merge peste SPF?', action: 'fspf' }
+            ]);
+            this.setState({ busy: false });
+          }, 550);
+        }
+      );
+    }, 400);
+  }
+
+  // ── SPF ──
+  startSPF(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'spf' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: SPF pentru zi', 'Filtrez: minim SPF 30, potrivit sub machiaj', 'Compar textura și reziduul alb'],
+        'Am analizat 26 de produse · 1,5 s',
+        () => {
+          this.setState({ ctx: ['SPF 50', 'fără parfum', 'sub machiaj'], lastReco: 'S5' });
+          this.push({ type: 'reco', pid: 'S5', badge: 'Recomandarea mea' });
+          this.pushChips([
+            { label: 'E în stoc?', action: 'stock' },
+            { label: 'Salvează-l în listă', action: 'saveLast' },
+            { label: 'Merge sub fondul de ten?', action: 'fspf' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  // ── Refuz onest ──
+  startMiracle(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'miracle' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Caut: ser care șterge ridurile în 3 zile', 'Verific studiile clinice din spatele produselor', 'Rezultat: niciun produs nu susține asta onest'],
+        'Verificare onestă · 1,7 s',
+        () => {
+          this.push({ type: 'noresults', title: 'Niciun ser nu șterge ridurile în 3 zile', text: 'Ridurile se atenuează în săptămâni, nu în zile — orice produs care promite altceva vinde o iluzie. Îți propun două direcții oneste:' });
+          this.pushChips([
+            { label: 'Efect real în timp: retinol', action: 'retinol' },
+            { label: 'Efect imediat: ce netezește azi', action: 'plump' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  doRetinol() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Efect real în timp: retinol' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Sinceritate totală', body: [
+        'Retinolul are cele mai solide dovezi pe riduri, dar lucrează în 8–12 săptămâni și cere introducere treptată — altfel irită.',
+        'Așa ți-aș construi planul: concentrație mică, de 2 ori pe săptămână la început, seara, mereu urmat de SPF a doua zi. Răbdarea e ingredientul care lipsește din promisiunile de „3 zile".'
+      ], conf: 86 });
+      this.pushChips([{ label: 'Arată-mi un SPF bun', action: 'spfStart' }]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  doPlump() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Efect imediat: ce netezește azi' });
+    setTimeout(() => {
+      this.setState({ ctx: ['efect imediat', 'hidratare'], lastReco: 'R3' });
+      this.push({ type: 'reco', pid: 'R3', badge: 'Efect imediat, onest' });
+      this.pushChips([
+        { label: 'E în stoc?', action: 'stock' },
+        { label: 'Salvează-l în listă', action: 'saveLast' }
+      ]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  doFSPF() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Merge sub fondul de ten?' });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Da — aplică SPF-ul mineral ca ultim pas de îngrijire, așteaptă 2 minute să se așeze, apoi fondul. Textura lui nu face pilling și nu schimbă nuanța fondului de ten.'] });
+      this.pushChips([
+        { label: 'E în stoc?', action: 'stock' },
+        { label: 'Salvează-l în listă', action: 'saveLast' }
+      ]);
+      this.setState({ busy: false });
+    }, 500);
+  }
+
+  // ── Rutină completă (2 clarificări) ──
+  startRoutine(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'routine' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: rutină completă, ten uscat', 'Am nevoie de 2 clarificări înainte să aleg'],
+        'Analiză inițială · 0,9 s',
+        () => {
+          this.push({ type: 'text', title: 'Două întrebări scurte', body: ['O rutină greșită pentru ten uscat face mai mult rău decât lipsa ei. Prima: cum se comportă tenul tău?'] });
+          this.pushChips([
+            { label: 'Uscat tot anul', action: 'rq1', arg: 'uscat tot anul' },
+            { label: 'Uscat doar iarna', action: 'rq1', arg: 'uscat doar iarna' },
+            { label: 'Uscat și sensibil', action: 'rq1', arg: 'uscat și sensibil' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  answerRQ1(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.rSkin = arg;
+    this.push({ type: 'user', text: 'Ten ' + arg });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Am reținut. Și a doua: ce buget total ai pentru toată rutina?'] });
+      this.pushChips([
+        { label: 'Sub 250 lei', action: 'rq2', arg: 'sub 250 lei' },
+        { label: '250–400 lei', action: 'rq2', arg: '250–400 lei' },
+        { label: 'Nu contează bugetul', action: 'rq2', arg: 'flexibil' }
+      ]);
+      this.setState({ busy: false });
+    }, 500);
+  }
+
+  answerRQ2(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Buget: ' + arg });
+    const compact = arg === 'sub 250 lei';
+    setTimeout(() => {
+      this.runThinking(
+        ['Rețin: ten ' + (this.rSkin || 'uscat') + ', buget ' + arg, 'Exclud formulele cu parfum și alcool uscat', 'Construiesc rutina pas cu pas — verific compatibilitatea între produse'],
+        'Rutină construită din 87 de produse · 2,4 s',
+        () => {
+          this.setState({ ctx: ['ten ' + (this.rSkin || 'uscat'), 'buget ' + arg, 'fără parfum'], lastReco: 'R3' });
+          this.push({ type: 'understand', chips: [
+            { k: 'Ten', v: this.rSkin || 'uscat' },
+            { k: 'Buget', v: arg },
+            { k: 'Regulă', v: 'fără parfum, fără alcool' }
+          ], note: 'Am verificat și compatibilitatea între pași — nimic nu se anulează reciproc.' });
+          let steps, total, pids, note;
+          if (compact) {
+            steps = [
+              { pid: 'S2', role: 'Pasul 1 · Curățare', why: 'Gel fără sulfați — nu decapează pielea deja uscată.' },
+              { pid: 'R3', role: 'Pasul 2 · Hidratare activă', why: 'Serul face munca grea: 5 tipuri de acid hialuronic.' },
+              { pid: 'S4', role: 'Pasul 3 · Sigilare', why: 'Ceramidele refac bariera și țin hidratarea în piele.' }
+            ];
+            total = '209 lei'; pids = ['S2', 'R3', 'S4'];
+            note = 'Rutina esențială — am tăiat tonerul și am păstrat doar ce are efect dovedit, ca să rămâi sub 250 de lei. SPF-ul rămâne recomandarea mea următoare când bugetul permite.';
+          } else {
+            steps = [
+              { pid: 'S2', role: 'Pasul 1 · Curățare', why: 'Gel fără sulfați — nu decapează pielea deja uscată.' },
+              { pid: 'R2', role: 'Pasul 2 · Esență', why: 'Strat de apă legat în piele înainte de ser.' },
+              { pid: 'R3', role: 'Pasul 3 · Hidratare activă', why: 'Serul face munca grea: 5 tipuri de acid hialuronic.' },
+              { pid: 'S4', role: 'Pasul 4 · Sigilare', why: 'Ceramidele refac bariera și țin hidratarea în piele.' },
+              { pid: 'S5', role: 'Pasul 5 · Protecție', why: 'SPF mineral, fără parfum — obligatoriu și iarna.' }
+            ];
+            total = '363 lei'; pids = ['S2', 'R2', 'R3', 'S4', 'S5'];
+            note = 'Ordinea de aplicare dimineața: 1 → 5, de la cea mai lejeră textură la cea mai bogată. Seara, sari peste SPF.';
+          }
+          this.lastRoutine = { pids, total };
+          this.push({ type: 'routine', title: compact ? 'Rutina esențială · 3 pași' : 'Rutina completă · 5 pași', total, steps, note });
+          this.pushChips([
+            { label: 'Salvează toată rutina', action: 'saveRoutine' },
+            { label: 'E în stoc?', action: 'stock' },
+            { label: 'De ce acești pași?', action: 'rwhy' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  doRWhy() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'De ce acești pași?' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Logica din spatele rutinei', body: [
+        'Tenul uscat pierde apă prin barieră, deci rutina atacă exact asta: curățare care nu agresează, apoi straturi de hidratare de la lejer la bogat, apoi sigilare cu ceramide.',
+        'Am exclus 61 din 87 de produse pentru parfum, alcool denaturat sau acizi exfolianți — pe ten uscat ar fi anulat restul rutinei.'
+      ], conf: 91 });
+      this.pushChips([
+        { label: 'Salvează toată rutina', action: 'saveRoutine' },
+        { label: 'E în stoc?', action: 'stock' }
+      ]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  // ── Follow-ups comune ──
+  doCompare() {
+    if (this.state.busy) return;
+    if (!this.state.journey) { this.startSkincare('Un ser cu vitamina C pentru ten sensibil'); return; }
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Compară primele două' });
+    const j = this.state.journey;
+    setTimeout(() => {
+      if (j === 'foundation') {
+        this.runThinking(
+          ['Aliniez specificațiile fiecărui fond', 'Ponderez după criteriile tale: acoperire + finish'],
+          'Comparație pe 6 dimensiuni · 1,4 s',
+          () => {
+            this.push({ type: 'compare',
+              a: { name: 'Skin Tint · Acoperire Medie', price: '119 lei', score: '9,0' },
+              b: { name: 'Matte Long-Wear 16h', price: '129 lei', score: '8,6' },
+              dims: [
+                { label: 'Acoperire', a: 'Medie modulabilă', b: 'Medie-mare', win: 'b' },
+                { label: 'Finish', a: 'Natural', b: 'Mat', win: 'a' },
+                { label: 'Durată', a: '12 h', b: '16 h', win: 'b' },
+                { label: 'SPF inclus', a: 'SPF 20', b: 'Fără', win: 'a' },
+                { label: 'Preț', a: '119 lei', b: '129 lei', win: 'a' },
+                { label: 'Ten uscat', a: 'Confortabil', b: 'Poate accentua', win: 'a' }
+              ],
+              verdict: 'Pentru purtare zilnică și aspect „piele reală", Skin Tint câștigă: finish natural, SPF inclus și mai blând pe zonele uscate. Matte Long-Wear rămâne alegerea pentru ten gras sau zile lungi când rezistența contează mai mult.',
+              conf: 88 });
+            this.pushChips([
+              { label: 'E în stoc?', action: 'stock' },
+              { label: 'Vreau ceva mai ieftin', action: 'cheaper' }
+            ]);
+            this.setState({ busy: false });
+          }
+        );
+      } else {
+        this.runThinking(
+          ['Aliniez forma vitaminei C și pH-ul', 'Ponderez după criteriul tău: ten sensibil'],
+          'Comparație pe 6 dimensiuni · 1,3 s',
+          () => {
+            this.push({ type: 'compare',
+              a: { name: 'C10 · Ser Vitamina C', price: '89 lei', score: '8,9' },
+              b: { name: 'Ser Vitamina C 15%', price: '129 lei', score: '8,5' },
+              dims: [
+                { label: 'Concentrație', a: '10%', b: '15%', win: 'b' },
+                { label: 'Formă vit. C', a: 'SAP stabilizată', b: 'Acid ascorbic', win: 'a' },
+                { label: 'Parfum', a: 'Fără', b: 'Ușor', win: 'a' },
+                { label: 'pH', a: '5,5 · blând', b: '3,5 · activ', win: 'a' },
+                { label: 'Preț', a: '89 lei', b: '129 lei', win: 'a' },
+                { label: 'Reacții raportate', a: 'Minime', b: 'Moderate', win: 'a' }
+              ],
+              verdict: 'Pe ten sensibil, C10 câștigă clar: aceeași luminozitate, dar cu pH prietenos și fără riscul de iritație al acidului ascorbic pur. Serul de 15% e pentru un ten deja obișnuit cu vitamina C.',
+              conf: 90 });
+            this.pushChips([
+              { label: 'E în stoc?', action: 'stock' },
+              { label: 'Salvează C10', action: 'saveLast' }
+            ]);
+            this.setState({ busy: false });
+          }
+        );
+      }
+    }, 400);
+  }
+
+  doCheaper() {
+    if (this.state.busy) return;
+    if (!this.state.journey) { this.startSkincare('Un ser cu vitamina C pentru ten sensibil'); return; }
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Vreau ceva mai ieftin' });
+    const j = this.state.journey;
+    setTimeout(() => {
+      if (j === 'foundation') {
+        this.runThinking(
+          ['Păstrez criteriile: acoperire medie, subtonul tău', 'Cobor plafonul de preț și recalculez'],
+          'Recalculat · 1,1 s',
+          () => {
+            this.setState({ lastReco: 'F' });
+            this.push({ type: 'reco', pid: 'F', badge: 'Varianta mai accesibilă', changes: [
+              { delta: '−20 lei', label: 'preț față de varianta mată', tone: 'good' },
+              { delta: '+SPF 20', label: 'protecție solară inclusă', tone: 'good' },
+              { delta: '−4 h', label: 'durată (12 h în loc de 16 h)', tone: 'warn' }
+            ]});
+            this.pushChips([
+              { label: 'E în stoc?', action: 'stock' },
+              { label: 'OK, salveaz-o', action: 'saveLast' }
+            ]);
+            this.setState({ busy: false });
+          }
+        );
+      } else {
+        this.runThinking(
+          ['Păstrez criteriile: fără parfum, ten sensibil', 'Caut cea mai bună formulă sub 70 lei'],
+          'Recalculat sub 70 lei · 1,2 s',
+          () => {
+            this.setState({ lastReco: 'S' });
+            this.push({ type: 'text', title: 'Aici sunt sinceră', body: [
+              'Sub 70 de lei nu găsesc o vitamina C stabilizată în care să am încredere pentru ten sensibil — formulele ieftine folosesc acid ascorbic instabil, care se oxidează repede și poate irita.',
+              'C10 la 89 de lei (redus de la 109) rămâne cel mai bun raport pe care ți-l pot recomanda cu conștiința curată.'
+            ], conf: 83 });
+            this.pushChips([
+              { label: 'Bine, rămân la C10', action: 'saveLast' },
+              { label: 'Compară cu serul de 15%', action: 'compare' }
+            ]);
+            this.setState({ busy: false });
+          }
+        );
+      }
+    }, 400);
+  }
+
+  doStock() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'E în stoc?' });
+    const j = this.state.journey;
+    setTimeout(() => {
+      const p = this.products[this.state.lastReco || 'S'];
+      let status = [{ name: p.name, sub: 'Livrare mâine, până la ora 18', badge: 'În stoc', tone: 'ok' }];
+      if (j === 'skin') {
+        status.push({ name: this.products.S5.name, sub: 'Livrare în 1–2 zile lucrătoare', badge: 'În stoc', tone: 'ok' });
+      } else if (j === 'foundation') {
+        status.push({ name: this.products.F3.name, sub: 'Livrare în 2–3 zile lucrătoare', badge: 'Stoc limitat · 4 buc', tone: 'warn' });
+      }
+      this.push({ type: 'text', title: 'Verificare de stoc', body: ['Am verificat chiar acum, direct în sistemul magazinului:'], status });
+      this.pushChips([
+        { label: 'Salvează recomandarea', action: 'saveLast' },
+        { label: 'Vezi lista salvată', action: 'openSaved' }
+      ]);
+      this.setState({ busy: false });
+    }, 700);
+  }
+
+  doHowTo() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Cum îl folosesc corect?' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Rutina corectă', body: [
+        'Dimineața, pe ten curat: 3–4 picături de ser, apoi crema hidratantă și obligatoriu SPF — vitamina C fără SPF e muncă în zadar.',
+        'Începe cu o zi da, una nu, în prima săptămână. Dacă apare furnicătură ușoară e normal; usturime persistentă — oprește și scrie-mi.'
+      ]});
+      this.pushChips([
+        { label: 'Salveaz-o în listă', action: 'saveLast' },
+        { label: 'Ce SPF îmi recomanzi?', action: 'spf' }
+      ]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  saveProduct(pid, silent) {
+    this.setState(s => {
+      const saved = { ...s.saved };
+      if (saved[pid]) delete saved[pid]; else saved[pid] = true;
+      return { saved };
+    });
+    if (!silent) this.scrollDown();
+  }
+
+  doSaveLast() {
+    if (this.state.busy) return;
+    const pid = this.state.lastReco || 'S';
+    const p = this.products[pid];
+    this.push({ type: 'user', text: 'Salveaz-o în listă' });
+    if (!this.state.saved[pid]) this.saveProduct(pid, true);
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Gata — ' + p.name + ' e în trusa ta salvată. O găsești oricând din butonul de sus.'] });
+    }, 400);
+  }
+
+  doSaveRoutine() {
+    if (this.state.busy) return;
+    this.push({ type: 'user', text: 'Salvează toată rutina' });
+    const r = this.lastRoutine || { pids: ['S', 'S2', 'S3', 'S4', 'S5'], total: '341 lei' };
+    this.setState(s => {
+      const saved = { ...s.saved };
+      r.pids.forEach(pid => { saved[pid] = true; });
+      return { saved };
+    });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Rutina e salvată', body: ['Toți pașii sunt în trusa ta — total ' + r.total + '. Ordinea de aplicare dimineața: de la cea mai lejeră textură la cea mai bogată.'] });
+      this.pushChips([
+        { label: 'Vezi lista salvată', action: 'openSaved' },
+        { label: 'Cum o folosesc corect?', action: 'howto' }
+      ]);
+    }, 400);
+  }
+
+  doPick() {
+    if (this.state.busy) return;
+    const pid = this.state.lastReco || 'S';
+    if (!this.state.saved[pid]) this.saveProduct(pid, true);
+    const p = this.products[pid];
+    this.push({ type: 'text', title: 'Am ales pentru tine', body: [p.name + ' — cea mai bună potrivire pe criteriile tale. Am salvat-o în trusă; verifică oricând argumentele mai sus.'] });
+    this.pushChips([
+      { label: 'Vezi lista salvată', action: 'openSaved' },
+      { label: 'E în stoc?', action: 'stock' }
+    ]);
+  }
+
+  route(action, arg) {
+    switch (action) {
+      case 'skinStart': this.startSkincare('Un ser cu vitamina C pentru ten sensibil'); break;
+      case 'foundationStart': this.startFoundation('Caut un fond de ten cu acoperire medie'); break;
+      case 'routineStart': this.startRoutine('Vreau o rutină completă pentru ten uscat'); break;
+      case 'spfStart': this.startSPF('Ce SPF îmi recomanzi pentru zi?'); break;
+      case 'miracleStart': this.startMiracle('Un ser care șterge ridurile în 3 zile'); break;
+      case 'skin': this.answerSkin(arg); break;
+      case 'fq1': this.answerFQ1(arg); break;
+      case 'fq2': this.answerFQ2(arg); break;
+      case 'rq1': this.answerRQ1(arg); break;
+      case 'rq2': this.answerRQ2(arg); break;
+      case 'rwhy': this.doRWhy(); break;
+      case 'compare': this.doCompare(); break;
+      case 'cheaper': this.doCheaper(); break;
+      case 'stock': this.doStock(); break;
+      case 'howto': this.doHowTo(); break;
+      case 'spf': this.startSPF('Ce SPF îmi recomanzi pentru zi?'); break;
+      case 'fspf': this.doFSPF(); break;
+      case 'retinol': this.doRetinol(); break;
+      case 'plump': this.doPlump(); break;
+      case 'saveLast': this.doSaveLast(); break;
+      case 'saveRoutine': this.doSaveRoutine(); break;
+      case 'pick': this.doPick(); break;
+      case 'openSaved': this.setState({ savedOpen: true }); break;
+      default: break;
+    }
+  }
+
+  handleSend = () => {
+    const t = (this.state.typed || '').trim();
+    if (!t || this.state.busy) return;
+    this.setState({ typed: '' });
+    const low = t.toLowerCase();
+    if (!this.state.journey) {
+      if (low.includes('riduri') || low.includes('minun') || low.includes('3 zile') || low.includes('instant')) { this.startMiracle(t); return; }
+      if (low.includes('fond') || low.includes('machiaj') || low.includes('nuanț') || low.includes('nuanta')) { this.startFoundation(t); return; }
+      if (low.includes('rutin')) { this.startRoutine(t); return; }
+      if (low.includes('spf') || low.includes('solar') || low.includes('protecț') || low.includes('protec')) { this.startSPF(t); return; }
+      this.startSkincare(t); return;
+    }
+    if (low.includes('compar')) { this.doCompare(); return; }
+    if (low.includes('ieftin')) { this.doCheaper(); return; }
+    if (low.includes('stoc')) { this.doStock(); return; }
+    if (low.includes('folos')) { this.doHowTo(); return; }
+    if (low.includes('salv')) { this.doSaveLast(); return; }
+    this.push({ type: 'user', text: t });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Am păstrat criteriile tale de până acum. În acest demo pot răspunde la comparații, preț, stoc, mod de folosire și salvare — alege o sugestie de mai jos sau dă-mi un criteriu concret.'] });
+      this.pushChips([
+        { label: 'Compară cu altă opțiune', action: 'compare' },
+        { label: 'Vreau ceva mai ieftin', action: 'cheaper' },
+        { label: 'E în stoc?', action: 'stock' }
+      ]);
+    }, 450);
+  };
+
+  toggleExp(id) {
+    this.setState(s => ({ expanded: { ...s.expanded, [id]: !s.expanded[id] } }));
+  }
+
+  renderVals() {
+    const S = this.state;
+    const P = this.products;
+
+    const msgs = S.msgs.map(m => {
+      const v = { id: m.id };
+      if (m.type === 'welcome') {
+        v.isWelcome = true;
+        v.prompts = [
+          { label: 'Un ser cu vitamina C pentru ten sensibil', go: () => this.route('skinStart') },
+          { label: 'Caut un fond de ten cu acoperire medie', go: () => this.route('foundationStart') },
+          { label: 'Vreau o rutină completă pentru ten uscat', go: () => this.route('routineStart') },
+          { label: 'Ce SPF îmi recomanzi pentru zi?', go: () => this.route('spfStart') }
+        ];
+      } else if (m.type === 'user') {
+        v.isUser = true; v.text = m.text;
+      } else if (m.type === 'thinking') {
+        v.isThinking = true;
+        v.done = !!m.done; v.running = !m.done;
+        v.headLabel = m.done ? m.summary : 'Aria analizează…';
+        v.headColor = m.done ? '#7A7589' : '#6D28D9';
+        v.showSteps = m.done ? !!S.expanded[m.id] : true;
+        v.toggle = () => { if (m.done) this.toggleExp(m.id); };
+        v.steps = m.steps.map(st => ({
+          label: st.label,
+          isDone: st.st === 'done', isActive: st.st === 'active', isPending: st.st === 'pending',
+          color: st.st === 'pending' ? '#A5A1B2' : (st.st === 'active' ? '#1B1826' : '#7A7589')
+        }));
+      } else if (m.type === 'understand') {
+        v.isUnderstand = true; v.chips = m.chips; v.note = m.note;
+      } else if (m.type === 'text') {
+        v.isText = true;
+        v.hasTitle = !!m.title; v.title = m.title || '';
+        v.body = m.body || [];
+        v.hasStatus = !!m.status;
+        v.status = (m.status || []).map(st => ({
+          ...st,
+          dot: st.tone === 'ok' ? '#22C55E' : '#F59E0B',
+          bg: st.tone === 'ok' ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.14)',
+          tone: st.tone === 'ok' ? '#189A4A' : '#C77700'
+        }));
+        v.hasConf = !!m.conf; v.conf = m.conf; v.confW = (m.conf || 0) + '%';
+      } else if (m.type === 'reco') {
+        const p = P[m.pid];
+        v.isReco = true; v.p = p; v.badge = m.badge;
+        v.hasDisc = !!p.disc;
+        v.hasChanges = !!m.changes;
+        v.changes = (m.changes || []).map(ch => ({ ...ch, tone: ch.tone === 'good' ? '#189A4A' : '#C77700' }));
+        v.expanded = !!S.expanded['x' + m.id];
+        v.expand = () => this.toggleExp('x' + m.id);
+        const saved = !!S.saved[p.id];
+        v.save = () => this.saveProduct(p.id);
+        v.saveLabel = saved ? 'Salvat' : 'Salvează';
+        v.saveBg = saved ? 'rgba(124,58,237,.1)' : '#fff';
+        v.saveBorder = saved ? 'rgba(124,58,237,.45)' : '#E0DCEC';
+        v.saveColor = saved ? '#6D28D9' : '#4B4756';
+        v.saveFill = saved ? '#7C3AED' : 'none';
+        v.ask = () => this.route('howto');
+      } else if (m.type === 'grid') {
+        v.isGrid = true; v.title = m.title; v.sub = m.sub;
+        v.items = m.items.map(g => {
+          const p = P[g.pid];
+          const purple = g.tone === 'purple';
+          const saved = !!S.saved[p.id];
+          return {
+            brand: p.brand, name: p.name, price: p.price, score: p.score,
+            sku: p.sku,
+            rating: p.rating, reviews: p.reviews, line: p.line || '',
+            old: p.old || '', hasOld: !!p.old,
+            hasTag: !!g.tag, tag: g.tag || '',
+            tagBg: purple ? 'rgba(124,58,237,.07)' : 'rgba(56,189,248,.1)',
+            tagBorder: purple ? 'rgba(124,58,237,.3)' : 'rgba(2,132,199,.25)',
+            tagColor: purple ? '#6D28D9' : '#0284C7',
+            heartFill: saved ? '#7C3AED' : 'none',
+            save: () => this.saveProduct(p.id)
+          };
+        });
+      } else if (m.type === 'routine') {
+        v.isRoutine = true; v.title = m.title; v.total = m.total; v.note = m.note;
+        v.steps = m.steps.map((st, i) => {
+          const p = P[st.pid];
+          const saved = !!S.saved[p.id];
+          return {
+            n: i + 1, role: st.role, why: st.why,
+            brand: p.brand, name: p.name, price: p.price, score: p.score,
+            sku: p.sku,
+            hasLine: i < m.steps.length - 1,
+            heartFill: saved ? '#7C3AED' : 'none',
+            save: () => this.saveProduct(p.id)
+          };
+        });
+      } else if (m.type === 'compare') {
+        v.isCompare = true; v.a = m.a; v.b = m.b;
+        v.verdict = m.verdict; v.conf = m.conf; v.confW = m.conf + '%';
+        v.pick = () => this.route('pick');
+        v.dims = m.dims.map(d => ({
+          label: d.label, a: d.a, b: d.b,
+          winA: d.win === 'a', winB: d.win === 'b',
+          aW: d.win === 'a' ? 600 : 400, bW: d.win === 'b' ? 600 : 400,
+          aC: d.win === 'a' ? '#1B1826' : '#8B8798',
+          bC: d.win === 'b' ? '#1B1826' : '#8B8798'
+        }));
+      } else if (m.type === 'noresults') {
+        v.isNoResults = true; v.title = m.title; v.text = m.text;
+      } else if (m.type === 'chips') {
+        v.isChips = true;
+        v.items = m.items.map(ch => ({ label: ch.label, go: () => this.route(ch.action, ch.arg) }));
+      }
+      return v;
+    });
+
+    const savedIds = Object.keys(S.saved);
+    const savedItems = savedIds.map(pid => {
+      const p = P[pid];
+      return { name: p.name, brand: p.brand, price: p.price, sku: p.sku, remove: () => this.saveProduct(pid) };
+    });
+    const total = savedIds.reduce((acc, pid) => acc + (P[pid].priceN || 0), 0);
+
+    return {
+      msgs,
+      merchantSub: this.props.merchantName ?? 'Aria',
+      typed: S.typed,
+      onType: (e) => this.setState({ typed: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') this.handleSend(); },
+      onSend: this.handleSend,
+      setScroll: this.setScrollRef,
+      ctx: S.ctx,
+      ctxVisible: S.ctx.length > 0,
+      savedCount: savedIds.length,
+      savedOpen: S.savedOpen,
+      savedEmpty: savedIds.length === 0,
+      savedAny: savedIds.length > 0,
+      savedItems,
+      savedTotal: total.toLocaleString('ro-RO') + ' lei',
+      toggleSaved: () => this.setState(s => ({ savedOpen: !s.savedOpen }))
+    };
+  }
+}
+</script>
+</body>
+</html>

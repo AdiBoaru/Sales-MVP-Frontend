@@ -90,3 +90,93 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Aria brand gradient — the purple→violet→cyan identity used across the chat
+   widget (header accent, CTAs, user bubbles, progress/confidence bars).
+   One custom property so every consumer stays in sync if the brand shifts.
+--------------------------------------------------------------------------- */
+:root {
+  --aria-gradient: linear-gradient(135deg, #6d28d9, #7c3aed 60%, #38bdf8 140%);
+  --aria-gradient-flat: linear-gradient(90deg, #6d28d9, #7c3aed, #38bdf8);
+}
+
+@layer components {
+  .aria-gradient-bg {
+    background: var(--aria-gradient);
+  }
+  .aria-gradient-text {
+    background: var(--aria-gradient-flat);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Aria widget design tokens — exact hex values from the design spec (light
+   theme), scoped under .aria-widget so the rest of the app keeps its own
+   Tailwind palette untouched. Referenced from components as e.g.
+   text-[var(--aria-text)] / bg-[var(--aria-surface-2)].
+--------------------------------------------------------------------------- */
+.aria-widget {
+  --aria-bg: #faf9fc;
+  --aria-surface: #ffffff;
+  --aria-surface-2: #f6f4fb;
+  --aria-surface-3: #f9f8fc;
+  --aria-border: #e7e4f0;
+  --aria-border-2: #ece9f4;
+  --aria-border-3: #e0dcec;
+  --aria-text: #1b1826;
+  --aria-text-2: #4b4756;
+  --aria-text-3: #8b8798;
+  --aria-text-4: #7a7589;
+  --aria-text-5: #a5a1b2;
+  --aria-purple: #6d28d9;
+  --aria-blue: #0284c7;
+  --aria-success: #189a4a;
+  --aria-warning: #c77700;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.aria-widget .aria-heading {
+  font-family: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------------------
+   Thinking timeline — the collapsible "Aria analizează…" card. Sequential
+   reasoning steps reveal on an interval (driven from JS), each rendered as
+   done (check) / active (pulsing dot) / pending (empty ring). Collapses to a
+   one-line summary once finished, re-expandable on tap.
+--------------------------------------------------------------------------- */
+@layer components {
+  .aria-think-spinner {
+    animation: aria-think-spin 0.8s linear infinite;
+  }
+  .aria-think-dot {
+    animation: aria-think-pulse 1s ease-in-out infinite;
+  }
+  .aria-confidence-bar {
+    animation: aria-think-fill 0.8s ease both;
+  }
+  .aria-msg-in {
+    animation: aria-fade-up 0.35s ease both;
+  }
+
+  @keyframes aria-think-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes aria-think-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.8); }
+  }
+  @keyframes aria-think-fill {
+    from { width: 0; }
+  }
+  @keyframes aria-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}

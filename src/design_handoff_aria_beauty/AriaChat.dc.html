@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0a0a0a;font-family:'Hanken Grotesk','Inter',Arial,sans-serif}
+a{color:#A78BFA;text-decoration:none}a:hover{color:#C4B5FD}
+@keyframes ariaFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ariaPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@keyframes ariaSpin{to{transform:rotate(360deg)}}
+@keyframes ariaGlow{0%,100%{box-shadow:0 0 14px rgba(124,58,237,.26)}50%{box-shadow:0 0 22px rgba(56,189,248,.24)}}
+@keyframes ariaBar{from{width:0}}
+.aria-scroll::-webkit-scrollbar{width:5px}
+.aria-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:99px}
+.aria-scroll::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+<div style="position:relative;display:flex;flex-direction:column;height:100%;min-height:0;background:#09090D;color:#E5E7EB;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;overflow:hidden">
+
+  <!-- ═══ Header ═══ -->
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(9,9,13,.72);backdrop-filter:blur(14px)">
+    <div style="width:34px;height:34px;flex:none;display:grid;place-items:center">
+      <div style="width:24px;height:24px;border-radius:7px;transform:rotate(45deg);background:#0a0a0a;border:2px solid transparent;background-image:linear-gradient(#0a0a0a,#0a0a0a),linear-gradient(135deg,#6D28D9,#7C3AED,#38BDF8);background-origin:border-box;background-clip:padding-box,border-box;display:grid;place-items:center;animation:ariaGlow 4s ease-in-out infinite">
+        <div style="transform:rotate(-45deg);width:7px;height:7px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <div style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.02em;color:#fff;line-height:1.2">Aria</div>
+      <div style="font-size:10.5px;color:#6B7280;letter-spacing:.04em">Consultant de cumpărături · {{ merchantSub }}</div>
+    </div>
+    <button onClick="{{ toggleSaved }}" style="position:relative;display:flex;align-items:center;gap:7px;padding:7px 12px;background:#141418;border:1px solid rgba(255,255,255,.09);border-radius:9999px;color:#E5E7EB;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#6D28D9">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <span>{{ savedCount }}</span>
+    </button>
+  </div>
+
+  <!-- ═══ Context memory bar ═══ -->
+  <sc-if value="{{ ctxVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 18px;border-bottom:1px solid rgba(255,255,255,.05);background:#0f0f13;overflow-x:auto;animation:ariaFadeUp .35s ease both">
+      <span style="flex:none;font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#6B7280">Rețin</span>
+      <sc-for list="{{ ctx }}" as="c" hint-placeholder-count="0">
+        <span style="flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.28);border-radius:9999px;font-size:11px;color:#C4B5FD;white-space:nowrap">
+          <span style="width:4px;height:4px;border-radius:99px;background:#38BDF8"></span>{{ c }}
+        </span>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ═══ Conversation ═══ -->
+  <div class="aria-scroll" ref="{{ setScroll }}" style="flex:1;min-height:0;overflow-y:auto;padding:20px 18px 10px;display:flex;flex-direction:column;gap:16px">
+
+    <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="1">
+      <div style="animation:ariaFadeUp .4s ease both">
+
+        <!-- Welcome -->
+        <sc-if value="{{ m.isWelcome }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:18px;padding:22px 4px 6px">
+            <div style="width:52px;height:52px;display:grid;place-items:center">
+              <div style="width:38px;height:38px;border-radius:11px;transform:rotate(45deg);background:#0a0a0a;border:2.5px solid transparent;background-image:linear-gradient(#0a0a0a,#0a0a0a),linear-gradient(135deg,#6D28D9,#7C3AED,#38BDF8);background-origin:border-box;background-clip:padding-box,border-box;display:grid;place-items:center;animation:ariaGlow 4s ease-in-out infinite">
+                <div style="transform:rotate(-45deg);width:11px;height:11px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:24px;letter-spacing:-0.02em;color:#fff;line-height:1.15">Bună! Sunt Aria.</div>
+              <div style="font-size:13.5px;line-height:1.6;color:#9CA3AF;max-width:340px">Spune-mi ce cauți. Eu analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva — nu doar ce.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ m.prompts }}" as="pr" hint-placeholder-count="3">
+                <button onClick="{{ pr.go }}" style="display:flex;align-items:center;gap:12px;text-align:left;padding:13px 15px;background:#131317;border:1px solid rgba(255,255,255,.07);border-radius:13px;color:#E5E7EB;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;line-height:1.4;cursor:pointer;transition:border-color .2s,background .2s" style-hover="border-color:#6D28D9;background:#16161c">
+                  <span style="flex:none;width:6px;height:6px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8)"></span>
+                  <span style="flex:1">{{ pr.label }}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- User -->
+        <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:flex-end">
+            <div style="max-width:80%;padding:11px 16px;background:rgba(124,58,237,.16);border:1px solid rgba(124,58,237,.35);border-radius:16px 16px 4px 16px;font-size:13.5px;line-height:1.5;color:#F3F4F6">{{ m.text }}</div>
+          </div>
+        </sc-if>
+
+        <!-- Thinking timeline -->
+        <sc-if value="{{ m.isThinking }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#101014;overflow:hidden">
+            <button onClick="{{ m.toggle }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:transparent;border:none;cursor:pointer;text-align:left;font-family:'Hanken Grotesk','Inter',Arial,sans-serif">
+              <sc-if value="{{ m.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M20 6L9 17l-5-5"></path></svg>
+              </sc-if>
+              <sc-if value="{{ m.running }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:none;width:13px;height:13px;border-radius:99px;border:2px solid rgba(124,58,237,.25);border-top-color:#7C3AED;animation:ariaSpin .8s linear infinite"></div>
+              </sc-if>
+              <span style="flex:1;font-size:12px;font-weight:500;letter-spacing:.02em;color:{{ m.headColor }}">{{ m.headLabel }}</span>
+              <sc-if value="{{ m.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M6 9l6 6 6-6"></path></svg>
+              </sc-if>
+            </button>
+            <sc-if value="{{ m.showSteps }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:9px;padding:2px 14px 13px 15px">
+                <sc-for list="{{ m.steps }}" as="st" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <sc-if value="{{ st.isDone }}" hint-placeholder-val="{{ true }}">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M20 6L9 17l-5-5"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ st.isActive }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:none;width:7px;height:7px;margin:0 2px;border-radius:99px;background:linear-gradient(135deg,#7C3AED,#38BDF8);animation:ariaPulse 1s ease-in-out infinite"></span>
+                    </sc-if>
+                    <sc-if value="{{ st.isPending }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:none;width:7px;height:7px;margin:0 2px;border-radius:99px;border:1.5px solid #374151"></span>
+                    </sc-if>
+                    <span style="font-size:12px;color:{{ st.color }}">{{ st.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- Understanding card -->
+        <sc-if value="{{ m.isUnderstand }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(160deg,rgba(124,58,237,.07),rgba(56,189,248,.03) 70%)">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#A78BFA">Am înțeles ce cauți</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ m.chips }}" as="c" hint-placeholder-count="3">
+                <span style="display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;background:#131317;border:1px solid rgba(255,255,255,.09);border-radius:9999px;font-size:11.5px">
+                  <span style="color:#6B7280">{{ c.k }}</span><span style="color:#E5E7EB;font-weight:500">{{ c.v }}</span>
+                </span>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:#6B7280;line-height:1.5">{{ m.note }}</div>
+          </div>
+        </sc-if>
+
+        <!-- AI text / status / confidence -->
+        <sc-if value="{{ m.isText }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;padding:15px 17px;border:1px solid rgba(255,255,255,.08);border-radius:16px 16px 16px 4px;background:#121216;max-width:94%">
+            <sc-if value="{{ m.hasTitle }}" hint-placeholder-val="{{ false }}">
+              <div style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:15px;color:#fff;letter-spacing:-0.01em">{{ m.title }}</div>
+            </sc-if>
+            <sc-for list="{{ m.body }}" as="p" hint-placeholder-count="1">
+              <div style="font-size:13.5px;line-height:1.65;color:#D1D5DB">{{ p }}</div>
+            </sc-for>
+            <sc-if value="{{ m.hasStatus }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ m.status }}" as="s" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;background:#0f0f13;border:1px solid rgba(255,255,255,.07);border-radius:11px">
+                    <span style="flex:none;width:8px;height:8px;border-radius:99px;background:{{ s.dot }}"></span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                      <span style="font-size:12.5px;font-weight:600;color:#F3F4F6">{{ s.name }}</span>
+                      <span style="font-size:11px;color:#6B7280">{{ s.sub }}</span>
+                    </div>
+                    <span style="flex:none;font-size:11px;font-weight:600;color:{{ s.tone }}">{{ s.badge }}</span>
+                  </div>
+                </sc-for>
+                <div style="font-size:10.5px;color:#4B5563">Stoc verificat în timp real, acum câteva secunde</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.hasConf }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:2px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B7280">Încredere în recomandare</span>
+                  <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:14px;color:#38BDF8">{{ m.conf }}%</span>
+                </div>
+                <div style="height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden">
+                  <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C3AED,#6366F1,#38BDF8);width:{{ m.confW }};animation:ariaBar 1s ease both"></div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- Recommendation hero card -->
+        <sc-if value="{{ m.isReco }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid rgba(255,255,255,.10);border-radius:18px;background:#121216;overflow:hidden;box-shadow:0 20px 48px -16px rgba(0,0,0,.72)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px 0">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(90deg,#A78BFA,#38BDF8);-webkit-background-clip:text;background-clip:text;color:transparent">{{ m.badge }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:9999px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3)">
+                <span style="font-size:9.5px;font-weight:600;letter-spacing:.08em;color:#6B7280">SCOR AI</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:14px;color:#38BDF8">{{ m.p.score }}</span>
+              </span>
+            </div>
+            <div style="margin:13px 16px 0;height:150px;border-radius:12px;background:radial-gradient(closest-side at 50% 42%,rgba(124,58,237,.2),rgba(20,20,24,0) 90%),#141419;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;position:relative">
+              <sc-if value="{{ m.gHead }}" hint-placeholder-val="{{ false }}">
+                <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"></path><rect x="2.5" y="13.5" width="4.5" height="7" rx="2"></rect><rect x="17" y="13.5" width="4.5" height="7" rx="2"></rect></svg>
+              </sc-if>
+              <sc-if value="{{ m.gDrop }}" hint-placeholder-val="{{ false }}">
+                <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.2 6 7.4 6 10.2a6 6 0 0 1-12 0C6 10.4 8.5 7.2 12 3z"></path><path d="M9.5 13.5a2.5 2.5 0 0 0 2.5 2.5"></path></svg>
+              </sc-if>
+              <sc-if value="{{ m.gProj }}" hint-placeholder-val="{{ false }}">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7.5" width="20" height="9.5" rx="2.5"></rect><circle cx="16" cy="12.2" r="2.7"></circle><path d="M5.5 12.2h5M5.5 17v2.5M18.5 17v2.5"></path></svg>
+              </sc-if>
+              <span style="position:absolute;left:10px;bottom:10px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#4B5563">Imagine produs</span>
+              <sc-if value="{{ m.hasDisc }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;right:10px;top:10px;padding:3px 9px;border-radius:9999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);font-size:11px;font-weight:600;color:#22C55E">{{ m.p.disc }}</span>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font-size:10px;font-weight:600;letter-spacing:.18em;color:#6B7280">{{ m.p.brand }}</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:19px;letter-spacing:-0.01em;color:#fff;line-height:1.2">{{ m.p.name }}</span>
+                <div style="display:flex;align-items:center;gap:7px;margin-top:3px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><path d="M12 2l3 6.6 7 .8-5.2 4.8L18.3 21 12 17.5 5.7 21l1.5-6.8L2 9.4l7-.8z"></path></svg>
+                  <span style="font-size:12px;font-weight:600;color:#E5E7EB">{{ m.p.rating }}</span>
+                  <span style="font-size:11.5px;color:#6B7280">{{ m.p.reviews }} recenzii</span>
+                  <span style="width:3px;height:3px;border-radius:99px;background:#374151"></span>
+                  <span style="font-size:11.5px;color:#22C55E">{{ m.p.stock }}</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:9px">
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:24px;color:#fff">{{ m.p.price }}</span>
+                <sc-if value="{{ m.hasDisc }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:13px;color:#6B7280;text-decoration:line-through">{{ m.p.old }}</span>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ m.p.chips }}" as="h" hint-placeholder-count="3">
+                  <span style="padding:4px 10px;background:#17171c;border:1px solid rgba(255,255,255,.10);border-radius:8px;font-size:11px;color:#C4B5FD">{{ h }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;padding:12px 13px;background:#0f0f13;border:1px solid rgba(255,255,255,.08);border-radius:12px">
+                <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#A78BFA">De ce am ales-o pentru tine</span>
+                <span style="font-size:12.5px;line-height:1.6;color:#D1D5DB">{{ m.p.why }}</span>
+              </div>
+              <sc-if value="{{ m.hasChanges }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:7px;padding:12px 13px;background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.18);border-radius:12px">
+                  <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#38BDF8">Ce s-a schimbat față de recomandarea anterioară</span>
+                  <sc-for list="{{ m.changes }}" as="ch" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:baseline;gap:8px">
+                      <span style="flex:none;font-size:11px;font-weight:700;color:{{ ch.tone }}">{{ ch.delta }}</span>
+                      <span style="font-size:12px;color:#9CA3AF">{{ ch.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:#0f0f13;border:1px solid rgba(255,255,255,.08);border-radius:11px">
+                  <span style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#22C55E">Ideală pentru</span>
+                  <span style="font-size:11.5px;line-height:1.45;color:#D1D5DB">{{ m.p.best }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:#0f0f13;border:1px solid rgba(255,255,255,.08);border-radius:11px">
+                  <span style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#F59E0B">Evită dacă</span>
+                  <span style="font-size:11.5px;line-height:1.45;color:#D1D5DB">{{ m.p.avoid }}</span>
+                </div>
+              </div>
+              <div style="border:1px solid rgba(255,255,255,.08);border-radius:11px;overflow:hidden">
+                <button onClick="{{ m.expand }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 13px;background:#0f0f13;border:none;cursor:pointer;font-family:'Hanken Grotesk','Inter',Arial,sans-serif">
+                  <span style="font-size:11.5px;font-weight:500;color:#9CA3AF">Argumente pro și contra</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+                <sc-if value="{{ m.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 13px;background:#0d0d11;border-top:1px solid rgba(255,255,255,.08)">
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{ m.p.pros }}" as="pp" hint-placeholder-count="2">
+                        <div style="display:flex;gap:7px;align-items:baseline"><span style="flex:none;font-size:11px;font-weight:700;color:#22C55E">+</span><span style="font-size:11.5px;line-height:1.45;color:#D1D5DB">{{ pp }}</span></div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{ m.p.cons }}" as="cc" hint-placeholder-count="1">
+                        <div style="display:flex;gap:7px;align-items:baseline"><span style="flex:none;font-size:11px;font-weight:700;color:#F59E0B">−</span><span style="font-size:11.5px;line-height:1.45;color:#9CA3AF">{{ cc }}</span></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:2px">
+                <button onClick="{{ m.save }}" style="flex:none;display:flex;align-items:center;gap:7px;padding:10px 14px;background:{{ m.saveBg }};border:1px solid {{ m.saveBorder }};border-radius:11px;color:{{ m.saveColor }};font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="{{ m.saveFill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                  {{ m.saveLabel }}
+                </button>
+                <button onClick="{{ m.ask }}" style="flex:none;padding:10px 14px;background:#17171c;border:1px solid rgba(255,255,255,.09);border-radius:11px;color:#E5E7EB;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#6D28D9">Întreabă Aria</button>
+                <button style="flex:1;padding:10px 14px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:11px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(99,102,241,.32)" style-hover="filter:brightness(1.1)">Vezi produsul ↗</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Alternatives cluster -->
+        <sc-if value="{{ m.isAlts }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <span style="font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#6B7280;padding-left:2px">Am analizat și</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ m.items }}" as="al" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#111115">
+                  <span style="align-self:flex-start;padding:3px 9px;border-radius:9999px;background:{{ al.tagBg }};border:1px solid {{ al.tagBorder }};font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:{{ al.tagColor }}">{{ al.tag }}</span>
+                  <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:9.5px;letter-spacing:.14em;color:#6B7280">{{ al.brand }}</span>
+                    <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:14px;color:#fff;line-height:1.25">{{ al.name }}</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;justify-content:space-between">
+                    <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;color:#fff">{{ al.price }}</span>
+                    <span style="font-size:10.5px;color:#38BDF8;font-weight:600">AI {{ al.score }}</span>
+                  </div>
+                  <span style="font-size:11px;line-height:1.5;color:#9CA3AF">{{ al.line }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Comparison module -->
+        <sc-if value="{{ m.isCompare }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid rgba(255,255,255,.10);border-radius:18px;background:#121216">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(90deg,#A78BFA,#38BDF8);-webkit-background-clip:text;background-clip:text;color:transparent">Comparație directă</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:2px;padding:12px;background:#0f0f13;border:1px solid rgba(124,58,237,.35);border-radius:12px">
+                <span style="font-size:9.5px;letter-spacing:.12em;color:#A78BFA;font-weight:600">A</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:13.5px;color:#fff;line-height:1.25">{{ m.a.name }}</span>
+                <span style="font-size:12px;color:#9CA3AF">{{ m.a.price }} · AI {{ m.a.score }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;padding:12px;background:#0f0f13;border:1px solid rgba(56,189,248,.3);border-radius:12px">
+                <span style="font-size:9.5px;letter-spacing:.12em;color:#38BDF8;font-weight:600">B</span>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:13.5px;color:#fff;line-height:1.25">{{ m.b.name }}</span>
+                <span style="font-size:12px;color:#9CA3AF">{{ m.b.price }} · AI {{ m.b.score }}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ m.dims }}" as="d" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid #1a1a20">
+                  <div style="display:flex;align-items:center;gap:6px;justify-content:flex-start">
+                    <sc-if value="{{ d.winA }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:5px;height:5px;border-radius:99px;background:#A78BFA"></span></sc-if>
+                    <span style="font-size:12px;font-weight:{{ d.aW }};color:{{ d.aC }}">{{ d.a }}</span>
+                  </div>
+                  <span style="font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#4B5563;text-align:center">{{ d.label }}</span>
+                  <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+                    <span style="font-size:12px;font-weight:{{ d.bW }};color:{{ d.bC }}">{{ d.b }}</span>
+                    <sc-if value="{{ d.winB }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:5px;height:5px;border-radius:99px;background:#38BDF8"></span></sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;padding:13px 14px;border-radius:13px;background:linear-gradient(160deg,rgba(124,58,237,.1),rgba(56,189,248,.05));border:1px solid rgba(124,58,237,.3)">
+              <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#A78BFA">Verdictul Ariei</span>
+              <span style="font-size:12.5px;line-height:1.6;color:#E5E7EB">{{ m.verdict }}</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden">
+                  <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C3AED,#6366F1,#38BDF8);width:{{ m.confW }};animation:ariaBar 1s ease both"></div>
+                </div>
+                <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:13px;color:#38BDF8">{{ m.conf }}%</span>
+              </div>
+              <button onClick="{{ m.pick }}" style="align-self:flex-start;padding:9px 16px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:10px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.1)">Alege pentru mine</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- No results -->
+        <sc-if value="{{ m.isNoResults }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:11px;padding:15px 17px;border:1px solid rgba(245,158,11,.25);border-radius:16px;background:rgba(245,158,11,.04)">
+            <div style="display:flex;align-items:center;gap:9px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              <span style="font-family:'Barlow',Arial,sans-serif;font-weight:600;font-size:14.5px;color:#fff">{{ m.title }}</span>
+            </div>
+            <span style="font-size:13px;line-height:1.65;color:#D1D5DB">{{ m.text }}</span>
+            <span style="font-size:11px;color:#6B7280">Prefer să-ți spun adevărul decât să-ți vând orice.</span>
+          </div>
+        </sc-if>
+
+        <!-- Follow-up chips -->
+        <sc-if value="{{ m.isChips }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:2px">
+            <sc-for list="{{ m.items }}" as="ch" hint-placeholder-count="3">
+              <button onClick="{{ ch.go }}" style="padding:8px 14px;background:#131317;border:1px solid rgba(255,255,255,.09);border-radius:9999px;color:#C4B5FD;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:border-color .2s" style-hover="border-color:#7C3AED;color:#E5E7EB">{{ ch.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </sc-for>
+    <div style="flex:none;height:6px"></div>
+  </div>
+
+  <!-- ═══ Composer ═══ -->
+  <div style="flex:none;display:flex;flex-direction:column;gap:7px;padding:12px 16px 14px;border-top:1px solid rgba(255,255,255,.07);background:#09090D">
+    <div style="display:flex;align-items:center;gap:9px;padding:5px 6px 5px 16px;background:#131317;border:1px solid rgba(255,255,255,.10);border-radius:9999px" style-focus="border-color:#6D28D9">
+      <input value="{{ typed }}" onChange="{{ onType }}" onKeyDown="{{ onKey }}" placeholder="Întreabă orice despre produse…" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#F3F4F6;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;padding:8px 0"></input>
+      <button style="flex:none;width:34px;height:34px;display:grid;place-items:center;background:transparent;border:none;cursor:pointer;border-radius:99px" style-hover="background:#1a1a20">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"></path></svg>
+      </button>
+      <button onClick="{{ onSend }}" style="flex:none;width:36px;height:36px;display:grid;place-items:center;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:99px;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.4)" style-hover="filter:brightness(1.15)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+      </button>
+    </div>
+    <span style="font-size:10px;color:#4B5563;text-align:center">Aria caută doar în catalogul magazinului · poate greși ocazional</span>
+  </div>
+
+  <!-- ═══ Saved drawer ═══ -->
+  <sc-if value="{{ savedOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(8,8,10,.66);backdrop-filter:blur(4px)">
+      <div onClick="{{ toggleSaved }}" style="flex:1"></div>
+      <div style="flex:none;display:flex;flex-direction:column;gap:13px;padding:18px 18px 22px;background:#121216;border-top:1px solid rgba(255,255,255,.10);border-radius:20px 20px 0 0;box-shadow:0 -12px 48px rgba(0,0,0,.6);animation:ariaFadeUp .3s ease both">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:16px;color:#fff">Lista ta salvată</span>
+          <button onClick="{{ toggleSaved }}" style="width:30px;height:30px;display:grid;place-items:center;background:#1a1a20;border:1px solid rgba(255,255,255,.09);border-radius:99px;cursor:pointer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <sc-if value="{{ savedEmpty }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:12.5px;color:#6B7280;padding:8px 0 14px">Nimic salvat încă. Apasă „Salvează" pe orice recomandare.</span>
+        </sc-if>
+        <sc-for list="{{ savedItems }}" as="sv" hint-placeholder-count="0">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:#0f0f13;border:1px solid rgba(255,255,255,.08);border-radius:12px">
+            <div style="flex:none;width:38px;height:38px;border-radius:9px;background:#17171c;border:1px solid rgba(255,255,255,.10);display:grid;place-items:center;font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:14px;color:#A78BFA">{{ sv.initial }}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:12.5px;font-weight:600;color:#F3F4F6">{{ sv.name }}</span>
+              <span style="font-size:11px;color:#6B7280">{{ sv.brand }}</span>
+            </div>
+            <span style="flex:none;font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:13.5px;color:#fff">{{ sv.price }}</span>
+            <button onClick="{{ sv.remove }}" style="flex:none;width:26px;height:26px;display:grid;place-items:center;background:transparent;border:none;cursor:pointer;border-radius:99px" style-hover="background:rgba(255,255,255,.08)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ savedAny }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px">
+            <span style="font-size:12px;color:#9CA3AF">Total estimat</span>
+            <span style="font-family:'Barlow',Arial,sans-serif;font-weight:700;font-size:17px;color:#fff">{{ savedTotal }}</span>
+          </div>
+          <button style="padding:12px;background:linear-gradient(140deg,#7C3AED,#6366F1 52%,#38BDF8);border:none;border-radius:12px;color:#fff;font-family:'Hanken Grotesk','Inter',Arial,sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(99,102,241,.35)" style-hover="filter:brightness(1.1)">Adaugă tot în coș</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:820},&quot;merchantName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Atelier Nord&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Widget&quot;},&quot;thinkSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:650,&quot;min&quot;:250,&quot;max&quot;:1200,&quot;step&quot;:50,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Comportament AI&quot;}}">
+class Component extends DCLogic {
+  state = {
+    msgs: [{ id: 'w', type: 'welcome' }],
+    typed: '',
+    saved: {},
+    savedOpen: false,
+    expanded: {},
+    ctx: [],
+    busy: false,
+    journey: null,
+    lastReco: null
+  };
+
+  uid = 1;
+
+  products = {
+    A: { id: 'A', brand: 'NORD AUDIO', name: 'Nord H400 ANC', glyph: 'head', price: '549 lei', priceN: 549, old: '649 lei', disc: '−15%', rating: '4,7', reviews: '2 431', score: '9,2',
+      why: 'Din cele 128 de modele analizate, e singura sub 600 de lei cu anulare activă de zgomot măsurată la −38 dB și autonomie de 60 de ore. Recenziile confirmă confortul la purtare de peste 4 ore — exact ce contează pentru navetă și birou.',
+      chips: ['ANC −38 dB', '60 h autonomie', 'Multipoint · 2 dispozitive', '10 min încărcare → 4 h'],
+      best: 'Navetă, open-space, călătorii lungi', avoid: 'Sport intens — nu rezistă la transpirație',
+      pros: ['Cea mai bună izolare din segment', 'Autonomie dublă față de media clasei', 'Pliabile, husă rigidă inclusă'],
+      cons: ['Bas accentuat implicit (reglabil din aplicație)', 'Puțin mai grele: 264 g'],
+      stock: 'În stoc' },
+    B: { id: 'B', brand: 'PULSE', name: 'Pulse Lite 30', glyph: 'head', price: '329 lei', priceN: 329, old: '399 lei', disc: '−18%', rating: '4,5', reviews: '1 108', score: '8,4',
+      why: 'Păstrează ce contează din criteriile tale — ANC real și confort — și renunță doar la „nice to have": autonomia scade la 40 h, iar izolarea e cu ~8 dB mai discretă. La 329 de lei, e cel mai bun raport calitate-preț din tot ce am analizat.',
+      chips: ['ANC −30 dB', '40 h autonomie', 'Doar 218 g', 'USB-C rapid'],
+      best: 'Buget mic, purtare zilnică ușoară', avoid: 'Vrei izolare maximă în avion sau open-space gălăgios',
+      pros: ['Cu 220 de lei mai ieftine', 'Mai ușoare cu 46 g', 'Sunet echilibrat, natural'],
+      cons: ['Izolare mai slabă la frecvențe joase', 'Fără conectare multipoint'],
+      stock: 'Stoc limitat · 3 buc' },
+    C: { id: 'C', brand: 'VELA', name: 'Vela Studio Pro', glyph: 'head', price: '899 lei', priceN: 899, rating: '4,8', reviews: '3 902', score: '9,5' },
+    S: { id: 'S', brand: 'DERMIA', name: 'Dermia C10 — Serum Vitamina C', glyph: 'drop', price: '89 lei', priceN: 89, old: '109 lei', disc: '−18%', rating: '4,6', reviews: '894', score: '8,9',
+      why: 'Formulă cu 10% vitamina C stabilizată (SAP, nu acid ascorbic pur) și fără parfum — blândă cu tenul sensibil, dar suficient de activă pentru luminozitate. E sub bugetul tău și are cel mai mic procent de reacții raportate din categorie.',
+      chips: ['10% vit. C stabilizată', 'Fără parfum', 'pH 5,5 · blând', '30 ml'],
+      best: 'Ten sensibil, primul contact cu vitamina C', avoid: 'Ai deja o rutină cu retinol dimineața',
+      pros: ['Formulă blândă, testată dermatologic', 'Ambalaj opac, pompă airless', 'Sub bugetul de 100 de lei'],
+      cons: ['Efect vizibil abia după 3–4 săptămâni', 'Procent mai mic decât serurile „pro"'],
+      stock: 'În stoc' },
+    L: { id: 'L', brand: 'LUMO', name: 'Lumo Cast FHD', glyph: 'proj', price: '379 lei', priceN: 379, old: '429 lei', disc: '−12%', rating: '4,4', reviews: '512', score: '8,1',
+      why: 'În loc de un „fals 4K", ți-am ales cel mai bun 1080p nativ real din buget: imagine curată la 100", Wi-Fi 6 pentru streaming direct și corecție automată a imaginii. Onest la specificații — verificat în teste independente.',
+      chips: ['1080p nativ real', '280 ANSI lumeni', 'Wi-Fi 6 · streaming direct', 'Autofocus'],
+      best: 'Seri de film în apartament, perete alb', avoid: 'Camere foarte luminoase ziua',
+      pros: ['Rezoluție nativă onestă, nu upscaling', 'Silențios: 26 dB', 'Corecție trapez automată'],
+      cons: ['Luminozitate medie — ideal seara', 'Difuzor intern modest'],
+      stock: 'În stoc' }
+  };
+
+  setScrollRef = (el) => { this.scrollEl = el; };
+
+  scrollDown() {
+    setTimeout(() => { if (this.scrollEl) this.scrollEl.scrollTop = this.scrollEl.scrollHeight + 9999; }, 60);
+  }
+
+  push(m) {
+    const id = 'm' + (this.uid++);
+    this.setState(s => ({ msgs: [...s.msgs, { id, ...m }] }));
+    this.scrollDown();
+    return id;
+  }
+
+  updateMsg(id, fn) {
+    this.setState(s => ({ msgs: s.msgs.map(mm => mm.id === id ? fn(mm) : mm) }));
+  }
+
+  speed() { const v = Number(this.props.thinkSpeed); return isFinite(v) && v > 100 ? v : 650; }
+
+  runThinking(steps, summary, onDone) {
+    const id = this.push({ type: 'thinking', steps: steps.map((la, i) => ({ label: la, st: i === 0 ? 'active' : 'pending' })), done: false, summary });
+    let i = 0;
+    const iv = setInterval(() => {
+      i++;
+      this.updateMsg(id, mm => ({ ...mm, steps: mm.steps.map((st, j) => ({ ...st, st: j < i ? 'done' : (j === i ? 'active' : 'pending') })) }));
+      this.scrollDown();
+      if (i >= steps.length) {
+        clearInterval(iv);
+        this.updateMsg(id, mm => ({ ...mm, done: true }));
+        setTimeout(onDone, 350);
+      }
+    }, this.speed());
+  }
+
+  pushChips(items) {
+    this.push({ type: 'chips', items });
+  }
+
+  chipsAfterReco() {
+    this.pushChips([
+      { label: 'Compară primele două', action: 'compare' },
+      { label: 'Vreau ceva mai ieftin', action: 'cheaper' },
+      { label: 'E în stoc?', action: 'stock' },
+      { label: 'De ce nu Vela Studio Pro?', action: 'why' }
+    ]);
+  }
+
+  startHeadphones(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'audio' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: wireless, ANC, buget sub 600 lei', 'Caut în catalog — 128 de căști găsite', 'Filtrez: ANC real, măsurat, nu doar „marketing"', 'Compar autonomie, confort și recenzii verificate', 'Verific stocul și istoricul de preț'],
+        'Am analizat 128 de produse · 3,2 s',
+        () => {
+          this.push({ type: 'understand', chips: [
+            { k: 'Buget', v: 'sub 600 lei' },
+            { k: 'Tip', v: 'wireless, over-ear' },
+            { k: 'Cerință', v: 'anulare de zgomot' }
+          ], note: 'Am reținut criteriile — le păstrez pentru tot restul conversației.' });
+          setTimeout(() => {
+            this.setState({ ctx: ['sub 600 lei', 'ANC', 'wireless'], lastReco: 'A' });
+            this.push({ type: 'reco', pid: 'A', badge: 'Recomandarea mea' });
+            setTimeout(() => {
+              this.push({ type: 'alts', items: [
+                { pid: 'B', tag: 'Opțiune buget', line: 'ANC de bază, −220 lei față de recomandare', tone: 'sky' },
+                { pid: 'C', tag: 'Premium · peste buget', line: '+299 lei: sunet de studio, cel mai bun ANC testat', tone: 'purple' }
+              ]});
+              this.chipsAfterReco();
+              this.setState({ busy: false });
+            }, 550);
+          }, 650);
+        }
+      );
+    }, 400);
+  }
+
+  startSkincare(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'skin' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Analizez cerința: serum cu vitamina C', 'Găsesc 34 de formule în catalog'],
+        'Analiză inițială · 1,1 s',
+        () => {
+          this.push({ type: 'text', title: 'O întrebare înainte să aleg', body: ['Formulele de vitamina C diferă mult în funcție de piele. Ce tip de ten ai?'] });
+          this.pushChips([
+            { label: 'Ten sensibil', action: 'skin', arg: 'sensibil' },
+            { label: 'Ten mixt sau gras', action: 'skin', arg: 'mixt' },
+            { label: 'Nu știu — ajută-mă', action: 'skin', arg: 'nu știu, ajută-mă' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  answerSkin(arg) {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Ten ' + arg });
+    setTimeout(() => {
+      this.runThinking(
+        ['Rețin: ten ' + arg, 'Exclud formulele cu parfum și alcool', 'Compar concentrații și pH — 34 → 6 → 1'],
+        'Am ales din 34 de formule · 2,0 s',
+        () => {
+          this.setState({ ctx: ['ten ' + arg, 'fără parfum', 'sub 100 lei'], lastReco: 'S' });
+          this.push({ type: 'reco', pid: 'S', badge: 'Potrivit pentru tenul tău' });
+          this.pushChips([
+            { label: 'E în stoc?', action: 'stock' },
+            { label: 'Salveaz-o în listă', action: 'saveLast' },
+            { label: 'Cum o folosesc corect?', action: 'howto' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  startProjector(text) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, journey: 'proj' });
+    this.push({ type: 'user', text });
+    setTimeout(() => {
+      this.runThinking(
+        ['Caut proiectoare 4K sub 400 lei', 'Verific: rezoluție nativă vs upscaling', 'Rezultat: 0 modele 4K reale în buget'],
+        'Verificare onestă · 1,8 s',
+        () => {
+          this.push({ type: 'noresults', title: 'Nu există un 4K real sub 400 de lei', text: 'Modelele listate „4K" la acest preț fac de fapt upscaling de la 1080p sau chiar 720p — ai plăti pentru o promisiune falsă. Îți propun două direcții oneste:' });
+          this.pushChips([
+            { label: 'Cel mai bun 1080p real sub 400 lei', action: 'fhd' },
+            { label: 'Cresc bugetul la 1 500 lei', action: 'bump' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  showFHD() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Arată-mi cel mai bun 1080p real sub 400 lei' });
+    setTimeout(() => {
+      this.runThinking(
+        ['Filtrez: doar rezoluție nativă 1080p', 'Compar luminozitate, zgomot, recenzii'],
+        'Am analizat 21 de proiectoare · 1,6 s',
+        () => {
+          this.setState({ ctx: ['1080p nativ', 'sub 400 lei'], lastReco: 'L' });
+          this.push({ type: 'reco', pid: 'L', badge: 'Alternativa onestă' });
+          this.pushChips([
+            { label: 'E în stoc?', action: 'stock' },
+            { label: 'Salvează-l în listă', action: 'saveLast' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  bumpBudget() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Cresc bugetul la 1 500 lei' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Bun plan', body: ['La 1 500 de lei intră primele proiectoare cu 4K real prin pixel-shift — o diferență vizibilă față de upscaling. Dar sincer: dacă proiectezi sub 100 de inci, un 1080p nativ bun arată aproape identic și economisești 1 100 de lei.'], conf: 78 });
+      this.pushChips([{ label: 'Convinge-mă cu cel mai bun 1080p', action: 'fhd' }]);
+      this.setState({ busy: false });
+    }, 500);
+  }
+
+  doCompare() {
+    if (this.state.busy) return;
+    if (this.state.journey !== 'audio') { this.startHeadphones('Caut căști wireless cu anulare de zgomot, sub 600 lei'); return; }
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Compară primele două' });
+    setTimeout(() => {
+      this.runThinking(
+        ['Aliniez specificațiile măsurate', 'Ponderez după criteriile tale: navetă + buget'],
+        'Comparație pe 6 dimensiuni · 1,4 s',
+        () => {
+          this.push({ type: 'compare',
+            a: { name: 'Nord H400 ANC', price: '549 lei', score: '9,2' },
+            b: { name: 'Pulse Lite 30', price: '329 lei', score: '8,4' },
+            dims: [
+              { label: 'Preț', a: '549 lei', b: '329 lei', win: 'b' },
+              { label: 'Izolare zgomot', a: '−38 dB', b: '−30 dB', win: 'a' },
+              { label: 'Autonomie', a: '60 h', b: '40 h', win: 'a' },
+              { label: 'Greutate', a: '264 g', b: '218 g', win: 'b' },
+              { label: 'Confort 4 h+', a: '4,8 / 5', b: '4,3 / 5', win: 'a' },
+              { label: 'Multipoint', a: 'Da · 2 disp.', b: 'Nu', win: 'a' }
+            ],
+            verdict: 'Pentru criteriile tale — navetă zilnică și open-space — Nord H400 justifică diferența de 220 de lei prin izolare și autonomie dublă. Dacă le porți doar ocazional, Pulse Lite 30 e alegerea rațională.',
+            conf: 87 });
+          this.pushChips([
+            { label: 'Vreau ceva mai ieftin', action: 'cheaper' },
+            { label: 'E în stoc?', action: 'stock' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  doCheaper() {
+    if (this.state.busy) return;
+    if (this.state.journey !== 'audio') { this.startHeadphones('Caut căști wireless cu anulare de zgomot, sub 600 lei'); return; }
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Vreau ceva mai ieftin' });
+    setTimeout(() => {
+      this.runThinking(
+        ['Păstrez criteriile: ANC real, wireless', 'Cobor plafonul de preț și recalculez'],
+        'Recalculat sub 350 lei · 1,2 s',
+        () => {
+          this.setState({ lastReco: 'B', ctx: ['sub 350 lei', 'ANC', 'wireless'] });
+          this.push({ type: 'reco', pid: 'B', badge: 'Varianta economică', changes: [
+            { delta: '−220 lei', label: 'preț față de Nord H400', tone: 'good' },
+            { delta: '−20 h', label: 'autonomie (40 h rămâne peste medie)', tone: 'warn' },
+            { delta: '−8 dB', label: 'izolare — sesizabil doar în avion', tone: 'warn' },
+            { delta: '−46 g', label: 'mai ușoare, confort sporit vara', tone: 'good' }
+          ]});
+          this.pushChips([
+            { label: 'E în stoc?', action: 'stock' },
+            { label: 'OK, salveaz-o', action: 'saveLast' },
+            { label: 'Totuși, compară-le', action: 'compare' }
+          ]);
+          this.setState({ busy: false });
+        }
+      );
+    }, 400);
+  }
+
+  doStock() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'E în stoc?' });
+    const j = this.state.journey;
+    setTimeout(() => {
+      let status;
+      if (j === 'audio') {
+        status = [
+          { name: 'Nord H400 ANC', sub: 'Livrare mâine, până la ora 18', badge: 'În stoc', tone: 'ok' },
+          { name: 'Pulse Lite 30', sub: 'Livrare în 2–3 zile lucrătoare', badge: 'Stoc limitat · 3 buc', tone: 'warn' }
+        ];
+      } else {
+        const p = this.products[this.state.lastReco || 'S'];
+        status = [{ name: p.name, sub: 'Livrare în 1–2 zile lucrătoare', badge: 'În stoc', tone: 'ok' }];
+      }
+      this.push({ type: 'text', title: 'Verificare de stoc', body: ['Am verificat chiar acum, direct în sistemul magazinului:'], status });
+      this.pushChips([
+        { label: 'Salvează recomandarea', action: 'saveLast' },
+        { label: 'Vezi lista salvată', action: 'openSaved' }
+      ]);
+      this.setState({ busy: false });
+    }, 700);
+  }
+
+  doWhy() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'De ce nu Vela Studio Pro?' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Sinceritate totală', body: [
+        'Vela Studio Pro e obiectiv mai bună — izolare cu 3 dB peste Nord și un sunet vizibil mai rafinat. Dar costă 899 de lei: cu 299 peste bugetul pe care mi l-ai dat.',
+        'Regula mea: nu-ți recomand să depășești bugetul decât dacă diferența îți schimbă real experiența. Aici nu e cazul — la navetă și birou, Nord H400 îți oferă 95% din experiență la 60% din preț.'
+      ], conf: 87 });
+      this.pushChips([
+        { label: 'Bine, rămân la Nord H400', action: 'saveA' },
+        { label: 'Totuși, arată-mi Vela', action: 'cheaper' }
+      ]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  doHowTo() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Cum o folosesc corect?' });
+    setTimeout(() => {
+      this.push({ type: 'text', title: 'Rutina corectă', body: [
+        'Dimineața, pe ten curat: 3–4 picături, apoi crema hidratantă și obligatoriu SPF — vitamina C fără SPF e muncă în zadar.',
+        'Începe cu o zi da, una nu, în prima săptămână. Dacă apare furnicătură ușoară e normal; usturime persistentă — oprește și scrie-mi.'
+      ]});
+      this.pushChips([
+        { label: 'Salveaz-o în listă', action: 'saveLast' },
+        { label: 'Ce SPF îmi recomanzi?', action: 'spf' }
+      ]);
+      this.setState({ busy: false });
+    }, 600);
+  }
+
+  doSPF() {
+    if (this.state.busy) return;
+    this.setState({ busy: true });
+    this.push({ type: 'user', text: 'Ce SPF îmi recomanzi?' });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Țin minte că ai ten sensibil, deci caut un SPF mineral, fără parfum — îl analizez și revin cu o recomandare argumentată. În demo, această ramură se oprește aici.'] });
+      this.setState({ busy: false });
+    }, 500);
+  }
+
+  saveProduct(pid, silent) {
+    this.setState(s => {
+      const saved = { ...s.saved };
+      if (saved[pid]) delete saved[pid]; else saved[pid] = true;
+      return { saved };
+    });
+    if (!silent) this.scrollDown();
+  }
+
+  doSaveLast() {
+    if (this.state.busy) return;
+    const pid = this.state.lastReco || 'A';
+    const p = this.products[pid];
+    this.push({ type: 'user', text: 'Salveaz-o în listă' });
+    if (!this.state.saved[pid]) this.saveProduct(pid, true);
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Gata — ' + p.name + ' e în lista ta salvată. O găsești oricând din butonul de sus.'] });
+    }, 400);
+  }
+
+  doPick() {
+    if (this.state.busy) return;
+    if (!this.state.saved['A']) this.saveProduct('A', true);
+    this.push({ type: 'text', title: 'Am ales pentru tine', body: ['Nord H400 ANC — cea mai bună potrivire pe criteriile tale, cu încredere de 87%. Am salvat-o în listă; verifică oricând argumentele mai sus.'] });
+    this.pushChips([
+      { label: 'Vezi lista salvată', action: 'openSaved' },
+      { label: 'E în stoc?', action: 'stock' }
+    ]);
+  }
+
+  route(action, arg) {
+    switch (action) {
+      case 'audio': this.startHeadphones('Caut căști wireless cu anulare de zgomot, sub 600 lei'); break;
+      case 'skinStart': this.startSkincare('Un serum cu vitamina C pentru ten sensibil, sub 100 lei'); break;
+      case 'projStart': this.startProjector('Un proiector 4K pentru acasă, sub 400 lei'); break;
+      case 'skin': this.answerSkin(arg); break;
+      case 'compare': this.doCompare(); break;
+      case 'cheaper': this.doCheaper(); break;
+      case 'stock': this.doStock(); break;
+      case 'why': this.doWhy(); break;
+      case 'howto': this.doHowTo(); break;
+      case 'spf': this.doSPF(); break;
+      case 'fhd': this.showFHD(); break;
+      case 'bump': this.bumpBudget(); break;
+      case 'saveLast': this.doSaveLast(); break;
+      case 'saveA': this.doSaveLast(); break;
+      case 'pick': this.doPick(); break;
+      case 'openSaved': this.setState({ savedOpen: true }); break;
+      default: break;
+    }
+  }
+
+  handleSend = () => {
+    const t = (this.state.typed || '').trim();
+    if (!t || this.state.busy) return;
+    this.setState({ typed: '' });
+    const low = t.toLowerCase();
+    if (!this.state.journey) {
+      if (low.includes('serum') || low.includes('vitamin')) { this.startSkincare(t); return; }
+      if (low.includes('proiector')) { this.startProjector(t); return; }
+      this.startHeadphones(t); return;
+    }
+    if (low.includes('compar')) { this.doCompare(); return; }
+    if (low.includes('ieftin')) { this.doCheaper(); return; }
+    if (low.includes('stoc')) { this.doStock(); return; }
+    if (low.includes('de ce')) { this.doWhy(); return; }
+    if (low.includes('salv')) { this.doSaveLast(); return; }
+    this.push({ type: 'user', text: t });
+    setTimeout(() => {
+      this.push({ type: 'text', body: ['Am păstrat criteriile tale de până acum. În acest demo pot răspunde la comparații, preț, stoc și salvare — alege o sugestie de mai jos sau dă-mi un criteriu concret.'] });
+      this.pushChips([
+        { label: 'Compară primele două', action: 'compare' },
+        { label: 'Vreau ceva mai ieftin', action: 'cheaper' },
+        { label: 'E în stoc?', action: 'stock' }
+      ]);
+    }, 450);
+  };
+
+  toggleExp(id) {
+    this.setState(s => ({ expanded: { ...s.expanded, [id]: !s.expanded[id] } }));
+  }
+
+  renderVals() {
+    const S = this.state;
+    const P = this.products;
+
+    const msgs = S.msgs.map(m => {
+      const v = { id: m.id };
+      if (m.type === 'welcome') {
+        v.isWelcome = true;
+        v.prompts = [
+          { label: 'Căști wireless cu anulare de zgomot, sub 600 lei', go: () => this.route('audio') },
+          { label: 'Un serum cu vitamina C pentru ten sensibil', go: () => this.route('skinStart') },
+          { label: 'Proiector 4K pentru acasă, sub 400 lei', go: () => this.route('projStart') }
+        ];
+      } else if (m.type === 'user') {
+        v.isUser = true; v.text = m.text;
+      } else if (m.type === 'thinking') {
+        v.isThinking = true;
+        v.done = !!m.done; v.running = !m.done;
+        v.headLabel = m.done ? m.summary : 'Aria analizează…';
+        v.headColor = m.done ? '#9CA3AF' : '#C4B5FD';
+        v.showSteps = m.done ? !!S.expanded[m.id] : true;
+        v.toggle = () => { if (m.done) this.toggleExp(m.id); };
+        v.steps = m.steps.map(st => ({
+          label: st.label,
+          isDone: st.st === 'done', isActive: st.st === 'active', isPending: st.st === 'pending',
+          color: st.st === 'pending' ? '#4B5563' : (st.st === 'active' ? '#E5E7EB' : '#9CA3AF')
+        }));
+      } else if (m.type === 'understand') {
+        v.isUnderstand = true; v.chips = m.chips; v.note = m.note;
+      } else if (m.type === 'text') {
+        v.isText = true;
+        v.hasTitle = !!m.title; v.title = m.title || '';
+        v.body = m.body || [];
+        v.hasStatus = !!m.status; 
+        v.status = (m.status || []).map(st => ({
+          ...st,
+          dot: st.tone === 'ok' ? '#22C55E' : '#F59E0B',
+          tone: st.tone === 'ok' ? '#22C55E' : '#F59E0B'
+        }));
+        v.hasConf = !!m.conf; v.conf = m.conf; v.confW = (m.conf || 0) + '%';
+      } else if (m.type === 'reco') {
+        const p = P[m.pid];
+        v.isReco = true; v.p = p; v.badge = m.badge;
+        v.hasDisc = !!p.disc;
+        v.gHead = p.glyph === 'head'; v.gDrop = p.glyph === 'drop'; v.gProj = p.glyph === 'proj';
+        v.hasChanges = !!m.changes;
+        v.changes = (m.changes || []).map(ch => ({ ...ch, tone: ch.tone === 'good' ? '#22C55E' : '#F59E0B' }));
+        v.expanded = !!S.expanded['x' + m.id];
+        v.expand = () => this.toggleExp('x' + m.id);
+        const saved = !!S.saved[p.id];
+        v.save = () => this.saveProduct(p.id);
+        v.saveLabel = saved ? 'Salvat' : 'Salvează';
+        v.saveBg = saved ? 'rgba(124,58,237,.18)' : '#17171c';
+        v.saveBorder = saved ? 'rgba(124,58,237,.5)' : 'rgba(255,255,255,.09)';
+        v.saveColor = saved ? '#C4B5FD' : '#E5E7EB';
+        v.saveFill = saved ? '#A78BFA' : 'none';
+        v.ask = () => this.route('why');
+      } else if (m.type === 'alts') {
+        v.isAlts = true;
+        v.items = m.items.map(al => {
+          const p = P[al.pid];
+          const purple = al.tone === 'purple';
+          return {
+            brand: p.brand, name: p.name, price: p.price, score: p.score,
+            tag: al.tag, line: al.line,
+            tagBg: purple ? 'rgba(124,58,237,.1)' : 'rgba(56,189,248,.08)',
+            tagBorder: purple ? 'rgba(124,58,237,.35)' : 'rgba(56,189,248,.3)',
+            tagColor: purple ? '#C4B5FD' : '#7DD3FC'
+          };
+        });
+      } else if (m.type === 'compare') {
+        v.isCompare = true; v.a = m.a; v.b = m.b;
+        v.verdict = m.verdict; v.conf = m.conf; v.confW = m.conf + '%';
+        v.pick = () => this.route('pick');
+        v.dims = m.dims.map(d => ({
+          label: d.label, a: d.a, b: d.b,
+          winA: d.win === 'a', winB: d.win === 'b',
+          aW: d.win === 'a' ? 600 : 400, bW: d.win === 'b' ? 600 : 400,
+          aC: d.win === 'a' ? '#F3F4F6' : '#6B7280',
+          bC: d.win === 'b' ? '#F3F4F6' : '#6B7280'
+        }));
+      } else if (m.type === 'noresults') {
+        v.isNoResults = true; v.title = m.title; v.text = m.text;
+      } else if (m.type === 'chips') {
+        v.isChips = true;
+        v.items = m.items.map(ch => ({ label: ch.label, go: () => this.route(ch.action, ch.arg) }));
+      }
+      return v;
+    });
+
+    const savedIds = Object.keys(S.saved);
+    const savedItems = savedIds.map(pid => {
+      const p = P[pid];
+      return { name: p.name, brand: p.brand, price: p.price, initial: p.name.charAt(0), remove: () => this.saveProduct(pid) };
+    });
+    const total = savedIds.reduce((acc, pid) => acc + (P[pid].priceN || 0), 0);
+
+    return {
+      msgs,
+      merchantSub: this.props.merchantName ?? 'Atelier Nord',
+      typed: S.typed,
+      onType: (e) => this.setState({ typed: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') this.handleSend(); },
+      onSend: this.handleSend,
+      setScroll: this.setScrollRef,
+      ctx: S.ctx,
+      ctxVisible: S.ctx.length > 0,
+      savedCount: savedIds.length,
+      savedOpen: S.savedOpen,
+      savedEmpty: savedIds.length === 0,
+      savedAny: savedIds.length > 0,
+      savedItems,
+      savedTotal: total.toLocaleString('ro-RO') + ' lei',
+      toggleSaved: () => this.setState(s => ({ savedOpen: !s.savedOpen }))
+    };
+  }
+}
+</script>
+</body>
+</html>

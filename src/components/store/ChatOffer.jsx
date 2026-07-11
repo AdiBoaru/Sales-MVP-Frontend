@@ -14,7 +14,7 @@ const ICONS = {
 };
 
 const BTN =
-  "inline-flex items-center justify-center gap-2 w-full text-sm font-semibold px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200 transition-colors";
+  "inline-flex items-center justify-center gap-2 w-full text-sm font-semibold px-4 py-2.5 rounded-xl aria-gradient-bg hover:opacity-90 text-white shadow-sm shadow-violet-200 transition-opacity";
 
 export default function ChatOffer({ offer, onQuickReply }) {
   if (!offer) return null;
