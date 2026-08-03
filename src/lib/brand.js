@@ -3,7 +3,7 @@
 // is Romanian and currency is RON (real catalog).
 export const BRAND = {
   name: "Aria",
-  logoText: "Aria",
+  logoText: "Aria - Demo",
   tagline: "Cosmetice & îngrijire",
   assistant: "Aria",
   supportPhone: "",

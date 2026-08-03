@@ -1,4 +1,4 @@
-name: Deploy shop to Hostinger
+name: Deploy demo to Hostinger
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 # Cancel overlapping deploys.
 concurrency:
-  group: deploy-shop
+  group: deploy-demo
   cancel-in-progress: true
 
 jobs:
@@ -52,7 +52,9 @@ jobs:
       # ("Error: Timeout (control socket)"). The build is fine — it just needs a retry.
       # We attempt up to 3 times; only the final attempt can fail the job.
       # NOTE: ⚠️ public_html is NOT at the FTP root on this Hostinger account — it's under
-      # domains/. The sync is INCREMENTAL (orphaned files are not deleted).
+      # domains/. The FTP root is /home/u646222197, so the demo.nativextech.com docroot
+      # (/home/u646222197/domains/nativextech.com/public_html/demo) is the relative path
+      # below. The sync is INCREMENTAL (orphaned files are not deleted).
       - name: Deploy via FTPS (attempt 1)
         id: ftp1
         continue-on-error: true
@@ -65,7 +67,7 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/shop/
+          server-dir: ./domains/nativextech.com/public_html/demo/
 
       - name: Wait before retry
         if: steps.ftp1.outcome == 'failure'
@@ -84,7 +86,7 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/shop/
+          server-dir: ./domains/nativextech.com/public_html/demo/
 
       - name: Wait before final retry
         if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
@@ -101,4 +103,4 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/shop/
+          server-dir: ./domains/nativextech.com/public_html/demo/

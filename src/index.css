@@ -114,6 +114,72 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Aria "lux" tokens — the landing page palette. One saturated accent, a four-
+   step ink scale, and stepped surfaces. Token names are semantic (accent, not
+   gold) so the hue can change without touching a single component class.
+   Scoped to .aria-lux so the store keeps its own palette.
+
+   Base = the warm dark / gold theme. .aria-lux.is-light overrides it with the
+   slate-blue on warm-grey theme the landing page actually uses today.
+--------------------------------------------------------------------------- */
+.aria-lux {
+  /* Surfaces (warm near-black, stepped up) */
+  --color-void: #0b0a07;
+  --color-surface: #100e0a;
+  --color-surface-2: #16130d;
+  --color-surface-3: #1c1811;
+
+  /* Text */
+  --color-ink: #f4f1ea;
+  --color-ink-soft: #a7a9ae;
+  --color-ink-mute: #8f939b;
+  --color-ink-faint: #7f838b;
+
+  /* Accent — fill, its hover, and the text colour that sits on top of it */
+  --color-accent: #c9a96e;
+  --color-accent-hover: #d8bc84;
+  --color-on-accent: #17140e;
+
+  /* The accent as it reads at text/icon size. Identical to the fill on dark;
+     the light theme has to darken it to stay legible. */
+  --color-accent-ink: var(--color-accent);
+
+  --color-ember: #cf8563; /* warning / negative state */
+  --color-hair: rgb(201 169 110 / 0.18); /* hairlines and borders */
+  --color-chip: rgb(201 169 110 / 0.12); /* accent chip fill */
+
+  --color-glow: rgb(201 169 110 / 0.14); /* hero wash */
+
+  color: var(--color-ink);
+  background: var(--color-void);
+}
+
+/* Light theme — slate blue on warm grey. Same structure, inverted ink scale.
+   The accent darkens for text-weight use; fills keep #3f5d7a with near-white
+   on top. */
+.aria-lux.is-light {
+  --color-void: #f5f5f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #ececea;
+  --color-surface-3: #e3e3e0;
+
+  --color-ink: #1c1c1a;
+  --color-ink-soft: #4d4d49;
+  --color-ink-mute: #6e6e69;
+  --color-ink-faint: #7a7a75;
+
+  --color-accent: #3f5d7a;
+  --color-accent-hover: #334d66; /* hover darkens on light, brightens on dark */
+  --color-on-accent: #f7f9fb;
+  --color-accent-ink: #35516d;
+
+  --color-ember: #a8542f;
+  --color-hair: rgb(63 93 122 / 0.22);
+  --color-chip: rgb(63 93 122 / 0.10);
+  --color-glow: rgb(63 93 122 / 0.13);
+}
+
+/* ---------------------------------------------------------------------------
    Aria widget design tokens — exact hex values from the design spec (light
    theme), scoped under .aria-widget so the rest of the app keeps its own
    Tailwind palette untouched. Referenced from components as e.g.
