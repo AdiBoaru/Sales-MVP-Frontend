@@ -51,10 +51,11 @@ jobs:
       # Hostinger's FTPS endpoint frequently times out on the FIRST connection
       # ("Error: Timeout (control socket)"). The build is fine — it just needs a retry.
       # We attempt up to 3 times; only the final attempt can fail the job.
-      # NOTE: ⚠️ public_html is NOT at the FTP root on this Hostinger account — it's under
-      # domains/. The FTP root is /home/u646222197, so the demo.nativextech.com docroot
-      # (/home/u646222197/domains/nativextech.com/public_html/demo) is the relative path
-      # below. The sync is INCREMENTAL (orphaned files are not deleted).
+      # NOTE: FTP_USERNAME is the DEDICATED account for this subdomain — it logs in
+      # straight into /home/u646222197/domains/nativextech.com/public_html/demo, so
+      # server-dir is just "./". Do NOT reintroduce a domains/... path here: the main
+      # account (u646222197) is chrooted somewhere that no vhost serves, and uploads
+      # through it silently 404. The sync is INCREMENTAL (orphans are not deleted).
       - name: Deploy via FTPS (attempt 1)
         id: ftp1
         continue-on-error: true
@@ -67,7 +68,7 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/demo/
+          server-dir: ./
 
       - name: Wait before retry
         if: steps.ftp1.outcome == 'failure'
@@ -86,7 +87,7 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/demo/
+          server-dir: ./
 
       - name: Wait before final retry
         if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
@@ -103,4 +104,4 @@ jobs:
           port: 21
           timeout: 120000
           local-dir: ./dist/
-          server-dir: ./domains/nativextech.com/public_html/demo/
+          server-dir: ./

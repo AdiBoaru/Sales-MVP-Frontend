@@ -1,6 +1,10 @@
 # SPA history fallback for Apache (Hostinger shared hosting).
 # Without this, hard navigation / refresh on /store, /product/:id, /Cart returns 404
 # because Apache looks for a filesystem path that doesn't exist. Serve index.html instead.
+# The subdomain docroot ships with Hostinger's default.php placeholder, which the
+# server's DirectoryIndex would otherwise prefer over our build. Pin index.html.
+DirectoryIndex index.html
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   # Don't rewrite real files or directories (assets, images, etc.)
