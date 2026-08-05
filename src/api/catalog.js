@@ -178,6 +178,11 @@ export function mapProduct(row) {
     productUrl: row.product_url || "",
     image: images[0]?.url || "",
     images,
+    // Detail-page only: LIST_SELECT omits both columns, so these stay null/"" in
+    // grid views. `attributes` is the enrichment JSON (specs, key ingredients,
+    // concerns, texture/finish) that lib/productContent.js turns into panels.
+    attributes: row.attributes || null,
+    deliveryClass: row.delivery_class || "",
   };
 }
 

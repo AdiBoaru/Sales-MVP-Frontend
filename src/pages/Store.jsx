@@ -264,49 +264,6 @@ export default function Store() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 bg-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <div className="mb-4">
-                <StoreLogo to={null} />
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {BRAND.tagline}. Produse atent selectate și un asistent care te ajută să alegi în câteva secunde.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm mb-3">Magazin</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors">Toate produsele</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Noutăți</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Cele mai vândute</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Carduri cadou</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm mb-3">Ajutor</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors">Cum cumperi</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Livrare</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Retururi</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Urmărește comanda</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm mb-3">Companie</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors">Despre {BRAND.name}</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Cariere</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Centru de ajutor</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors">Contact</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </footer>
-
       {/* Aria chat */}
       <ChatWidget />
     </div>
