@@ -79,14 +79,20 @@ function loadCategories() {
   return categoriesPromise;
 }
 
-// Restrict a query to one category's subtree. Unknown slug → left unfiltered,
-// same as the old classifier did for an unknown value.
-async function applyCategoryFilter(query, categorySlug) {
-  if (!categorySlug || categorySlug === "all") return query;
+// The ids to match for one category: itself + every descendant. null = no filter
+// (no category selected, or a slug we don't know — same as the old classifier did
+// for an unknown value).
+//
+// ⚠ This resolves to an ARRAY on purpose, and the caller applies `.in()` itself.
+// It must never `return query` from an async function: a Supabase query builder is
+// a THENABLE, so `await` on a promise resolving to one doesn't hand back the
+// builder — it runs the query and resolves with `{ data, error }`. The builder is
+// gone by the time the next `.order()` is chained, and the whole listing throws.
+async function categorySubtreeIds(categorySlug) {
+  if (!categorySlug || categorySlug === "all") return null;
   const { subtreeIds } = await loadCategories();
   const ids = subtreeIds.get(categorySlug);
-  if (!ids || !ids.length) return query;
-  return query.in("primary_category_id", ids);
+  return ids && ids.length ? ids : null;
 }
 
 /**
@@ -186,9 +192,11 @@ const LIST_SELECT =
 /** @param {{ search?: string, category?: string, sort?: string, limit?: number, offset?: number }} [opts] */
 export async function listProducts({ search, category, sort, limit = 24, offset = 0 } = {}) {
   if (!supabase) return [];
+  const categoryIds = await categorySubtreeIds(category);
+
   let query = supabase.from("products").select(LIST_SELECT).eq("status", "active");
   query = applySearchFilter(query, search);
-  query = await applyCategoryFilter(query, category);
+  if (categoryIds) query = query.in("primary_category_id", categoryIds);
   query = applySort(query, sort);
   query = query.range(offset, offset + limit - 1);
 
@@ -218,12 +226,14 @@ export async function getProduct(id) {
 /** @param {{ search?: string, category?: string }} [opts] */
 export async function countProducts({ search, category } = {}) {
   if (!supabase) return 0;
+  const categoryIds = await categorySubtreeIds(category);
+
   let query = supabase
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("status", "active");
   query = applySearchFilter(query, search);
-  query = await applyCategoryFilter(query, category);
+  if (categoryIds) query = query.in("primary_category_id", categoryIds);
 
   const { count, error } = await query;
   if (error) {
