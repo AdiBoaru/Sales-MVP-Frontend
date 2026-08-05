@@ -92,13 +92,14 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Aria brand gradient — the purple→violet→cyan identity used across the chat
-   widget (header accent, CTAs, user bubbles, progress/confidence bars).
-   One custom property so every consumer stays in sync if the brand shifts.
+   Aria brand accent — used across the chat widget (header accent, CTAs, user
+   bubbles, progress/confidence bars). Deliberately a single-hue tonal shift
+   rather than the multi-stop violet→cyan wash: a real storefront has a brand
+   colour, not a spectrum. One custom property so every consumer stays in sync.
 --------------------------------------------------------------------------- */
 :root {
-  --aria-gradient: linear-gradient(135deg, #6d28d9, #7c3aed 60%, #38bdf8 140%);
-  --aria-gradient-flat: linear-gradient(90deg, #6d28d9, #7c3aed, #38bdf8);
+  --aria-gradient: linear-gradient(135deg, #2f664c, #427f61);
+  --aria-gradient-flat: linear-gradient(90deg, #2f664c, #427f61);
 }
 
 @layer components {
@@ -168,15 +169,15 @@
   --color-ink-mute: #6e6e69;
   --color-ink-faint: #7a7a75;
 
-  --color-accent: #3f5d7a;
-  --color-accent-hover: #334d66; /* hover darkens on light, brightens on dark */
-  --color-on-accent: #f7f9fb;
-  --color-accent-ink: #35516d;
+  --color-accent: #2f664c;
+  --color-accent-hover: #26523e; /* hover darkens on light, brightens on dark */
+  --color-on-accent: #f7faf8;
+  --color-accent-ink: #26523e;
 
   --color-ember: #a8542f;
-  --color-hair: rgb(63 93 122 / 0.22);
-  --color-chip: rgb(63 93 122 / 0.10);
-  --color-glow: rgb(63 93 122 / 0.13);
+  --color-hair: rgb(47 102 76 / 0.22);
+  --color-chip: rgb(47 102 76 / 0.10);
+  --color-glow: rgb(47 102 76 / 0.13);
 }
 
 /* ---------------------------------------------------------------------------
@@ -198,7 +199,7 @@
   --aria-text-3: #8b8798;
   --aria-text-4: #7a7589;
   --aria-text-5: #a5a1b2;
-  --aria-purple: #6d28d9;
+  --aria-purple: #2f664c; /* name kept for churn; the accent is the brand green */
   --aria-blue: #0284c7;
   --aria-success: #189a4a;
   --aria-warning: #c77700;

@@ -172,12 +172,12 @@ function ComparisonTable({ comparison }) {
       {/* "Verdictul Ariei" — only when the bot sends an actual verdict; the
           confidence bar only accompanies a real number, never a guess. */}
       {comparison.verdict && (
-        <div className="m-2.5 mt-1 flex flex-col gap-2 p-3 rounded-xl bg-[linear-gradient(160deg,rgba(124,58,237,0.07),rgba(56,189,248,0.05))] border border-[rgba(124,58,237,0.22)]">
+        <div className="m-2.5 mt-1 flex flex-col gap-2 p-3 rounded-xl bg-[linear-gradient(160deg,rgba(47,102,76,0.09),rgba(47,102,76,0.03))] border border-[rgba(47,102,76,0.22)]">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--aria-purple)]">Verdictul Ariei</span>
           <p className="text-xs leading-relaxed text-[var(--aria-text-2)]">{comparison.verdict}</p>
           {comparison.confidence != null && (
             <div className="flex items-center gap-2.5">
-              <div className="flex-1 h-1.5 rounded-full bg-[rgba(124,58,237,0.12)] overflow-hidden">
+              <div className="flex-1 h-1.5 rounded-full bg-[rgba(47,102,76,0.12)] overflow-hidden">
                 <div
                   className="aria-confidence-bar h-full rounded-full aria-gradient-bg"
                   style={{ width: `${comparison.confidence}%` }}
@@ -256,12 +256,12 @@ function ProductStack({ products, onToast, onAsk }) {
 }
 
 // "Am înțeles ce cauți" — the extracted criteria as key/value chips + an optional
-// note. A soft violet→cyan gradient card, matching the design's understanding block.
+// note. A soft brand-tinted card, matching the design's understanding block.
 function UnderstandingCard({ data }) {
   return (
     <div
-      className="flex flex-col gap-2.5 px-4 py-3.5 rounded-[14px] border border-[rgba(124,58,237,0.18)]"
-      style={{ background: "linear-gradient(160deg,rgba(124,58,237,0.06),rgba(56,189,248,0.04) 70%),#fff" }}
+      className="flex flex-col gap-2.5 px-4 py-3.5 rounded-[14px] border border-[rgba(47,102,76,0.18)]"
+      style={{ background: "linear-gradient(160deg,rgba(47,102,76,0.07),rgba(47,102,76,0.02) 70%),#fff" }}
     >
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--aria-purple)]">
         {data.title || "Am înțeles ce cauți"}
@@ -361,7 +361,7 @@ function RoutineStepCard({ product }) {
         style={
           product.image_url
             ? undefined
-            : { background: "radial-gradient(closest-side at 50% 50%, rgba(124,58,237,0.1), rgba(246,244,251,0) 90%), var(--aria-surface-2)" }
+            : { background: "radial-gradient(closest-side at 50% 50%, rgba(47,102,76,0.1), rgba(246,244,251,0) 90%), var(--aria-surface-2)" }
         }
       >
         {product.image_url ? (
@@ -422,7 +422,7 @@ function RoutineTimeline({ routine }) {
                 {!last && (
                   <span
                     className="flex-1 w-0.5 min-h-[14px] rounded-full my-[3px]"
-                    style={{ background: "linear-gradient(180deg,rgba(124,58,237,0.35),rgba(56,189,248,0.25))" }}
+                    style={{ background: "linear-gradient(180deg,rgba(47,102,76,0.35),rgba(56,189,248,0.25))" }}
                   />
                 )}
               </div>
@@ -474,7 +474,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       {/* User bubble — right-aligned gradient. */}
       {isUser && hasContent && (
         <div className="flex justify-end">
-          <div className="max-w-[80%] text-[13.5px] leading-relaxed px-4 py-2.5 rounded-2xl rounded-br-md aria-gradient-bg text-white shadow-[0_4px_14px_rgba(109,40,217,0.25)]">
+          <div className="max-w-[80%] text-[13.5px] leading-relaxed px-4 py-2.5 rounded-2xl rounded-br-md aria-gradient-bg text-white shadow-[0_4px_14px_rgba(47,102,76,0.25)]">
             <RichText text={m.content} />
           </div>
         </div>
@@ -530,7 +530,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
             <button
               key={j}
               onClick={() => onSuggestion?.(s)}
-              className="px-3.5 py-2 bg-white border border-[var(--aria-border-3)] rounded-full text-[12px] font-medium text-[var(--aria-purple)] shadow-sm hover:border-[var(--aria-purple)] hover:bg-[rgba(124,58,237,0.05)] transition-colors"
+              className="px-3.5 py-2 bg-white border border-[var(--aria-border-3)] rounded-full text-[12px] font-medium text-[var(--aria-purple)] shadow-sm hover:border-[var(--aria-purple)] hover:bg-[rgba(47,102,76,0.05)] transition-colors"
             >
               {s}
             </button>

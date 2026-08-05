@@ -9,7 +9,7 @@ import StoreHeader from "@/components/store/StoreHeader";
 
 const EMPTY_FORM = { name: "", phone: "", address: "", city: "", notes: "" };
 const inputClass =
-  "w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 transition-all";
+  "w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-300 transition-all";
 
 export default function Cart() {
   const [items, setItems] = useState(/** @type {any[]} */ ([]));
@@ -125,7 +125,7 @@ export default function Cart() {
 
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors mt-7"
+            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors mt-7"
           >
             <ArrowLeft className="w-4 h-4" /> Continuă cumpărăturile
           </Link>
@@ -147,7 +147,7 @@ export default function Cart() {
           <p className="text-sm text-muted-foreground mt-2">Adaugă produse din magazin ca să continui.</p>
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors mt-6"
+            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors mt-6"
           >
             <ArrowLeft className="w-4 h-4" /> Mergi în magazin
           </Link>
@@ -226,7 +226,7 @@ export default function Cart() {
               </div>
               <button
                 onClick={() => setCheckoutOpen(true)}
-                className="w-full mt-5 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl transition-colors"
+                className="w-full mt-5 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 Finalizează comanda
               </button>
@@ -275,7 +275,7 @@ export default function Cart() {
               <button
                 type="submit"
                 disabled={!canSubmit || placing}
-                className="w-full inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 {placing ? (
                   <>

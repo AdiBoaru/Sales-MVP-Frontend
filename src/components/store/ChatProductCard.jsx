@@ -45,7 +45,7 @@ const TONES = {
   success: "bg-emerald-100 text-emerald-700",
   warning: "bg-amber-100 text-amber-800",
   danger: "bg-rose-100 text-rose-700",
-  promo: "bg-violet-100 text-violet-700",
+  promo: "bg-brand-100 text-brand-700",
 };
 const toneClass = (tone) => TONES[tone] || TONES.neutral;
 
@@ -142,7 +142,7 @@ function ScorePill({ score }) {
   if (score == null) return null;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[rgba(56,189,248,0.1)] border border-[rgba(2,132,199,0.25)] shrink-0">
-      <span className="text-[8.5px] font-bold tracking-wide text-[var(--aria-text-3)]">SCOR AI</span>
+      <span className="text-[8.5px] font-bold tracking-wide text-[var(--aria-text-3)]">POTRIVIRE</span>
       <span className="text-xs font-extrabold text-[var(--aria-blue)]">{score}</span>
     </span>
   );
@@ -312,7 +312,7 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
       }}
       className={`flex-1 min-[420px]:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-[11px] border text-xs font-semibold transition-colors ${
         wished
-          ? "bg-[rgba(124,58,237,0.1)] border-[rgba(124,58,237,0.45)] text-[var(--aria-purple)]"
+          ? "bg-[rgba(47,102,76,0.1)] border-[rgba(47,102,76,0.45)] text-[var(--aria-purple)]"
           : "bg-white border-[var(--aria-border-3)] text-[var(--aria-text-2)] hover:border-[var(--aria-purple)]"
       }`}
     >
@@ -468,7 +468,7 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
   // ── Hero card — the primary recommendation ──
   if (variant === "hero") {
     return (
-      <div className="relative bg-white border border-[var(--aria-border)] rounded-[18px] p-3 min-[380px]:p-3.5 shadow-[0_12px_36px_rgba(109,40,217,0.1)] space-y-2.5">
+      <div className="relative bg-white border border-[var(--aria-border)] rounded-[18px] p-3 min-[380px]:p-3.5 shadow-[0_12px_36px_rgba(47,102,76,0.1)] space-y-2.5">
         <div className="flex items-start justify-between gap-2 min-h-[20px]">
           <div className="flex flex-wrap items-center gap-1.5">{badgesRow}</div>
           <ScorePill score={product.score} />
@@ -515,7 +515,7 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
           {linkProps && (
             <a
               {...linkProps}
-              className="flex-1 min-w-[150px] flex items-center justify-center px-3.5 py-2.5 rounded-[11px] aria-gradient-bg text-white text-[12.5px] font-semibold shadow-[0_6px_20px_rgba(109,40,217,0.3)] hover:opacity-90 transition-opacity"
+              className="flex-1 min-w-[150px] flex items-center justify-center px-3.5 py-2.5 rounded-[11px] aria-gradient-bg text-white text-[12.5px] font-semibold shadow-[0_6px_20px_rgba(47,102,76,0.3)] hover:opacity-90 transition-opacity"
             >
               Vezi produsul ↗
             </a>
@@ -617,7 +617,7 @@ function CardImage({ product, variant }) {
       style={
         product.image_url
           ? undefined
-          : { background: "radial-gradient(closest-side at 50% 45%, rgba(124,58,237,0.1), rgba(246,244,251,0) 90%), var(--aria-surface-2)" }
+          : { background: "radial-gradient(closest-side at 50% 45%, rgba(47,102,76,0.1), rgba(246,244,251,0) 90%), var(--aria-surface-2)" }
       }
     >
       {product.image_url ? (

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Sparkles, X, Send, Plus, Minus, Check, ShoppingCart, Trash2,
+  MessageCircle, X, Send, Plus, Minus, Check, ShoppingCart, Trash2,
   ChevronDown, Bookmark, ArrowRight, Mic,
 } from "lucide-react";
 import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
@@ -100,7 +100,7 @@ function ThinkingIndicator() {
           aria-expanded={expanded}
           className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left"
         >
-          <span className="w-[13px] h-[13px] rounded-full border-2 border-[rgba(124,58,237,0.2)] border-t-[#7C3AED] aria-think-spinner shrink-0" />
+          <span className="w-[13px] h-[13px] rounded-full border-2 border-[rgba(47,102,76,0.2)] border-t-[#7C3AED] aria-think-spinner shrink-0" />
           <span className="flex-1 text-xs font-medium truncate text-[var(--aria-purple)]">
             {THINKING_STEPS[stage]}…
           </span>
@@ -150,7 +150,7 @@ function CartView({ onBack }) {
   if (items.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-[var(--aria-bg)]">
-        <div className="w-16 h-16 rounded-2xl bg-[rgba(124,58,237,0.1)] flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-[rgba(47,102,76,0.1)] flex items-center justify-center mb-4">
           <ShoppingCart className="w-8 h-8 text-[var(--aria-purple)]" />
         </div>
         <h3 className="aria-heading text-lg text-[var(--aria-text)]">Coșul tău e gol</h3>
@@ -159,7 +159,7 @@ function CartView({ onBack }) {
         </p>
         <button
           onClick={onBack}
-          className="text-sm font-semibold text-[var(--aria-purple)] bg-[rgba(124,58,237,0.07)] hover:bg-[rgba(124,58,237,0.12)] px-4 py-2 rounded-full transition-colors"
+          className="text-sm font-semibold text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-4 py-2 rounded-full transition-colors"
         >
           Înapoi la chat
         </button>
@@ -305,7 +305,7 @@ function SavedDrawer({ onClose }) {
               <button
                 type="button"
                 onClick={addAllToCart}
-                className="w-full py-3 rounded-xl aria-gradient-bg text-white text-[13px] font-semibold shadow-[0_6px_20px_rgba(109,40,217,0.3)] hover:opacity-90 transition-opacity"
+                className="w-full py-3 rounded-xl aria-gradient-bg text-white text-[13px] font-semibold shadow-[0_6px_20px_rgba(47,102,76,0.3)] hover:opacity-90 transition-opacity"
               >
                 Adaugă tot în coș
               </button>
@@ -368,7 +368,7 @@ function MicButton({ onTranscript, disabled }) {
       title={listening ? "Ascult… apasă pentru stop" : "Dictează"}
       className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
         listening
-          ? "text-[var(--aria-purple)] bg-[rgba(124,58,237,0.1)]"
+          ? "text-[var(--aria-purple)] bg-[rgba(47,102,76,0.1)]"
           : "text-[var(--aria-text-3)] hover:bg-[var(--aria-border-2)]"
       }`}
     >
@@ -526,9 +526,9 @@ export default function ChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 aria-gradient-bg hover:opacity-90 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-violet-300/60 transition-opacity"
+          className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 aria-gradient-bg hover:opacity-90 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-brand-300/60 transition-opacity"
         >
-          <Sparkles className="w-4 h-4" />
+          <MessageCircle className="w-4 h-4" />
           <span className="hidden sm:inline">{BRAND.assistant}</span>
         </button>
       )}
@@ -555,7 +555,7 @@ export default function ChatWidget() {
                 <button
                   onClick={handleReset}
                   title="Începe un chat nou"
-                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(124,58,237,0.07)] hover:bg-[rgba(124,58,237,0.12)] px-2.5 py-1 rounded-full transition-colors"
+                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-2.5 py-1 rounded-full transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Chat nou
                 </button>
@@ -576,7 +576,7 @@ export default function ChatWidget() {
                 onClick={() => setShowCart((s) => !s)}
                 title={showCart ? "Înapoi la chat" : "Vezi coșul"}
                 className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  showCart ? "bg-[rgba(124,58,237,0.1)] text-[var(--aria-purple)]" : "text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
+                  showCart ? "bg-[rgba(47,102,76,0.1)] text-[var(--aria-purple)]" : "text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
                 }`}
               >
                 <ShoppingCart className="w-4 h-4" />
@@ -604,7 +604,7 @@ export default function ChatWidget() {
               {criteria.map((c, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(124,58,237,0.07)] border border-[rgba(124,58,237,0.22)] rounded-full text-[11px] text-[var(--aria-purple)] whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(47,102,76,0.07)] border border-[rgba(47,102,76,0.22)] rounded-full text-[11px] text-[var(--aria-purple)] whitespace-nowrap shrink-0"
                 >
                   <span className="w-1 h-1 rounded-full bg-[#38BDF8] shrink-0" />
                   {c}

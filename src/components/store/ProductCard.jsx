@@ -41,7 +41,7 @@ export default function ProductCard({ product }) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.onSale && (
-            <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-md">
+            <span className="text-[10px] font-bold bg-brand-100 text-brand-700 px-2.5 py-1 rounded-md">
               -{product.discountPercent}%
             </span>
           )}
@@ -92,7 +92,7 @@ export default function ProductCard({ product }) {
             type="button"
             onClick={handleAdd}
             disabled={!product.inStock}
-            className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
             <Plus className="w-3 h-3" /> Adaugă
           </button>

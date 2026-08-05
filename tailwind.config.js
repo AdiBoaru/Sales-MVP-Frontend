@@ -10,6 +10,22 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			/* Storefront accent. Deep apothecary green — the shop's own colour,
+  			   deliberately not the generic SaaS violet. Referenced as bg-brand-600,
+  			   text-brand-700, ring-brand-200, … throughout the store pages. */
+  			brand: {
+  				'50': '#f2f7f4',
+  				'100': '#dfebe4',
+  				'200': '#bfd8c9',
+  				'300': '#94bda6',
+  				'400': '#639b7e',
+  				'500': '#427f61',
+  				'600': '#2f664c',
+  				'700': '#26523e',
+  				'800': '#204233',
+  				'900': '#1b362b',
+  				'950': '#0e1e17'
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

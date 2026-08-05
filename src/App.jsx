@@ -5,9 +5,9 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from '@/lib/PageNotFound';
 import ScrollToTop from '@/components/ScrollToTop';
 
-// Route-level code splitting: each page (and its heavy deps — framer-motion on
-// Landing, supabase on the store routes) lands in its own chunk instead of one
-// monolithic bundle on first paint.
+// Route-level code splitting: each page (and its heavy deps — supabase on the
+// store routes) lands in its own chunk instead of one monolithic bundle on
+// first paint.
 const Landing = lazy(() => import('@/pages/Landing'));
 const Store = lazy(() => import('@/pages/Store'));
 const ProductDetail = lazy(() => import('@/pages/ProductDetail'));
@@ -16,7 +16,7 @@ const Cart = lazy(() => import('@/pages/Cart'));
 function RouteFallback() {
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-gray-200 border-t-violet-600 rounded-full animate-spin" />
+      <div className="w-8 h-8 border-4 border-gray-200 border-t-brand-600 rounded-full animate-spin" />
     </div>
   );
 }

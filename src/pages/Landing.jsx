@@ -1,194 +1,132 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Bot,
-  Check,
-  MessageSquareText,
-  MousePointerClick,
-  Search,
-  ShoppingBag,
-  Sparkles,
-} from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 
-const demoSteps = [
+// Numbered rather than icon-tiled: three glyphs in rounded squares is the house
+// style of every generated landing page, and a numbered list is what an actual
+// "how this demo works" page uses.
+const pasi = [
   {
-    icon: ShoppingBag,
-    title: "Enter the demo store",
-    desc: "You will find a test storefront, built specifically to simulate an AI-assisted shopping experience.",
+    titlu: "Deschide catalogul",
+    text: "Un magazin de test cu produse reale de cosmetice, organizate pe categorii.",
   },
   {
-    icon: Search,
-    title: "Browse the products",
-    desc: "Pick a simple scenario: search for a product, compare a few variants, or start from a concrete need.",
+    titlu: "Caută sau filtrează",
+    text: "Alege o categorie din stânga, caută după nume sau pornește de la o nevoie concretă.",
   },
   {
-    icon: MessageSquareText,
-    title: `Try the ${BRAND.assistant} chat`,
-    desc: "Ask questions the way a real customer would, and watch the assistant offer recommendations, explanations and buying support.",
+    titlu: `Întreabă-o pe ${BRAND.assistant}`,
+    text: "Scrie-i cum i-ai scrie unei consultante din magazin. Îți recomandă, compară și adaugă în coș.",
   },
 ];
 
-const testIdeas = [
-  "I'm looking for a gift under 100 RON.",
-  "Which product suits dry skin?",
-  "Compare two options and recommend one.",
-  "Add the most suitable product to my cart.",
+const intrebari = [
+  "Caut un cadou sub 150 de lei.",
+  "Ce produs mi se potrivește pentru ten uscat?",
+  "Compară două creme și recomandă-mi una.",
+  "Adaugă în coș ce mi-ai recomandat.",
 ];
 
-const highlights = [
-  "Ready to test in minutes",
-  "Online store and AI chat in a single experience",
-  "No setup and no extra account",
+const puncte = [
+  "Fără cont și fără configurare",
+  "Catalog și prețuri reale",
+  "Comandă dusă până la final",
 ];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.08, duration: 0.45, ease: "easeOut" },
-  }),
-};
 
 export default function Landing() {
   return (
-    <main className="aria-lux is-light relative min-h-screen overflow-hidden bg-[var(--color-void)]">
-      {/* Soft accent wash behind the hero, lifting the top of the page. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
-        style={{
-          background:
-            "radial-gradient(60% 100% at 50% 0%, var(--color-glow), transparent 70%)",
-        }}
-      />
+    <main className="aria-lux is-light min-h-screen bg-[var(--color-void)]">
+      <section className="px-4 pt-16 pb-12 md:pt-24 md:pb-16">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-ink-mute)]">
+            Mediu de test — {BRAND.name}
+          </p>
 
-      <section className="relative px-4 py-14 md:py-20">
-        <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--color-hair)] bg-[var(--color-chip)] px-4 py-2 text-sm font-medium text-[var(--color-accent-ink)]"
-          >
-            <Bot className="h-4 w-4" />
-            AI Sales Assistant — demo access
-          </motion.div>
+          <h1 className="mt-5 font-heading text-3xl font-bold leading-tight tracking-tight text-[var(--color-ink)] md:text-5xl">
+            Magazinul demo pe care l-ai primit la înscriere
+          </h1>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.08 }}
-            className="mt-7 max-w-3xl font-heading text-4xl font-bold leading-tight tracking-tight text-[var(--color-ink)] md:text-6xl"
-          >
-            Experience an online store guided by AI
-          </motion.h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-[var(--color-ink-soft)]">
+            Poți parcurge catalogul, discuta cu asistentul și duce o comandă până la
+            final. Nimic nu se facturează și nu ai nevoie de cont — datele introduse
+            rămân în sesiunea ta.
+          </p>
 
-          <motion.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.16 }}
-            className="mt-5 max-w-2xl text-base leading-relaxed text-[var(--color-ink-soft)] md:text-lg"
-          >
-            This site is the test environment you received after signing up for the demo.
-            In just a few minutes you can explore the store, talk to {BRAND.assistant}, and
-            see how AI supports a buying decision.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35, delay: 0.24 }}
-            className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
-          >
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               to="/store"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-8 py-3.5 text-base font-semibold text-[var(--color-on-accent)] transition-colors duration-200 hover:bg-[var(--color-accent-hover)]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-7 py-3 text-[15px] font-semibold text-[var(--color-on-accent)] transition-colors hover:bg-[var(--color-accent-hover)]"
             >
-              Start testing <ArrowRight className="h-4 w-4" />
+              Intră în magazin <ArrowRight className="h-4 w-4" />
             </Link>
             <span className="text-sm text-[var(--color-ink-mute)]">
-              Demo store and AI chat
+              Durează 2–3 minute
             </span>
-          </motion.div>
+          </div>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {highlights.map((item) => (
-              <span
-                key={item}
-                className="inline-flex items-center gap-1.5 text-sm text-[var(--color-ink-faint)]"
-              >
-                <Check className="h-4 w-4 text-[var(--color-accent-ink)]" />
-                {item}
-              </span>
+          <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-1.5">
+            {puncte.map((p) => (
+              <li key={p} className="text-sm text-[var(--color-ink-faint)]">
+                {p}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      <section className="relative px-4 pb-14">
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
-          {demoSteps.map((step, i) => (
-            <motion.article
-              key={step.title}
-              custom={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              className="rounded-2xl border border-[var(--color-hair)] bg-[var(--color-surface)] p-6"
-            >
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-chip)] text-[var(--color-accent-ink)]">
-                <step.icon className="h-5 w-5" />
-              </div>
-              <h2 className="font-heading text-lg font-semibold text-[var(--color-ink)]">
-                {step.title}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
-                {step.desc}
-              </p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <section className="relative px-4 pb-20">
-        <div className="mx-auto grid max-w-5xl gap-6 rounded-3xl border border-[var(--color-hair)] bg-[var(--color-surface)] p-6 md:grid-cols-[1fr_1.15fr] md:p-8">
-          <div>
-            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-chip)] text-[var(--color-accent-ink)]">
-              <MousePointerClick className="h-5 w-5" />
-            </div>
-            <h2 className="font-heading text-2xl font-bold text-[var(--color-ink)]">
-              How to test the demo
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--color-ink-soft)]">
-              Use the chat exactly as a customer who wants to buy faster and better informed
-              would. Ask for recommendations, comparisons, product details, or help adding an
-              item to the cart.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {testIdeas.map((idea, i) => (
-              <motion.div
-                key={idea}
-                custom={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="flex items-center gap-3 rounded-2xl border border-[var(--color-hair)] bg-[var(--color-surface-2)] px-4 py-3 text-left text-sm text-[var(--color-ink)]"
-              >
-                <Sparkles className="h-4 w-4 flex-shrink-0 text-[var(--color-accent-ink)]" />
-                <span>{idea}</span>
-              </motion.div>
+      <section className="border-t border-[var(--color-hair)] px-4 py-12 md:py-16">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="font-heading text-xl font-bold text-[var(--color-ink)]">
+            Cum parcurgi demo-ul
+          </h2>
+          <ol className="mt-7 space-y-7">
+            {pasi.map((pas, i) => (
+              <li key={pas.titlu} className="flex gap-5">
+                <span className="w-6 flex-shrink-0 font-heading text-lg font-bold tabular-nums text-[var(--color-accent-ink)]">
+                  {i + 1}.
+                </span>
+                <div>
+                  <h3 className="font-heading text-base font-semibold text-[var(--color-ink)]">
+                    {pas.titlu}
+                  </h3>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+                    {pas.text}
+                  </p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
+
+      <section className="border-t border-[var(--color-hair)] px-4 py-12 md:py-16">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="font-heading text-xl font-bold text-[var(--color-ink)]">
+            Idei de întrebări
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+            Cel mai bine se vede pe o nevoie concretă. Câteva începuturi de conversație:
+          </p>
+          <ul className="mt-6 space-y-3">
+            {intrebari.map((intrebare) => (
+              <li
+                key={intrebare}
+                className="border-l-2 border-[var(--color-hair)] pl-4 text-sm italic text-[var(--color-ink)]"
+              >
+                „{intrebare}”
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <footer className="border-t border-[var(--color-hair)] px-4 py-8">
+        <div className="mx-auto max-w-3xl text-xs text-[var(--color-ink-faint)]">
+          {BRAND.name} — {BRAND.tagline}. Mediu de demonstrație; comenzile nu se
+          procesează.
+        </div>
+      </footer>
     </main>
   );
 }

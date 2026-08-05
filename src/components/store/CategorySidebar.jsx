@@ -39,7 +39,7 @@ export default function CategorySidebar({ categories = [], selected, onSelect, c
         onClick={() => onSelect(slug)}
         className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all duration-150 ${
           child ? "text-[13px] ml-4" : "text-sm"
-        } ${isActive ? "bg-violet-600 text-white font-semibold shadow-sm" : "text-foreground hover:bg-gray-50"}`}
+        } ${isActive ? "bg-brand-600 text-white font-semibold shadow-sm" : "text-foreground hover:bg-gray-50"}`}
       >
         {Icon ? (
           <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-muted-foreground"}`} />
@@ -51,7 +51,7 @@ export default function CategorySidebar({ categories = [], selected, onSelect, c
           />
         )}
         <span className="truncate flex-1">{label}</span>
-        <span className={`text-[10px] font-medium ${isActive ? "text-violet-200" : "text-muted-foreground"}`}>
+        <span className={`text-[10px] font-medium ${isActive ? "text-brand-200" : "text-muted-foreground"}`}>
           {count.toLocaleString("ro-RO")}
         </span>
       </button>

@@ -56,7 +56,7 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-gray-50/50">
         <StoreHeader />
         <div className="flex items-center justify-center py-32">
-          <div className="w-8 h-8 border-4 border-gray-200 border-t-violet-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-brand-600 rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -70,7 +70,7 @@ export default function ProductDetail() {
           <p className="text-muted-foreground mb-6">Produsul nu a fost găsit.</p>
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Înapoi în magazin
           </Link>
@@ -118,7 +118,7 @@ export default function ProductDetail() {
                     key={i}
                     onClick={() => setActiveImage(i)}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                      i === activeImage ? "border-violet-600" : "border-gray-100 hover:border-gray-200"
+                      i === activeImage ? "border-brand-600" : "border-gray-100 hover:border-gray-200"
                     }`}
                   >
                     <img src={img.url} alt={img.alt || product.name} className="w-full h-full object-cover" />
@@ -150,7 +150,7 @@ export default function ProductDetail() {
                   <span className="text-lg text-muted-foreground line-through">
                     {formatCurrency(product.price, product.currency)}
                   </span>
-                  <span className="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-md">
+                  <span className="text-xs font-bold bg-brand-100 text-brand-700 px-2.5 py-1 rounded-md">
                     -{product.discountPercent}%
                   </span>
                 </>
@@ -198,7 +198,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleAdd}
                 disabled={!product.inStock}
-                className="flex-1 inline-flex items-center justify-center gap-2 border border-violet-600 text-violet-700 hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold px-5 py-2.5 rounded-xl transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 border border-brand-600 text-brand-700 hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold px-5 py-2.5 rounded-xl transition-colors"
               >
                 <ShoppingCart className="w-4 h-4" /> Adaugă în coș
               </button>
@@ -207,7 +207,7 @@ export default function ProductDetail() {
             <button
               onClick={handleBuyNow}
               disabled={!product.inStock}
-              className="w-full mt-3 inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl transition-colors"
+              className="w-full mt-3 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl transition-colors"
             >
               Cumpără acum
             </button>
