@@ -1,50 +1,101 @@
 import { supabase } from "@/api/supabaseClient";
 
-// ── Category classifier ───────────────────────────────────────────────────────
-// The `categories` table is NOT anon-readable and `primary_category_id` doesn't
-// map cleanly, so categories are DERIVED from the product name via ilike,
-// server-side (keeps pagination + exact counts). `priority` resolves overlaps —
-// LOWER number wins — so each product is counted once. Validated on all ~500
-// products. Keep this array verbatim (see IMPLEMENTATION.md §5a).
-export const CATEGORIES = [
-  { value: "seruri",    label: "Seruri & Esențe",          priority: 9,  keywords: ["ser"] },
-  { value: "creme",     label: "Creme & Hidratare",        priority: 11, keywords: ["crema", "ulei"] },
-  { value: "masti",     label: "Măști",                    priority: 10, keywords: ["masca"] },
-  { value: "toner",     label: "Tonere & Ape",             priority: 8,  keywords: ["toner"] },
-  { value: "curatare",  label: "Curățare & Demachiere",    priority: 2,  keywords: ["de curatare", "micelar", "demachiant"] },
-  { value: "accesorii", label: "Pensule & Accesorii",      priority: 7,  keywords: ["pensula", "burete", "accesoriu"] },
-  { value: "par",       label: "Păr & Șampon",             priority: 4,  keywords: ["sampon", "balsam"] },
-  { value: "machiaj",   label: "Machiaj",                  priority: 6,  keywords: ["ruj","gloss","fond de ten","de buze","fard","pudra","corector","rimel","creion","iluminator"] },
-  { value: "spf",       label: "Protecție solară (SPF)",   priority: 1,  keywords: ["spf"] },
-  { value: "corp",      label: "Corp & Deodorante",        priority: 3,  keywords: ["de dus", "deodorant"] },
-  { value: "parfum",    label: "Parfumuri",                priority: 5,  keywords: ["parfum"] },
-  { value: "diverse",   label: "Diverse",                  priority: 99, keywords: [] }, // fallback
-];
+// ── Categories ────────────────────────────────────────────────────────────────
+// Read from the DB, not guessed. Source is the `store_categories` view (migration
+// 039): it exposes only categories that actually carry active products — 6 roots
+// over ~36 children, from the 102 rows in the table — each with a SUBTREE product
+// count. One request feeds both the menu and its badges.
+//
+// The view deliberately omits `categories.path`: 19 of 102 rows have a `path`
+// that contradicts `parent_id`, so the hierarchy comes from `parent_id` alone.
+const CATEGORY_SELECT = "id,parent_id,name,slug,product_count";
 
-const ALL_KEYWORDS = CATEGORIES.flatMap((c) => c.keywords);
+// { tree, bySlug, subtreeIds } — resolved once per session. We cache the PROMISE
+// so concurrent callers (sidebar + product query, on first paint) share a single
+// request instead of racing two.
+let categoriesPromise = null;
 
-// Apply a category filter to a Supabase query builder.
-// For a category: OR over its own keywords, then EXCLUDE the keywords of every
-// higher-priority category (lower number). `diverse` = matches no keyword at all.
-function applyCategoryFilter(query, categoryValue) {
-  if (!categoryValue || categoryValue === "all") return query;
+function buildCategoryIndex(rows) {
+  const bySlug = new Map();
+  const byId = new Map();
+  const childrenOf = new Map();
 
-  const cat = CATEGORIES.find((c) => c.value === categoryValue);
-  if (!cat) return query;
-
-  if (cat.value === "diverse") {
-    for (const kw of ALL_KEYWORDS) query = query.not("name", "ilike", `%${kw}%`);
-    return query;
+  for (const r of rows) {
+    const cat = {
+      id: r.id,
+      parentId: r.parent_id,
+      name: r.name,
+      slug: r.slug,
+      productCount: r.product_count ?? 0,
+      children: [],
+    };
+    bySlug.set(cat.slug, cat);
+    byId.set(cat.id, cat);
+  }
+  for (const cat of byId.values()) {
+    const siblings = childrenOf.get(cat.parentId) || [];
+    siblings.push(cat);
+    childrenOf.set(cat.parentId, siblings);
   }
 
-  const orExpr = cat.keywords.map((kw) => `name.ilike.%${kw}%`).join(",");
-  if (orExpr) query = query.or(orExpr);
-
-  const higher = CATEGORIES.filter((c) => c.priority < cat.priority);
-  for (const c of higher) {
-    for (const kw of c.keywords) query = query.not("name", "ilike", `%${kw}%`);
+  const byCount = (a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name, "ro");
+  for (const cat of byId.values()) {
+    cat.children = (childrenOf.get(cat.id) || []).sort(byCount);
   }
-  return query;
+  // The exposed set is closed upwards — a category with products always has its
+  // parent exposed too — so a null parent really does mean "root".
+  const tree = [...byId.values()].filter((c) => !c.parentId).sort(byCount);
+
+  // A root's filter must match products hanging off it directly AND off any
+  // descendant: "Îngrijirea buzelor" holds its 7 products on the root itself,
+  // while "Machiaj" holds all 101 on children.
+  const subtreeIds = new Map();
+  const collect = (cat) => {
+    const ids = [cat.id];
+    for (const child of cat.children) ids.push(...collect(child));
+    subtreeIds.set(cat.slug, ids);
+    return ids;
+  };
+  for (const root of tree) collect(root);
+
+  return { tree, bySlug, subtreeIds };
+}
+
+function loadCategories() {
+  if (!supabase) return Promise.resolve(buildCategoryIndex([]));
+  if (!categoriesPromise) {
+    categoriesPromise = supabase
+      .from("store_categories")
+      .select(CATEGORY_SELECT)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[catalog] loadCategories:", error.message);
+          categoriesPromise = null; // let the next caller retry
+          return buildCategoryIndex([]);
+        }
+        return buildCategoryIndex(data || []);
+      });
+  }
+  return categoriesPromise;
+}
+
+// Restrict a query to one category's subtree. Unknown slug → left unfiltered,
+// same as the old classifier did for an unknown value.
+async function applyCategoryFilter(query, categorySlug) {
+  if (!categorySlug || categorySlug === "all") return query;
+  const { subtreeIds } = await loadCategories();
+  const ids = subtreeIds.get(categorySlug);
+  if (!ids || !ids.length) return query;
+  return query.in("primary_category_id", ids);
+}
+
+/**
+ * Menu tree: roots, each with `children`, both carrying `productCount`.
+ * @returns {Promise<Array<{id: string, parentId: string|null, name: string, slug: string, productCount: number, children: any[]}>>}
+ */
+export async function listCategories() {
+  const { tree } = await loadCategories();
+  return tree;
 }
 
 // Strip characters that would break a PostgREST .or() filter string.
@@ -137,7 +188,7 @@ export async function listProducts({ search, category, sort, limit = 24, offset 
   if (!supabase) return [];
   let query = supabase.from("products").select(LIST_SELECT).eq("status", "active");
   query = applySearchFilter(query, search);
-  query = applyCategoryFilter(query, category);
+  query = await applyCategoryFilter(query, category);
   query = applySort(query, sort);
   query = query.range(offset, offset + limit - 1);
 
@@ -172,7 +223,7 @@ export async function countProducts({ search, category } = {}) {
     .select("id", { count: "exact", head: true })
     .eq("status", "active");
   query = applySearchFilter(query, search);
-  query = applyCategoryFilter(query, category);
+  query = await applyCategoryFilter(query, category);
 
   const { count, error } = await query;
   if (error) {
@@ -182,12 +233,14 @@ export async function countProducts({ search, category } = {}) {
   return count || 0;
 }
 
-// { all, seruri, creme, ... } for the sidebar badges.
+// { all, "machiaj": 101, "rujuri": 6, ... } — slug → subtree count, for the
+// sidebar badges. The counts ride along with the category list, so this costs
+// one request for every category plus one for the `all` total; it used to be one
+// count query per category.
 export async function countCategories() {
   if (!supabase) return { all: 0 };
-  const entries = await Promise.all(
-    CATEGORIES.map(async (c) => [c.value, await countProducts({ category: c.value })])
-  );
-  const all = await countProducts({});
-  return { all, ...Object.fromEntries(entries) };
+  const [{ bySlug }, all] = await Promise.all([loadCategories(), countProducts({})]);
+  const counts = { all };
+  for (const cat of bySlug.values()) counts[cat.slug] = cat.productCount;
+  return counts;
 }

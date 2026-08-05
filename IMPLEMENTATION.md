@@ -171,44 +171,42 @@ Citește `VITE_SUPABASE_URL` și `VITE_SUPABASE_ANON_KEY` din `import.meta.env`.
   sale_price, availability, status, stock_total, rating, review_count, product_url,
   primary_category_id`.
 - Tabel **`product_images`**: `url, alt, position` (legat de produs; ordonat după `position`).
-- Tabel **`categories`** — **există, dar NU e citibil de rolul anon** (vezi mai jos).
-- **RLS:** public-read pe `products` + `product_images` (anon key). Interogările filtrează
-  mereu `status = 'active'`. Catalog ≈ **500 de produse**.
+- Tabel **`categories`**: `id, parent_id, name, slug, path` — ierarhie pe `parent_id`.
+- View **`store_categories`**: `id, parent_id, name, slug, product_count` — doar categoriile
+  care poartă produse active, cu numărătoarea pe **subarbore**. Sursa meniului (vezi mai jos).
+- **RLS:** public-read pe `products` + `product_images` + `categories` (anon key). Interogările
+  filtrează mereu `status = 'active'`. Catalog = **300 de produse active**.
 
 **API-ul** (`src/api/catalog.js`) expune:
 - `listProducts({ search, category, limit=24, offset=0 })`
 - `getProduct(id)` (pentru pagina de produs)
 - `countProducts({ search, category })`
-- `countCategories()` → `{ all, seruri, creme, … }` pentru badge-urile din sidebar
+- `listCategories()` → arborele meniului (rădăcini cu `children`), din `store_categories`
+- `countCategories()` → `{ all, machiaj: 101, rujuri: 6, … }` (slug → count) pentru badge-uri
 - `mapProduct(row)` — normalizează rândul DB în forma consumată de UI:
   calculează `onSale`, `effectivePrice`, `inStock`, alege prima imagine etc.
 
-#### ⭐ Partea grea: clasificarea pe categorii prin cuvinte-cheie
-Pentru că tabelul `categories` nu e citibil de anon și `primary_category_id` nu se mapează
-curat, **categoriile se derivă din numele produsului** prin `ilike`, server-side (păstrează
-paginarea și numărătoarea exactă). `priority` rezolvă suprapunerile (număr mai mic câștigă),
-ca un produs să fie numărat o singură dată. **Validat pe toate cele 500 de produse.**
-Păstrează acest array verbatim la rebuild:
+#### Categoriile vin din DB (migrarea 039 în repo-ul Sales-Ass)
+`category` din `listProducts`/`countProducts` e un **slug de categorie**, rezolvat în id-urile
+subarborelui și aplicat ca `.in("primary_category_id", ids)`. Filtrul pe subarbore, nu pe rândul
+propriu, e obligatoriu: unele produse stau direct pe rădăcină („Îngrijirea buzelor": 7,
+„Protecție solară": 6), altele pe frunze („Machiaj": toate cele 101).
 
-```js
-export const CATEGORIES = [
-  { value: "seruri",    label: "Seruri & Esențe",          priority: 9,  keywords: ["ser"] },
-  { value: "creme",     label: "Creme & Hidratare",        priority: 11, keywords: ["crema", "ulei"] },
-  { value: "masti",     label: "Măști",                    priority: 10, keywords: ["masca"] },
-  { value: "toner",     label: "Tonere & Ape",             priority: 8,  keywords: ["toner"] },
-  { value: "curatare",  label: "Curățare & Demachiere",    priority: 2,  keywords: ["de curatare", "micelar", "demachiant"] },
-  { value: "accesorii", label: "Pensule & Accesorii",      priority: 7,  keywords: ["pensula", "burete", "accesoriu"] },
-  { value: "par",       label: "Păr & Șampon",             priority: 4,  keywords: ["sampon", "balsam"] },
-  { value: "machiaj",   label: "Machiaj",                  priority: 6,  keywords: ["ruj","gloss","fond de ten","de buze","fard","pudra","corector","rimel","creion","iluminator"] },
-  { value: "spf",       label: "Protecție solară (SPF)",   priority: 1,  keywords: ["spf"] },
-  { value: "corp",      label: "Corp & Deodorante",        priority: 3,  keywords: ["de dus", "deodorant"] },
-  { value: "parfum",    label: "Parfumuri",                priority: 5,  keywords: ["parfum"] },
-  { value: "diverse",   label: "Diverse",                  priority: 99, keywords: [] }, // fallback
-];
-```
-Logica de filtrare (`applyCategoryFilter`): pentru o categorie aplică `OR` pe cuvintele ei,
-apoi **exclude** cuvintele categoriilor cu prioritate mai mare; `diverse` = tot ce nu prinde
-niciun cuvânt-cheie.
+Arborele se calculează **exclusiv prin `parent_id`**. Coloana `categories.path` există, dar
+19 din 102 rânduri au un `path` care contrazice `parent_id` (rămășiță din taxonomia sursă) —
+de aceea `store_categories` nici nu o expune.
+
+Taxonomia reală: 6 rădăcini peste ~36 subcategorii folosite, acoperind toate cele 300 de produse
+— Îngrijirea tenului (104), Machiaj (101), Îngrijirea părului (48), Îngrijire corp (34),
+Îngrijirea buzelor (7), Protecție solară (6).
+
+> **Istoric (până în aug. 2026):** `categories` nu avea policy de citire pentru `anon`, așa că
+> `catalog.js` își *deriva* categoriile din numele produsului cu ~27 de cuvinte-cheie `ilike`
+> (array-ul `CATEGORIES` + `applyCategoryFilter`, cu `priority` pentru suprapuneri). Măsurat pe
+> catalogul de atunci, paliativul punea **186 din 300 de produse (62%) în „Diverse"**, iar
+> „Tonere" și „Parfumuri" ieșeau goale: `ilike` nu ignoră diacriticele, iar cheile erau scrise
+> fără ele („masca" nu prinde „Măști", „sampon" nu prinde „Șampoane"). **Nu reintroduce
+> clasificatorul** — datele au categorii reale pe `primary_category_id`, complete 300/300.
 
 ### 5b. Entity stub pe localStorage (admin — FALS, demo)
 `src/api/client.js` → `createEntityClient(schema)` oferă `list/filter/get/create/update/
@@ -261,8 +259,9 @@ delete/bulkCreate`, persistate în `localStorage` cu prefixul `sales-mvp:`.
 - `EmagNavbar` — logo (`BRAND.logoText`), search, link „Chat" (→ `/Shop?chat=1`), coș cu badge;
   bară secundară cu „Produse" și „Cum funcționează".
 - `EmagHeroBanner` — carusel cu 3 sloturi (gradient + emoji), auto-rotate la 4s.
-- `EmagCategorySidebar` — „Toate produsele" + departamentul „Beauty" cu subcategoriile din
-  `CATEGORIES`, fiecare cu iconiță lucide și count.
+- `EmagCategorySidebar` — „Toate produsele" + departamentul „Beauty" cu subcategorii, fiecare cu
+  iconiță lucide și count. (Înlocuit între timp de `components/store/CategorySidebar.jsx`, care
+  primește arborele din DB prin prop-ul `categories`; iconițele se mapează pe slug.)
 - `ProductCard` — card cu imagine (fallback Unsplash), badge reducere/stoc, rating, preț, „Adaugă".
 
 ---
@@ -395,9 +394,11 @@ server-dir: ./domains/nativextech.com/public_html/shop/   # docroot-ul subdomeni
    `orders`/`order_items` + RLS de insert) sau predate botului/altui serviciu.
 2. **Catalogul e read-only din frontend.** Produsele se administrează în afara acestui app
    (Supabase direct / pipeline separat). Adminul din UI lucrează pe alt set de date (localStorage).
-3. **Categoriile sunt derivate prin cuvinte-cheie**, fiindcă tabelul `categories` nu e
-   anon-readable. Mai curat la rebuild: fie expunem `categories` prin RLS, fie punem o coloană
-   de categorie pe `products`. Până atunci, păstrăm clasificatorul din §5a.
+3. ~~Categoriile sunt derivate prin cuvinte-cheie~~ — **rezolvat** (aug. 2026, migrarea
+   `docs/039_public_read_categories.sql` din repo-ul Sales-Ass): `categories` e citibil de anon,
+   limitat la categoriile care chiar au produse, iar meniul vine din view-ul `store_categories`.
+   Rămâne de curățat în **date**: 64 din 102 categorii sunt goale, iar `path` contrazice
+   `parent_id` pe 19 rânduri (vezi §5a).
 4. **Fără autentificare.** `AuthContext` e un provider „gol" (vizitatori anonimi). Adminul nu
    e protejat. De decis dacă noul site are login (Supabase Auth?).
 5. **Numele cheii de coș** e `hamro-pasal-cart` (rămășiță template). Poate fi redenumit, dar
@@ -413,7 +414,8 @@ Când avem designul nou (din base44 sau alt builder), strategia e:
 
 ### ✅ Se păstrează ca atare (logica grea — copy-paste + ajustări mici)
 - `src/api/supabaseClient.js` — clientul Supabase.
-- `src/api/catalog.js` — **inclusiv `CATEGORIES` și `applyCategoryFilter`** (validate pe 500 produse).
+- `src/api/catalog.js` — inclusiv rezolvarea categoriilor pe subarbore (§5a). **Nu** reintroduce
+  clasificatorul pe cuvinte-cheie, oricât de „validat" ar suna în versiunile vechi ale acestui doc.
 - `src/api/chatClient.js` — transportul botului (bootstrap/chat/403/reset).
 - `vite.config.js` — **proxy-ul `/web` cu spoof de Origin** (altfel chat-ul nu merge în dev).
 - `.github/workflows/deploy.yml` — pipeline-ul FTPS + `server-dir` Hostinger.

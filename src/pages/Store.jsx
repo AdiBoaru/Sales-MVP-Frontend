@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, ShoppingCart, Sparkles, Menu, X } from "lucide-react";
-import { listProducts, countProducts, countCategories } from "@/api/catalog";
+import { listProducts, countProducts, countCategories, listCategories } from "@/api/catalog";
 import ProductCard from "@/components/store/ProductCard";
 import CategorySidebar from "@/components/store/CategorySidebar";
 import Pagination from "@/components/store/Pagination";
@@ -16,6 +16,7 @@ const ITEMS_PER_PAGE = 12;
 // network request refreshes them in the background.
 const listCache = new Map(); // key -> { products, total }
 let categoryCountsCache = null;
+let categoryTreeCache = null;
 
 function ProductCardSkeleton() {
   return (
@@ -45,6 +46,7 @@ const sortOptions = [
 export default function Store() {
   const [products, setProducts] = useState(/** @type {any[]} */ ([]));
   const [total, setTotal] = useState(0);
+  const [categories, setCategories] = useState(/** @type {any[]} */ (categoryTreeCache || []));
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -63,9 +65,14 @@ export default function Store() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Category badge counts (once) — show cached instantly, then revalidate.
+  // Category menu + badge counts (once) — show cached instantly, then revalidate.
+  // Both come from the same `store_categories` read, so this is one round trip.
   useEffect(() => {
     if (categoryCountsCache) setCategoryCounts(categoryCountsCache);
+    listCategories().then((tree) => {
+      categoryTreeCache = tree;
+      setCategories(tree);
+    });
     countCategories().then((c) => {
       categoryCountsCache = c;
       setCategoryCounts(c);
@@ -183,7 +190,12 @@ export default function Store() {
           {/* Sidebar - Desktop */}
           <aside className="hidden md:block w-56 flex-shrink-0">
             <div className="sticky top-20">
-              <CategorySidebar selected={category} onSelect={handleCategorySelect} counts={categoryCounts} />
+              <CategorySidebar
+                categories={categories}
+                selected={category}
+                onSelect={handleCategorySelect}
+                counts={categoryCounts}
+              />
             </div>
           </aside>
 
@@ -198,7 +210,12 @@ export default function Store() {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <CategorySidebar selected={category} onSelect={handleCategorySelect} counts={categoryCounts} />
+                <CategorySidebar
+                  categories={categories}
+                  selected={category}
+                  onSelect={handleCategorySelect}
+                  counts={categoryCounts}
+                />
               </div>
             </div>
           )}
