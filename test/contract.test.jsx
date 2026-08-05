@@ -43,7 +43,10 @@ describe("contract conformance — every payload shape renders faithfully", () =
     }
     if (a.dash === true) expect(container).toHaveTextContent("—");
     if (a.discountBadge === true) expect(container.innerHTML).toMatch(/-\d+%/);
-    if (a.lineBreak === true) expect(container.innerHTML).toMatch(/<br/);
+    // Blank-line-separated content becomes distinct <p> blocks, never one run-on line.
+    if (a.paragraphs != null) {
+      expect(container.querySelectorAll(".aria-reply > p")).toHaveLength(a.paragraphs);
+    }
     if (a.moreDetails === true) expect(container).toHaveTextContent("Spune-mi mai multe");
     if (a.emptyFallback === true) expect(container).toHaveTextContent(EMPTY_REPLY_FALLBACK);
     if (a.noBubble === true) expect(container.querySelector(".rounded-2xl")).toBeNull();

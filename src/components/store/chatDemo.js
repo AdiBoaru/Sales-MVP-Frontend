@@ -12,6 +12,51 @@ export function demoMessages() {
       role: "assistant",
       content: `Bună! Sunt **Aria**, asistenta ta de cumpărături. Spune-mi ce cauți și îți găsesc produsele potrivite.`,
     },
+    // The izi answer rhythm: bold lead, accent summary line, a card, then section
+    // headings + a green-check feature list parsed straight out of the markdown.
+    { role: "user", content: "vreau mai multe detalii despre primul ruj" },
+    {
+      role: "assistant",
+      content:
+        "**Primul ruj este un ruj clasic solid, foarte accesibil, care pornește verde și se transformă " +
+        "în roz/roșu cyclam pe buze, cu rezistență bună la transfer.**\n\n" +
+        "E gândit pentru un machiaj de zi cu culoare vizibilă și efect interesant de schimbare de culoare.\n\n" +
+        "## De ce ți-l recomand\n" +
+        "Ruj clasic solid, inițial verde, care se transformă în roz/roșu cyclam cu acoperire completă și " +
+        "aspect perlat, rezistent la transfer, ideal pentru machiaj de zi.\n\n" +
+        "## Funcționalități principale\n" +
+        "- Schimbare de culoare unică — rujul verde devine roz/roșu cyclam pentru un efect vizibil pe buze.\n" +
+        "- Rezistență la transfer — asigură un machiaj de durată fără pete pe obiecte.\n" +
+        "- Acoperire completă și aspect perlat — oferă un finisaj uniform și strălucitor buzelor.\n" +
+        "- Preț accesibil și rating bun — costă sub 10 lei și are o evaluare de 4.11 din 5, bazată pe 35 de recenzii.\n\n" +
+        "## Ce spun clienții\n" +
+        "Majoritatea recenziilor sunt pozitive, utilizatorii apreciază nuanța roz plăcută obținută prin schimbare, " +
+        "textura cremoasă și raportul calitate-preț. Există însă unele rezerve legate de miros și uscăciune.",
+      products: [
+        {
+          product_id: null,
+          name: "Ruj verde care isi schimba culoarea in Roz/Rosu Cyclam, rezistent la transfer",
+          price: 7.87,
+          currency: "RON",
+          image_url: "https://picsum.photos/seed/rujverde/240",
+          url: "#",
+          rating: 4.11,
+          review_count: 35,
+          reason: "Ruj solid foarte ieftin, acoperire completă, perlat, cu efect de schimbare de culoare.",
+          badges: [{ label: "Top Favorite", tone: "info" }],
+          details:
+            "**Textură și finisaj**\nRuj solid, perlat, cu acoperire completă. Nuanța finală variază ușor " +
+            "în funcție de pH-ul buzelor tale.\n\n**Cum se aplică**\n- Hidratează buzele înainte.\n" +
+            "- Aplică un strat subțire și lasă 30 de secunde pentru dezvoltarea culorii.",
+        },
+      ],
+      suggestions: [
+        "Care este durata rezistenței rujului?",
+        "Cum se aplică corect rujul solid?",
+        "Există alte nuanțe disponibile în această gamă?",
+      ],
+    },
+
     { role: "user", content: "Caut un fluid matifiant bun pentru ten gras, sub 120 lei" },
     {
       role: "assistant",

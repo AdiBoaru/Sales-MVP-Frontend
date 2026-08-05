@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Star, ShoppingCart, Heart, ChevronDown, Package,
+  Star, ShoppingCart, Heart, ChevronRight, ChevronDown, Package, Sparkles,
   Truck, Tag, Percent, ShieldCheck, Clock, Gift, Info,
 } from "lucide-react";
 import { addToCart } from "@/lib/cart";
@@ -9,7 +9,10 @@ import { formatCurrency } from "@/utils";
 import RichText from "@/components/store/RichText";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Generic visual layer for a chat product card.
+// Chat product card — the izi layout: one uniform card for every product in a
+// reply (no hero/grid split), image on the left, solid badge pills, star row,
+// big red price with raised decimals, blue cart button, then the one-line
+// reason and a full-width "Spune-mi mai multe" bar.
 //
 // NOTHING here is domain-specific: the card renders whatever optional fields the
 // backend sends and skips the rest. The bot owns the CONTENT (labels, text, which
@@ -19,43 +22,49 @@ import RichText from "@/components/store/RichText";
 // Consumed shape (every field past name/price is optional):
 //   { name, price, list_price?, currency?, image_url?, url?, product_id?,
 //     rating?, review_count?, reason?,
-//     badges?:    [{ label, tone }]            // pills at the top
+//     badges?:    [{ label, tone }]            // solid pills above the name
 //     highlights?:[{ text, tone, icon }]       // promo/delivery/urgency rows
 //     meta?:      [{ label, value }]            // key/value lines (e.g. delivery date)
 //     details?:   "markdown"                    // "Spune-mi mai multe" body
 //     score?: number, why?, best?, avoid?, pros?: [string], cons?: [string]
 //   }
 //
-// `variant` picks the layout — chosen by the caller (ChatMessage), never by the
-// card itself:
-//   "compact" (default) — small horizontal card; upgrades to the old full
-//                          vertical layout automatically once `highlights` arrive.
-//   "hero"    — the primary recommendation in a multi-product reply: adds the
-//               AI-score pill, "why I chose this", ideal-for/avoid and an
-//               expandable pros/cons block — every one of them only if the bot
-//               actually sent the field.
-//   "grid"    — compact tile for the secondary products, laid out 2-up.
+// The reasoning fields (why / pros / cons / best / avoid / changes) render BELOW
+// the card box as izi-style sections ("De ce ți-l recomand", "Funcționalități
+// principale"…), not inside it — same as the reference.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Visual tones, decoupled from meaning. The bot picks a tone per label; the
+// Solid badge tones, decoupled from meaning. The bot picks a tone per label; the
 // frontend maps it to colors here. Add a tone in ONE place to roll it everywhere.
 const TONES = {
-  neutral: "bg-gray-100 text-gray-700",
-  info: "bg-sky-100 text-sky-700",
-  success: "bg-emerald-100 text-emerald-700",
-  warning: "bg-amber-100 text-amber-800",
-  danger: "bg-rose-100 text-rose-700",
-  promo: "bg-brand-100 text-brand-700",
+  neutral: "bg-[#6c7180]",
+  info: "bg-[#1c7ed6]",
+  success: "bg-[#0ca678]",
+  warning: "bg-[#f76707]",
+  danger: "bg-[#e03131]",
+  promo: "bg-[#7048e8]",
 };
 const toneClass = (tone) => TONES[tone] || TONES.neutral;
+
+// Soft variants for the highlight rows (delivery / voucher / urgency) — the same
+// tone vocabulary, but tinted instead of solid so they don't fight the badges.
+const SOFT_TONES = {
+  neutral: "bg-gray-100 text-gray-700",
+  info: "bg-sky-50 text-sky-700",
+  success: "bg-emerald-50 text-emerald-700",
+  warning: "bg-amber-50 text-amber-800",
+  danger: "bg-rose-50 text-rose-700",
+  promo: "bg-violet-50 text-violet-700",
+};
+const softToneClass = (tone) => SOFT_TONES[tone] || SOFT_TONES.neutral;
 
 // Soft fallback for badges that arrive WITHOUT an explicit tone (legacy `badge`
 // string). Keeps "Super Preț"/"Top Favorit" colored instead of flat gray. An explicit
 // tone from the bot always wins; this only fills the gap.
 function inferBadgeTone(label) {
   const b = String(label).toLowerCase();
-  if (/(preț|pret|price|reducere|discount|sale|super|promo|-\s*\d)/.test(b)) return "success";
-  if (/(favorit|favourite|top|popular|bestseller|nou|new|recomand)/.test(b)) return "warning";
+  if (/(preț|pret|price|reducere|discount|sale|super|promo|-\s*\d)/.test(b)) return "danger";
+  if (/(favorit|favourite|top|popular|bestseller|nou|new|recomand)/.test(b)) return "info";
   return "neutral";
 }
 const badgeToneClass = (tone, label) => toneClass(tone && TONES[tone] ? tone : inferBadgeTone(label));
@@ -67,7 +76,7 @@ const LOCALE = "ro-RO";
 // Nicer display label per currency; falls back to the ISO code for anything else.
 const CURRENCY_LABEL = { RON: "Lei" };
 
-// Price with raised decimals ("82⁵⁰ Lei"). Locale-correct via Intl.formatToParts —
+// Price with raised decimals ("7⁸⁷ Lei"). Locale-correct via Intl.formatToParts —
 // the fraction is rendered small/superscript. Falls back to flat formatting if the
 // parts come back oddly (very old engines / unusual currency).
 function Price({ value, currency = "RON", className = "" }) {
@@ -97,8 +106,18 @@ function Price({ value, currency = "RON", className = "" }) {
   return (
     <span className={`inline-flex items-start whitespace-nowrap leading-none ${className}`}>
       <span className="font-extrabold">{intPart}</span>
-      {fracPart && <span className="text-[0.62em] font-bold mt-[0.1em]">{fracPart}</span>}
-      <span className="ml-1 text-[0.7em] font-semibold self-center">{label}</span>
+      {fracPart && <span className="text-[0.55em] font-extrabold mt-[0.08em]">{fracPart}</span>}
+      <span className="ml-1 text-[0.6em] font-bold self-end mb-[0.08em]">{label}</span>
+    </span>
+  );
+}
+
+// Struck original price, shown above the current one when it's a real markdown.
+function ListPrice({ value, currency }) {
+  return (
+    <span className="text-[11px] text-[var(--aria-text-5)] line-through whitespace-nowrap">
+      {Number(value).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+      {CURRENCY_LABEL[currency] || currency}
     </span>
   );
 }
@@ -106,7 +125,9 @@ function Price({ value, currency = "RON", className = "" }) {
 function Badge({ label, tone }) {
   if (!label) return null;
   return (
-    <span className={`text-[10px] font-bold leading-none px-1.5 py-1 rounded ${badgeToneClass(tone, label)}`}>
+    <span
+      className={`text-[10px] font-bold leading-none text-white px-1.5 py-[3px] rounded-[3px] ${badgeToneClass(tone, label)}`}
+    >
       {label}
     </span>
   );
@@ -116,7 +137,7 @@ function Highlight({ text, tone, icon }) {
   if (!text) return null;
   const Icon = icon ? ICONS[icon] : null;
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${toneClass(tone)}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${softToneClass(tone)}`}>
       {Icon && <Icon className="w-3 h-3 shrink-0" />}
       <span>{text}</span>
     </span>
@@ -126,9 +147,9 @@ function Highlight({ text, tone, icon }) {
 function MetaList({ items }) {
   if (!items?.length) return null;
   return (
-    <dl className="mt-1.5 space-y-0.5">
+    <dl className="space-y-0.5">
       {items.map((m, i) => (
-        <div key={i} className="flex gap-1 text-[10px] text-[var(--aria-text-4)]">
+        <div key={i} className="flex gap-1 text-[10.5px] text-[var(--aria-text-4)]">
           {m.label ? <dt className="font-medium">{m.label}:</dt> : null}
           <dd className="truncate">{m.value}</dd>
         </div>
@@ -137,114 +158,91 @@ function MetaList({ items }) {
   );
 }
 
-// "AI 9.2" pill — only when the bot sends a score. Never computed client-side.
-function ScorePill({ score }) {
-  if (score == null) return null;
+// Five stars with a partial fill clipped to the rating, then the numeric value —
+// the izi rating row. Purely decorative: the number carries the meaning.
+function Stars({ rating }) {
+  const pct = Math.max(0, Math.min(100, (Number(rating) / 5) * 100));
+  const row = (color) => (
+    <span className={`absolute inset-y-0 left-0 flex gap-px w-16 ${color}`}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Star key={i} className="w-3 h-3 shrink-0 fill-current" strokeWidth={0} />
+      ))}
+    </span>
+  );
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[rgba(56,189,248,0.1)] border border-[rgba(2,132,199,0.25)] shrink-0">
-      <span className="text-[8.5px] font-bold tracking-wide text-[var(--aria-text-3)]">POTRIVIRE</span>
-      <span className="text-xs font-extrabold text-[var(--aria-blue)]">{score}</span>
+    <span className="relative inline-block w-16 h-3 shrink-0" aria-hidden="true">
+      {row("text-[var(--aria-star-empty)]")}
+      <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
+        {row("text-[var(--aria-star)]")}
+      </span>
     </span>
   );
 }
 
-// "De ce am ales-o pentru tine" — the longer reasoning block (separate from the
-// one-line `reason` shown next to the name). Hidden unless the bot sends `why`.
-function WhyBlock({ why }) {
-  if (!why) return null;
+// "POTRIVIRE 9.2" pill — only when the bot sends a score. Never computed client-side.
+function ScorePill({ score }) {
+  if (score == null) return null;
   return (
-    <div className="flex flex-col gap-1 p-3 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-xl">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--aria-purple)]">De ce am ales-o pentru tine</span>
-      <p className="text-xs leading-relaxed text-[var(--aria-text-2)]">
-        <RichText text={why} />
-      </p>
-    </div>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[rgba(124,58,237,0.08)] shrink-0">
+      <span className="text-[8.5px] font-bold tracking-wide text-[var(--aria-text-3)]">POTRIVIRE</span>
+      <span className="text-[11px] font-extrabold text-[var(--aria-purple)]">{score}</span>
+    </span>
   );
 }
 
-// "Ce s-a schimbat față de recomandarea anterioară" — the delta rows on a re-recommendation
-// (cheaper alternative, etc.). Cyan card; `tone` colors just the delta ('good'/'warn').
+// One izi answer section below the card: navy heading + whatever the caller renders.
+function Section({ title, children }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h4 className="aria-heading text-[16.5px] leading-snug text-[var(--aria-text)]">{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+// "Ce s-a schimbat față de recomandarea anterioară" — the delta rows on a
+// re-recommendation (cheaper alternative, etc.). `tone` colors just the delta.
 const CHANGE_TONES = { good: "var(--aria-success)", warn: "var(--aria-warning)" };
 function ChangesBlock({ changes }) {
   if (!changes?.length) return null;
   return (
-    <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[rgba(56,189,248,0.06)] border border-[rgba(2,132,199,0.18)]">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--aria-blue)]">
-        Ce s-a schimbat față de recomandarea anterioară
-      </span>
-      {changes.map((c, i) => (
-        <div key={i} className="flex items-baseline gap-2">
-          <span className="shrink-0 text-[11px] font-bold" style={{ color: CHANGE_TONES[c.tone] || "var(--aria-text-4)" }}>
-            {c.delta}
-          </span>
-          <span className="text-xs text-[var(--aria-text-4)]">{c.label}</span>
-        </div>
-      ))}
-    </div>
+    <Section title="Ce s-a schimbat față de recomandarea anterioară">
+      <div className="flex flex-col gap-1.5">
+        {changes.map((c, i) => (
+          <div key={i} className="flex items-baseline gap-2">
+            <span className="shrink-0 text-[12px] font-bold" style={{ color: CHANGE_TONES[c.tone] || "var(--aria-text-4)" }}>
+              {c.delta}
+            </span>
+            <span className="text-[13px] text-[var(--aria-text-2)]">{c.label}</span>
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
-// "Ideală pentru / Evită dacă" two-column block — renders only the sides the bot
-// actually provided.
+// "Ideală pentru / Evită dacă" — renders only the sides the bot actually provided.
 function IdealAvoidBlock({ best, avoid }) {
   if (!best && !avoid) return null;
   return (
     <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2">
       {best && (
-        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-lg">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--aria-success)]">Ideală pentru</span>
-          <span className="text-[11px] leading-snug text-[var(--aria-text-2)]">{best}</span>
+        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]">
+          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--aria-success)]">Ideală pentru</span>
+          <span className="text-[12px] leading-snug text-[var(--aria-text-2)]">{best}</span>
         </div>
       )}
       {avoid && (
-        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-lg">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--aria-warning)]">Evită dacă</span>
-          <span className="text-[11px] leading-snug text-[var(--aria-text-2)]">{avoid}</span>
+        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]">
+          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--aria-warning)]">Evită dacă</span>
+          <span className="text-[12px] leading-snug text-[var(--aria-text-2)]">{avoid}</span>
         </div>
       )}
     </div>
   );
 }
 
-// Expandable pros/cons — independent from the legacy `details` expander below it.
-function ProsConsBlock({ pros, cons }) {
-  const [open, setOpen] = useState(false);
-  if (!pros?.length && !cons?.length) return null;
-  return (
-    <div className="border border-[var(--aria-border-2)] rounded-[11px] overflow-hidden">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex items-center justify-between w-full px-3 py-2.5 bg-[var(--aria-surface-3)] hover:bg-[var(--aria-surface-2)] text-[11.5px] font-medium text-[var(--aria-text-4)] transition-colors"
-      >
-        <span>Pentru cine e · argumente pro și contra</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[var(--aria-text-5)] transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 p-3 bg-white border-t border-[var(--aria-border-2)]">
-          <div className="space-y-1.5">
-            {pros.map((p, i) => (
-              <div key={i} className="flex gap-1.5 text-[11px] leading-snug text-[var(--aria-text-2)]">
-                <span className="text-[var(--aria-success)] font-bold shrink-0">+</span>
-                <span>{p}</span>
-              </div>
-            ))}
-          </div>
-          <div className="space-y-1.5">
-            {cons.map((c, i) => (
-              <div key={i} className="flex gap-1.5 text-[11px] leading-snug text-[var(--aria-text-4)]">
-                <span className="text-[var(--aria-warning)] font-bold shrink-0">–</span>
-                <span>{c}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function ChatProductCard({ product, variant = "compact", onAdd, onAsk }) {
+export default function ChatProductCard({ product, onAdd, onAsk }) {
   const [showDetails, setShowDetails] = useState(false);
   const wishKey = keyOfProduct(product);
   const wished = useWished(wishKey);
@@ -263,7 +261,7 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
     onAdd?.();
   };
 
-  // Optional discount: strike the original price, show the saved percentage.
+  // Optional discount: strike the original price, show the saved percentage as a badge.
   const hasDiscount = product.list_price != null && product.list_price > product.price;
   const discountPct = hasDiscount
     ? Math.round(((product.list_price - product.price) / product.list_price) * 100)
@@ -275,355 +273,195 @@ export default function ChatProductCard({ product, variant = "compact", onAdd, o
   const pros = product.pros || [];
   const cons = product.cons || [];
 
-  // Image + title link to the product page (new tab keeps the chat open). We don't
-  // wrap the whole card so the buttons / details toggle stay valid, isolated targets.
+  // Image + name link to the product page (new tab keeps the chat open). We don't
+  // wrap the whole card so the buttons stay valid, isolated targets.
   const linkProps = product.url
     ? { href: product.url, target: "_blank", rel: "noopener noreferrer", title: `Vezi ${product.name}` }
     : null;
 
-  // The tall vertical layout only looks balanced when the bot sends `highlights`
-  // (delivery / voucher / urgency rows) to fill it. With today's sparse replies it
-  // reads as a half-empty image block, so a plain "compact" reply stays compact
-  // unless it's explicitly the hero of a multi-product reply.
-  const rich = variant === "hero" || highlights.length > 0;
-
-  const heartBtn = (
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleWish(product);
-      }}
-      title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
-      className="w-7 h-7 rounded-full flex items-center justify-center bg-white border border-[var(--aria-border-2)] hover:border-[var(--aria-purple)] transition-colors shrink-0"
-    >
-      <Heart className={`w-3.5 h-3.5 text-[var(--aria-purple)] ${wished ? "fill-current" : ""}`} />
-    </button>
+  const nameEl = linkProps ? (
+    <a {...linkProps} className="block">
+      <p className="text-[12.5px] font-bold leading-[1.35] line-clamp-3 text-[var(--aria-title)] hover:underline">
+        {product.name}
+      </p>
+    </a>
+  ) : (
+    <p className="text-[12.5px] font-bold leading-[1.35] line-clamp-3 text-[var(--aria-title)]">{product.name}</p>
   );
 
-  // Labeled save toggle for the hero action row (matches the design's "Salvează"/"Salvat" pill).
-  const saveLabel = wished ? "Salvat" : "Salvează";
-  const savePillBtn = (
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleWish(product);
-      }}
-      className={`flex-1 min-[420px]:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-[11px] border text-xs font-semibold transition-colors ${
-        wished
-          ? "bg-[rgba(47,102,76,0.1)] border-[rgba(47,102,76,0.45)] text-[var(--aria-purple)]"
-          : "bg-white border-[var(--aria-border-3)] text-[var(--aria-text-2)] hover:border-[var(--aria-purple)]"
-      }`}
-    >
-      <Heart className={`w-3.5 h-3.5 ${wished ? "fill-current" : ""}`} />
-      {saveLabel}
-    </button>
-  );
-
-  const ratingRow = product.rating != null && (
-    <div className="flex items-center gap-1">
-      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-      <span className="text-[10px] font-semibold text-[var(--aria-text)]">{product.rating}</span>
-      {product.review_count > 0 && (
-        <span className="text-[10px] text-[var(--aria-text-5)]">({product.review_count.toLocaleString("ro-RO")})</span>
-      )}
-    </div>
-  );
-
-  const priceBlock = (
-    <div className="min-w-0">
-      <Price value={product.price} currency={product.currency} className="text-base text-[var(--aria-text)]" />
-      {hasDiscount && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-[var(--aria-text-5)] line-through">
-            {Number(product.list_price).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-            {CURRENCY_LABEL[product.currency] || product.currency}
-          </span>
-          {discountPct > 0 && <span className="text-[9px] font-bold text-[var(--aria-success)]">-{discountPct}%</span>}
-        </div>
-      )}
-    </div>
-  );
-
-  const addBtn = (
-    <button
-      onClick={handleAdd}
-      title="Adaugă în coș"
-      className="shrink-0 w-9 h-9 rounded-lg aria-gradient-bg text-white flex items-center justify-center shadow-sm transition-opacity hover:opacity-90"
-    >
-      <ShoppingCart className="w-4 h-4" />
-    </button>
-  );
-
-  const heroAddBtn = (
-    <button
-      onClick={handleAdd}
-      title="Adaugă în coș"
-      className="flex-1 min-w-[130px] flex items-center justify-center gap-2 aria-gradient-bg text-white text-[12.5px] font-semibold py-2.5 rounded-[11px] shadow-sm transition-opacity hover:opacity-90"
-    >
-      <ShoppingCart className="w-3.5 h-3.5" /> Adaugă în coș
-    </button>
-  );
-
-  const askAriaBtn = (
+  // The bottom bar either expands the bot's own `details` markdown in place, or —
+  // when there is none — asks Aria for more about this product. With neither
+  // available it isn't rendered at all, so it's never a dead control.
+  const canExpand = Boolean(product.details);
+  const canAsk = !canExpand && Boolean(onAsk);
+  const moreBar = (canExpand || canAsk) && (
     <button
       type="button"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        onAsk?.(`Spune-mi mai multe despre ${product.name}`);
+        if (canExpand) setShowDetails((s) => !s);
+        else onAsk?.(`Spune-mi mai multe despre ${product.name}`);
       }}
-      className="flex-1 min-[420px]:flex-none px-3.5 py-2.5 rounded-[11px] border border-[var(--aria-border-3)] text-xs font-medium text-[var(--aria-text-2)] hover:border-[var(--aria-purple)] hover:text-[var(--aria-purple)] transition-colors"
+      aria-expanded={canExpand ? showDetails : undefined}
+      className="flex items-center gap-2 w-full px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
     >
-      Întreabă Aria
+      <Sparkles className="w-4 h-4 shrink-0 text-[var(--aria-purple)]" />
+      <span className="flex-1 text-left text-[13px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
+      {canExpand ? (
+        <ChevronDown
+          className={`w-4 h-4 shrink-0 text-[var(--aria-text-5)] transition-transform ${showDetails ? "rotate-180" : ""}`}
+        />
+      ) : (
+        <ChevronRight className="w-4 h-4 shrink-0 text-[var(--aria-text-5)]" />
+      )}
     </button>
   );
 
-  const detailsBlock = product.details && (
-    <div className="border-t border-[var(--aria-border-2)] pt-1.5">
-      <button
-        onClick={() => setShowDetails((s) => !s)}
-        aria-expanded={showDetails}
-        className="flex items-center gap-1 text-[11px] font-semibold text-[var(--aria-purple)] hover:opacity-80 transition-opacity"
-      >
-        Spune-mi mai multe
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-      </button>
-      {showDetails && (
-        <div className="mt-1.5 text-[11px] text-[var(--aria-text-4)] leading-relaxed">
-          <RichText text={product.details} />
-        </div>
-      )}
-    </div>
-  );
-
-  const badgesRow = badges.length > 0 && (
-    <div className="flex flex-wrap gap-1">
-      {badges.map((b, i) => (
-        <Badge key={i} label={b.label} tone={b.tone} />
-      ))}
-    </div>
-  );
-
-  // `extra` reserves right padding so text clears the floating heart. `size` lets the
-  // hero variant use the design's larger 16px name vs 13.5px on grid/compact/rich.
-  const nameEl = (extra, size = "text-[13.5px]") =>
-    linkProps ? (
-      <a {...linkProps} className="block">
-        <p
-          className={`aria-heading ${size} leading-snug line-clamp-2 text-[var(--aria-text)] hover:text-[var(--aria-purple)] transition-colors ${extra}`}
-        >
-          {product.name}
-        </p>
-      </a>
-    ) : (
-      <p className={`aria-heading ${size} leading-snug line-clamp-2 text-[var(--aria-text)] ${extra}`}>{product.name}</p>
-    );
-
-  // ── Grid tile — secondary products in a multi-product reply, 2-up ──
-  if (variant === "grid") {
-    return (
-      <div className="relative flex flex-col gap-1.5 p-2.5 bg-white border border-[var(--aria-border)] rounded-[14px] shadow-[0_2px_8px_rgba(27,24,38,0.04)] h-full">
-        {/* Badges overlay the image (top-left) and the save heart the top-right, so a
-            badge never adds a row that shifts the text/price/cart down — every card in
-            the row lines up regardless of how many badges (or how long a name) it has. */}
-        <div className="relative">
-          {linkProps ? (
-            <a {...linkProps}>
-              <CardImage product={product} variant="grid" />
-            </a>
-          ) : (
-            <CardImage product={product} variant="grid" />
-          )}
-          <div className="absolute top-2 right-2 z-10">{heartBtn}</div>
-          {badges.length > 0 && (
-            <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1 max-w-[calc(100%-2.75rem)] drop-shadow-sm">
-              {badges.map((b, i) => (
-                <Badge key={i} label={b.label} tone={b.tone} />
-              ))}
-            </div>
-          )}
-        </div>
-        {product.brand && (
-          <span className="block text-[9px] uppercase tracking-[0.14em] text-[var(--aria-text-5)]">{product.brand}</span>
-        )}
-        {nameEl("min-h-[2.2em]")}
-        {ratingRow}
-        {product.reason && (
-          <p className="text-[10px] text-[var(--aria-text-4)] leading-snug line-clamp-2">{product.reason}</p>
-        )}
-        {/* Pinned to the bottom (mt-auto) so the price + cart line up across all cards. */}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <div className="flex items-center gap-2 min-w-0 flex-wrap">
-            <Price value={product.price} currency={product.currency} className="text-sm text-[var(--aria-text)]" />
-            <ScorePill score={product.score} />
-          </div>
-          {addBtn}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Hero card — the primary recommendation ──
-  if (variant === "hero") {
-    return (
-      <div className="relative bg-white border border-[var(--aria-border)] rounded-[18px] p-3 min-[380px]:p-3.5 shadow-[0_12px_36px_rgba(47,102,76,0.1)] space-y-2.5">
-        <div className="flex items-start justify-between gap-2 min-h-[20px]">
-          <div className="flex flex-wrap items-center gap-1.5">{badgesRow}</div>
-          <ScorePill score={product.score} />
-        </div>
-
-        {linkProps ? (
-          <a {...linkProps} className="block">
-            <CardImage product={product} variant="hero" />
-          </a>
-        ) : (
-          <CardImage product={product} variant="hero" />
-        )}
-
-        {ratingRow}
-
-        {highlights.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {highlights.map((h, i) => (
-              <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
-            ))}
-          </div>
-        )}
-
-        {product.brand && (
-          <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[var(--aria-text-3)]">
-            {product.brand}
-          </span>
-        )}
-        {nameEl("", "text-[16px]")}
-
-        {product.reason && <p className="text-[11px] text-[var(--aria-text-4)] leading-snug">{product.reason}</p>}
-
-        <WhyBlock why={product.why} />
-        <ChangesBlock changes={product.changes} />
-        <IdealAvoidBlock best={product.best} avoid={product.avoid} />
-
-        <div className="flex items-end justify-between gap-2">{priceBlock}</div>
-
-        <MetaList items={meta} />
-
-        <div className="flex flex-wrap gap-2">
-          {savePillBtn}
-          {askAriaBtn}
-          {linkProps && (
-            <a
-              {...linkProps}
-              className="flex-1 min-w-[150px] flex items-center justify-center px-3.5 py-2.5 rounded-[11px] aria-gradient-bg text-white text-[12.5px] font-semibold shadow-[0_6px_20px_rgba(47,102,76,0.3)] hover:opacity-90 transition-opacity"
-            >
-              Vezi produsul ↗
-            </a>
-          )}
-          {heroAddBtn}
-        </div>
-
-        <ProsConsBlock pros={pros} cons={cons} />
-        {detailsBlock}
-      </div>
-    );
-  }
-
-  // ── Compact card — default for today's sparse data (small filled image, dense info) ──
-  if (!rich) {
-    return (
-      <div className="relative bg-white border border-[var(--aria-border)] rounded-xl p-2.5 shadow-sm">
-        <div className="absolute top-1.5 right-1.5 z-10">{heartBtn}</div>
-        <div className="flex gap-3">
+  return (
+    <div className="flex flex-col gap-4">
+      {/* ── The card box ── */}
+      <div className="bg-white border border-[var(--aria-border)] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
+        <div className="flex gap-3 p-3">
           {linkProps ? (
             <a {...linkProps} className="shrink-0">
-              <CardImage product={product} variant="compact" />
+              <CardImage product={product} />
             </a>
           ) : (
-            <CardImage product={product} variant="compact" />
+            <CardImage product={product} />
           )}
-          <div className="flex-1 min-w-0">
-            {badgesRow && <div className="mb-1 pr-7">{badgesRow}</div>}
-            {nameEl(badges.length ? "" : "pr-7")}
-            {ratingRow && <div className="mt-0.5">{ratingRow}</div>}
-            {product.reason && (
-              <p className="text-[10px] text-[var(--aria-text-4)] leading-snug mt-0.5 line-clamp-2">{product.reason}</p>
-            )}
-            <div className="flex items-end justify-between gap-2 mt-1.5">
-              {priceBlock}
-              {addBtn}
+
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            {/* Badges + save heart share the top line, so a long badge row never
+                pushes the heart off the card. */}
+            <div className="flex items-start gap-2">
+              <div className="flex-1 flex flex-wrap items-center gap-1">
+                {badges.map((b, i) => (
+                  <Badge key={i} label={b.label} tone={b.tone} />
+                ))}
+                {discountPct > 0 && <Badge label={`-${discountPct}%`} tone="warning" />}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleWish(product);
+                }}
+                title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
+                className="shrink-0 -mt-0.5 -mr-0.5 p-0.5 text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] transition-colors"
+              >
+                <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
+              </button>
             </div>
+
+            {product.brand && (
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--aria-text-5)]">
+                {product.brand}
+              </span>
+            )}
+            {nameEl}
+
+            {product.rating != null && (
+              <div className="flex items-center gap-1.5">
+                <Stars rating={product.rating} />
+                <span className="text-[11px] font-semibold text-[var(--aria-text)]">{product.rating}</span>
+                {product.review_count > 0 && (
+                  <span className="text-[11px] text-[var(--aria-text-5)]">
+                    ({product.review_count.toLocaleString(LOCALE)})
+                  </span>
+                )}
+              </div>
+            )}
+
+            {highlights.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {highlights.map((h, i) => (
+                  <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
+                ))}
+              </div>
+            )}
+
+            {/* Price block and the cart button sit on the card's baseline. */}
+            <div className="mt-auto pt-1 flex items-end justify-between gap-2">
+              <div className="min-w-0 flex flex-col gap-0.5">
+                {hasDiscount && <ListPrice value={product.list_price} currency={product.currency} />}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Price value={product.price} currency={product.currency} className="text-[21px] text-[var(--aria-price)]" />
+                  <ScorePill score={product.score} />
+                </div>
+              </div>
+              <button
+                onClick={handleAdd}
+                title="Adaugă în coș"
+                className="shrink-0 w-11 h-9 rounded-[9px] bg-[var(--aria-cart)] hover:bg-[var(--aria-cart-hover)] text-white flex items-center justify-center transition-colors"
+              >
+                <ShoppingCart className="w-[18px] h-[18px]" />
+              </button>
+            </div>
+
             <MetaList items={meta} />
           </div>
         </div>
-        {detailsBlock}
-      </div>
-    );
-  }
 
-  // ── Full vertical eMAG card — once the bot sends highlights (matches the target) ──
-  return (
-    <div className="relative bg-white border border-[var(--aria-border)] rounded-xl p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-2 mb-2 min-h-[20px]">
-        {badgesRow || <span />}
-        {heartBtn}
+        {/* One-line "why it fits", separated from the product data above it. */}
+        {product.reason && (
+          <p className="px-3.5 py-2.5 border-t border-[var(--aria-border-2)] text-[12px] leading-snug text-[var(--aria-text-2)]">
+            {product.reason}
+          </p>
+        )}
+
+        {moreBar}
+
+        {canExpand && showDetails && (
+          <div className="px-3.5 py-3 border-t border-[var(--aria-border-2)]">
+            <RichText text={product.details} variant="reply" />
+          </div>
+        )}
       </div>
 
-      {linkProps ? (
-        <a {...linkProps} className="block">
-          <CardImage product={product} variant="rich" />
-        </a>
-      ) : (
-        <CardImage product={product} variant="rich" />
+      {/* ── izi answer sections, below the card box ── */}
+      {product.why && (
+        <Section title="De ce ți-l recomand">
+          <p className="text-[13.5px] leading-[1.65] text-[var(--aria-text-2)]">
+            <RichText text={product.why} />
+          </p>
+        </Section>
       )}
 
-      {ratingRow && <div className="mt-2">{ratingRow}</div>}
-
-      <div className="flex flex-wrap gap-1 mt-1.5">
-        {highlights.map((h, i) => (
-          <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
-        ))}
-      </div>
-
-      <div className="mt-1.5">{nameEl("")}</div>
-
-      {product.reason && (
-        <p className="text-[10px] text-[var(--aria-text-4)] leading-snug mt-1 line-clamp-2">{product.reason}</p>
+      {pros.length > 0 && (
+        <Section title="Funcționalități principale">
+          <RichText text={pros.map((p) => `- ${p}`).join("\n")} variant="reply" />
+        </Section>
       )}
 
-      <div className="flex items-end justify-between gap-2 mt-2">
-        {priceBlock}
-        {addBtn}
-      </div>
+      {cons.length > 0 && (
+        <Section title="De luat în calcul">
+          <ul className="flex flex-col gap-1.5">
+            {cons.map((c, i) => (
+              <li key={i} className="flex gap-2 text-[13px] leading-snug text-[var(--aria-text-2)]">
+                <span className="shrink-0 font-bold text-[var(--aria-warning)]">–</span>
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
-      <MetaList items={meta} />
-      {detailsBlock}
+      <IdealAvoidBlock best={product.best} avoid={product.avoid} />
+      <ChangesBlock changes={product.changes} />
     </div>
   );
 }
 
-// Product image — small square in compact mode, full-width banner in rich/hero
-// mode, medium square in grid mode. Muted icon when the bot returns no image_url.
-function CardImage({ product, variant }) {
-  const box =
-    variant === "compact"
-      ? "w-20 h-20 shrink-0"
-      : variant === "grid"
-        ? "w-full h-28 min-[390px]:h-24"
-        : "w-full h-32 min-[420px]:h-36";
+// Product image — a square slot on the left of the card. `object-contain` on white
+// so packshots read the way they do on the shop. Muted icon when there's no image.
+function CardImage({ product }) {
   return (
-    <div
-      className={`${box} rounded-[10px] border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center`}
-      style={
-        product.image_url
-          ? undefined
-          : { background: "radial-gradient(closest-side at 50% 45%, rgba(47,102,76,0.1), rgba(246,244,251,0) 90%), var(--aria-surface-2)" }
-      }
-    >
+    <div className="w-[86px] h-[86px] rounded-[8px] bg-white overflow-hidden flex items-center justify-center">
       {product.image_url ? (
-        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+        <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
       ) : (
-        <Package className={`${variant === "compact" ? "w-6 h-6" : "w-8 h-8"} text-[var(--aria-text-5)]`} />
+        <Package className="w-7 h-7 text-[var(--aria-text-5)]" />
       )}
     </div>
   );

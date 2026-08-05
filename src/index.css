@@ -184,28 +184,48 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Aria widget design tokens — exact hex values from the design spec (light
-   theme), scoped under .aria-widget so the rest of the app keeps its own
-   Tailwind palette untouched. Referenced from components as e.g.
-   text-[var(--aria-text)] / bg-[var(--aria-surface-2)].
+   Aria widget design tokens — the izi reference palette, scoped under
+   .aria-widget so the rest of the store keeps its own (green) identity
+   untouched. Referenced from components as e.g. text-[var(--aria-text)].
+
+   Note: --aria-gradient / --aria-gradient-flat are redefined here, so the
+   shared .aria-gradient-bg / .aria-gradient-text utilities render violet→pink
+   INSIDE the widget and stay brand-green everywhere else in the app.
 --------------------------------------------------------------------------- */
 .aria-widget {
-  --aria-bg: #faf9fc;
+  --aria-bg: #ffffff;
   --aria-surface: #ffffff;
-  --aria-surface-2: #f6f4fb;
-  --aria-surface-3: #f9f8fc;
-  --aria-border: #e7e4f0;
-  --aria-border-2: #ece9f4;
-  --aria-border-3: #e0dcec;
-  --aria-text: #1b1826;
-  --aria-text-2: #4b4756;
-  --aria-text-3: #8b8798;
-  --aria-text-4: #7a7589;
-  --aria-text-5: #a5a1b2;
-  --aria-purple: #2f664c; /* name kept for churn; the accent is the brand green */
-  --aria-blue: #0284c7;
-  --aria-success: #189a4a;
-  --aria-warning: #c77700;
+  --aria-surface-2: #f7f5fb;
+  --aria-surface-3: #faf9fd;
+  --aria-border: #e8e6ef;
+  --aria-border-2: #efedf5;
+  --aria-border-3: #e2dfec;
+  --aria-text: #16213e; /* dark navy — headings and lead copy */
+  --aria-text-2: #456d94; /* slate blue — body copy */
+  --aria-text-3: #8a8698;
+  --aria-text-4: #6f7f92;
+  --aria-text-5: #a6a2b4;
+  --aria-purple: #7c3aed; /* izi accent — sparkle, links, "spune-mi mai multe" */
+  --aria-blue: #2563eb;
+  --aria-success: #16a34a;
+  --aria-warning: #c2760a;
+
+  /* izi commerce accents — the product card reads eMAG-like on purpose. */
+  --aria-accent-line: #2f7cb8; /* the blue summary line under the lead paragraph */
+  --aria-price: #d81b32; /* current price */
+  --aria-title: #7b2b36; /* product name (maroon) */
+  --aria-cart: #1d5fd6; /* add-to-cart button */
+  --aria-cart-hover: #1750b8;
+  --aria-star: #f6a609;
+  --aria-star-empty: #dfe0e6;
+  --aria-chip: #fce8ef; /* suggestion pills */
+  --aria-chip-hover: #f9dbe6;
+  --aria-chip-ink: #3a3550;
+  --aria-user-bubble: #f3f0fa;
+
+  --aria-gradient: linear-gradient(135deg, #9b5cf6, #e879c7);
+  --aria-gradient-flat: linear-gradient(90deg, #9b5cf6, #e879c7);
+
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 

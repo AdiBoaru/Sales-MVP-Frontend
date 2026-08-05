@@ -643,7 +643,7 @@ export default function ChatWidget() {
               </div>
             </div>
           ) : (
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-4 bg-[var(--aria-bg)]">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-6 bg-[var(--aria-bg)]">
             {visibleMessages.map((msg, i) => (
               <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
                 <ChatMessage
@@ -660,14 +660,11 @@ export default function ChatWidget() {
           </div>
           )}
 
-          {/* Disclaimer + input belong to the chat; the cart view has its own footer. */}
+          {/* The input belongs to the chat; the cart view has its own footer. The AI
+              disclaimer is no longer pinned here — it sits under each bot answer
+              (ChatMessage), the way the reference design shows it. */}
           {!showCart && (
             <>
-              {/* Scope disclaimer — pinned at the bottom of the conversation area, centered */}
-              <p className="text-[10px] leading-tight text-center text-[var(--aria-text-5)] bg-[var(--aria-bg)] px-4 pt-0.5 pb-1.5 flex-shrink-0">
-                {BRAND.assistant} caută doar în catalogul acestui magazin · recomandări argumentate
-              </p>
-
               {/* Input — single pill containing the field + send button, like the design. */}
               <form
                 onSubmit={(e) => {

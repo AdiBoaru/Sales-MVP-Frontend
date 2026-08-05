@@ -36,7 +36,7 @@
       "textPresent": ["Pentru ten uscat, uite ce merge.", "Când alegi, uită-te la textură și la confort.", "Crema A", "Crema B", "Top Favorit", "Super Preț", "4.8", "(120)", "pentru ten uscat — hidratează intens", "opțiune mai accesibilă", "79,99", "Una mai ieftină", "Trimite-mi linkul"],
       "productCards": 2,
       "discountBadge": true,
-      "lineBreak": true
+      "paragraphs": 2
     }
   },
   {
@@ -74,7 +74,7 @@
         ]
       }
     },
-    "assert": { "comparisonTable": true, "columnHeaders": 3, "dash": true, "productCards": 0, "textPresent": ["Iată diferențele principale.", "Crema A", "Crema B", "58,99", "Adaugă Crema A"] }
+    "assert": { "comparisonTable": true, "columnHeaders": 2, "dash": true, "productCards": 0, "textPresent": ["Iată diferențele principale.", "Crema A", "Crema B", "58,99", "Adaugă Crema A"] }
   },
   {
     "case": "comparison_3col_sparse",
@@ -88,7 +88,7 @@
       },
       "products": [{ "product_id": "p1", "name": "A", "price": 10 }, { "product_id": "p2", "name": "B", "price": 20 }, { "product_id": "p3", "name": "C", "price": 30 }]
     },
-    "assert": { "comparisonTable": true, "columnHeaders": 4, "productCards": 0, "textPresent": ["Preț", "Rating"] }
+    "assert": { "comparisonTable": true, "columnHeaders": 3, "productCards": 0, "textPresent": ["Preț", "Rating"] }
   },
   {
     "case": "comparison_listprice",
