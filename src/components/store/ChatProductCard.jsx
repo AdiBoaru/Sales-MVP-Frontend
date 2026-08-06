@@ -194,7 +194,7 @@ function ScorePill({ score }) {
 function Section({ title, children }) {
   return (
     <section className="flex flex-col gap-2">
-      <h4 className="aria-heading text-[16.5px] leading-snug text-[var(--aria-text)]">{title}</h4>
+      <h4 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{title}</h4>
       {children}
     </section>
   );
@@ -213,7 +213,7 @@ function ChangesBlock({ changes }) {
             <span className="shrink-0 text-[12px] font-bold" style={{ color: CHANGE_TONES[c.tone] || "var(--aria-text-4)" }}>
               {c.delta}
             </span>
-            <span className="text-[13px] text-[var(--aria-text-2)]">{c.label}</span>
+            <span className="text-[14px] text-[var(--aria-text-2)]">{c.label}</span>
           </div>
         ))}
       </div>
@@ -304,10 +304,10 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
         else onAsk?.(`Spune-mi mai multe despre ${product.name}`);
       }}
       aria-expanded={canExpand ? showDetails : undefined}
-      className="flex items-center gap-2 w-full px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
+      className="flex items-center gap-2.5 w-full px-3.5 py-4 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
     >
-      <Sparkles className="w-4 h-4 shrink-0 text-[var(--aria-purple)]" />
-      <span className="flex-1 text-left text-[13px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
+      <Sparkles className="w-[17px] h-[17px] shrink-0 text-[var(--aria-purple)]" />
+      <span className="flex-1 text-left text-[14px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
       {/* Always the reference's "›". When the bar expands in place it rotates a
           quarter turn, so it reads as a disclosure rather than a dead arrow. */}
       <ChevronRight
@@ -386,7 +386,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
               <div className="min-w-0 flex flex-col gap-0.5">
                 {hasDiscount && <ListPrice value={product.list_price} currency={product.currency} />}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Price value={product.price} currency={product.currency} className="text-[21px] text-[var(--aria-price)]" />
+                  <Price value={product.price} currency={product.currency} className="text-[23px] text-[var(--aria-price)]" />
                   <ScorePill score={product.score} />
                 </div>
               </div>
@@ -405,7 +405,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
 
         {/* One-line "why it fits", separated from the product data above it. */}
         {product.reason && (
-          <p className="px-3.5 py-2.5 border-t border-[var(--aria-border-2)] text-[12px] leading-snug text-[var(--aria-text-2)]">
+          <p className="px-3.5 py-3 border-t border-[var(--aria-border-2)] text-[12.5px] leading-snug text-[var(--aria-text-2)]">
             {product.reason}
           </p>
         )}
@@ -422,7 +422,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
       {/* ── izi answer sections, below the card box ── */}
       {product.why && (
         <Section title="De ce ți-l recomand">
-          <p className="text-[13.5px] leading-[1.65] text-[var(--aria-text-2)]">
+          <p className="text-[15px] leading-[1.55] text-[var(--aria-text-2)]">
             <RichText text={product.why} />
           </p>
         </Section>
@@ -438,7 +438,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
         <Section title="De luat în calcul">
           <ul className="flex flex-col gap-1.5">
             {cons.map((c, i) => (
-              <li key={i} className="flex gap-2 text-[13px] leading-snug text-[var(--aria-text-2)]">
+              <li key={i} className="flex gap-2 text-[15px] leading-snug text-[var(--aria-text-2)]">
                 <span className="shrink-0 font-bold text-[var(--aria-warning)]">–</span>
                 <span>{c}</span>
               </li>

@@ -90,9 +90,12 @@ export function parseBlocks(text) {
 // The first two paragraphs of an answer carry the izi rhythm — a bold navy lead,
 // then one accent-blue line summarising it. Everything after a heading or a list
 // is ordinary body copy.
+// One 15px size across the answer, as in the reference — the lead is set apart by
+// weight and ink, not by scale. Calibrated against the reference's line breaks at
+// 405px: any smaller and each line swallows an extra word.
 const LEAD_CLASS = "text-[15px] font-bold leading-[1.45] text-[var(--aria-text)]";
-const SUMMARY_CLASS = "text-[13.5px] leading-[1.6] text-[var(--aria-accent-line)]";
-const BODY_CLASS = "text-[13.5px] leading-[1.65] text-[var(--aria-text-2)]";
+const SUMMARY_CLASS = "text-[15px] leading-[1.5] text-[var(--aria-accent-line)]";
+const BODY_CLASS = "text-[15px] leading-[1.55] text-[var(--aria-text-2)]";
 
 // The reference interleaves the answer with the products: the bold lead and its
 // accent summary line introduce them, everything else follows them. That's the
@@ -125,7 +128,7 @@ function Reply({ text, part, split }) {
         if (b.type === "h") {
           structured = true;
           return (
-            <h4 key={i} className="aria-heading text-[16.5px] leading-snug text-[var(--aria-text)] pt-2">
+            <h4 key={i} className="aria-heading text-[17px] leading-snug text-[var(--aria-text)] pt-2">
               <Inline text={b.text} />
             </h4>
           );
@@ -135,8 +138,8 @@ function Reply({ text, part, split }) {
           return (
             <ul key={i} className="flex flex-col gap-2">
               {b.items.map((it, j) => (
-                <li key={j} className="flex gap-2.5">
-                  <Check className="w-4 h-4 mt-[3px] shrink-0 text-[var(--aria-success)]" strokeWidth={3} />
+                <li key={j} className="flex gap-2">
+                  <Check className="w-4 h-4 mt-[4px] shrink-0 text-[var(--aria-success)]" strokeWidth={2.75} />
                   <span className={BODY_CLASS}>
                     <Inline text={it} />
                   </span>

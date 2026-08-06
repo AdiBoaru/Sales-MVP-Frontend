@@ -123,7 +123,7 @@ function ComparisonTable({ comparison }) {
                 <tr>
                   <td
                     colSpan={n}
-                    className="px-3 pt-2.5 pb-1 border-t border-[var(--aria-border-2)] text-[11px] text-[#9a8b80]"
+                    className="px-3 pt-2.5 pb-1 border-t border-[var(--aria-border-2)] text-[11.5px] text-[#9a8b80]"
                   >
                     {row.label}
                   </td>
@@ -132,7 +132,7 @@ function ComparisonTable({ comparison }) {
                   {columns.map((_, i) => (
                     <td
                       key={i}
-                      className={`px-3 pb-3 align-top text-[13px] leading-snug font-bold ${
+                      className={`px-3 pb-3 align-top text-[14px] leading-snug font-bold ${
                         row.winner === i ? "text-[var(--aria-purple)]" : "text-[var(--aria-text)]"
                       }`}
                     >
@@ -182,7 +182,7 @@ function MessageFeedback() {
           vote === "up" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
         }`}
       >
-        <ThumbsUp className="w-[18px] h-[18px]" />
+        <ThumbsUp className="w-5 h-5" />
       </button>
       <button
         onClick={() => setVote("down")}
@@ -191,7 +191,7 @@ function MessageFeedback() {
           vote === "down" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
         }`}
       >
-        <ThumbsDown className="w-[18px] h-[18px]" />
+        <ThumbsDown className="w-5 h-5" />
       </button>
       {vote && <span className="text-[11px] text-[var(--aria-text-4)]">Mulțumesc!</span>}
     </div>
@@ -419,7 +419,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
   if (isUser) {
     return hasContent ? (
       <div className="flex justify-end items-start gap-2">
-        <div className="max-w-[82%] text-[13.5px] leading-relaxed px-4 py-2.5 rounded-[18px] bg-[var(--aria-user-bubble)] text-[var(--aria-text)]">
+        <div className="max-w-[82%] text-[14px] leading-relaxed px-4 py-2.5 rounded-[18px] bg-[var(--aria-user-bubble)] text-[var(--aria-text)]">
           <RichText text={m.content} />
         </div>
         <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--aria-user-bubble)] flex items-center justify-center">
@@ -484,7 +484,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
             <button
               key={j}
               onClick={() => onSuggestion?.(s)}
-              className="text-left px-4 py-2.5 bg-[var(--aria-chip)] hover:bg-[var(--aria-chip-hover)] rounded-full text-[13px] text-[var(--aria-chip-ink)] transition-colors"
+              className="text-left px-[18px] py-[11px] bg-[var(--aria-chip)] hover:bg-[var(--aria-chip-hover)] rounded-full text-[14px] leading-snug text-[var(--aria-chip-ink)] transition-colors"
             >
               {s}
             </button>
@@ -495,7 +495,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       {/* Disclaimer + 👍/👎 under every bot reply except the opening greeting. */}
       {!isFirst && (
         <div className="flex flex-col gap-1">
-          <p className="text-[11px] text-[var(--aria-text-5)]">{AI_DISCLAIMER}</p>
+          <p className="text-[11.5px] text-[var(--aria-text-5)]">{AI_DISCLAIMER}</p>
           <MessageFeedback />
         </div>
       )}
