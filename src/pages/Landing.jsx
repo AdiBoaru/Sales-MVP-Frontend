@@ -28,86 +28,86 @@ import StorePreview from "@/components/landing/StorePreview";
  * safe to do inside it, and what to ask Aria once you are in.
  */
 
-const promisiuni = [
-  { icon: ShieldCheck, text: "Fără cont" },
-  { icon: CreditCard, text: "Fără plăți reale" },
-  { icon: CalendarX, text: "Nicio comandă nu se procesează" },
+const promises = [
+  { icon: ShieldCheck, text: "No account needed" },
+  { icon: CreditCard, text: "No real payments" },
+  { icon: CalendarX, text: "No orders get placed" },
 ];
 
-const capabilitati = [
+const showcase = [
   {
     icon: MessageCircle,
-    titlu: "Conversații naturale",
-    text: `Clienții își pot exprima nevoia în propriile cuvinte. ${BRAND.assistant} înțelege limbajul natural și contextul din spatele lui.`,
+    title: "Talks like a person",
+    text: "Customers write what they want in their own words. No keyword search, no filter checkboxes, no dropdowns to learn first.",
   },
   {
     icon: ShoppingBag,
-    titlu: "Descoperire ghidată",
-    text: `${BRAND.assistant} pune întrebări de clarificare, recomandă produse relevante și explică diferențele dintre opțiuni.`,
+    title: "Asks before it answers",
+    text: `When a request is too vague to act on, ${BRAND.assistant} asks a question back instead of guessing. It also says why it picked what it picked.`,
   },
   {
     icon: ShoppingCart,
-    titlu: "Experiență cap-coadă",
-    text: "Clienții își pot rafina alegerile, adaugă produse în coș și continuă printr-un flux complet de cumpărare.",
+    title: "Follows through to the cart",
+    text: "Ask for something cheaper, change your mind, swap a product. The cart and the checkout keep up.",
   },
 ];
 
-const testabile = [
+const testable = [
   {
     icon: MessageCircle,
-    titlu: "Înțelege limbajul natural",
-    exemplu: "Am tenul sensibil și vreau o cremă hidratantă lejeră pentru zi.",
+    title: "Reads plain language",
+    example: "I have sensitive skin and I want a light cream for daytime.",
   },
   {
     icon: HelpCircle,
-    titlu: "Pune întrebări de clarificare",
-    exemplu: "Caut o cremă nouă de față.",
+    title: "Asks when a request is vague",
+    example: "I'm looking for a new face cream.",
   },
   {
     icon: Star,
-    titlu: "Recomandă produse relevante",
-    exemplu: "Am nevoie de un ruj rezistent pentru o nuntă. Ce îmi recomanzi?",
+    title: "Recommends from the real catalog",
+    example: "I need a long-wear lipstick for a wedding. What do you suggest?",
   },
   {
     icon: Scale,
-    titlu: "Explică diferențele dintre opțiuni",
-    exemplu: "Care e diferența dintre aceste două produse și care e mai bun pentru ten gras?",
+    title: "Compares two products",
+    example: "What's the difference between these two, and which suits oily skin?",
   },
   {
     icon: SlidersHorizontal,
-    titlu: "Ajustează sugestiile după preferințe sau buget",
-    exemplu: "Îmi poți arăta o alternativă mai accesibilă, sub 150 RON?",
+    title: "Works to a budget",
+    example: "Show me something cheaper, under 150 RON.",
   },
   {
     icon: ShoppingCart,
-    titlu: "Duce clientul de la descoperire la coș",
-    exemplu: "Adaugă prima opțiune în coș.",
+    title: "Adds to the cart",
+    example: "Put the first one in my cart.",
   },
 ];
 
-const intrebari = [
-  "Am nevoie de o cremă hidratantă pentru ten sensibil.",
-  "Care e diferența dintre aceste produse?",
-  "Îmi poți recomanda ceva sub 150 RON?",
+const openers = [
+  "I need a moisturizer for sensitive skin.",
+  "What's the difference between these two?",
+  "Anything good under 150 RON?",
 ];
 
-const pasi = [
+const steps = [
   {
-    titlu: "Parcurge catalogul demo",
-    text: "Explorează produsele din magazinul nostru fictiv.",
+    title: "Open the catalog",
+    text: "300 products across six categories.",
   },
   {
-    titlu: `Apasă pe widgetul de chat ${BRAND.assistant}`,
-    text: "Începe o conversație în limbaj natural.",
+    title: `Click the ${BRAND.assistant} button`,
+    text: "Bottom right corner. Write a full sentence, not keywords.",
   },
   {
-    titlu: "Compară, alege și continuă",
-    text: "Adaugă în coș și finalizează checkout-ul simulat.",
+    title: "Follow it to checkout",
+    text: "Add what it suggests and run the order to the last step.",
   },
 ];
 
 /* A four-point star used as a section ornament — the page's only decorative glyph. */
-function Stea({ className = "" }) {
+function Star4({ className = "" }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
       <path d="M12 1.5c.5 4.6 2.4 7.4 6.9 8.4l1.6.35c.7.15.7 1.35 0 1.5l-1.6.35c-4.5 1-6.4 3.8-6.9 8.4-.5-4.6-2.4-7.4-6.9-8.4L3.5 11.7c-.7-.15-.7-1.35 0-1.5l1.6-.35c4.5-1 6.4-3.8 6.9-8.4Z" />
@@ -115,8 +115,8 @@ function Stea({ className = "" }) {
   );
 }
 
-/* Kraft bag with a bottle and a sprig — the illustration beside "cum explorezi". */
-function IlustratieSacosa({ className = "" }) {
+/* Kraft bag with a bottle and a sprig — the illustration beside "where to start". */
+function BagIllustration({ className = "" }) {
   return (
     <svg viewBox="0 0 120 120" className={className} aria-hidden="true">
       <path
@@ -156,7 +156,7 @@ export default function Landing() {
         <div className="mx-auto grid max-w-6xl items-start gap-10 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:gap-14">
           <div>
             <div className="flex items-center gap-2">
-              <Stea className="h-5 w-5 text-gray-900" />
+              <Star4 className="h-5 w-5 text-gray-900" />
               <span className="font-display text-2xl font-semibold uppercase tracking-[0.14em]">
                 {BRAND.name}
               </span>
@@ -164,20 +164,20 @@ export default function Landing() {
 
             <p className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#f7efe1] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8a6a34]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#c9963f]" />
-              Mediu demo
+              Demo environment
             </p>
 
             <h1 className="mt-5 font-display text-[34px] font-semibold leading-[1.1] tracking-tight md:text-[44px]">
-              Testează {BRAND.assistant} într-o experiență completă de cumpărare
+              Try {BRAND.assistant} in a working online store
             </h1>
 
             <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-gray-600">
-              Am construit un magazin online fictiv special ca să oferim un mediu realist în
-              care {BRAND.assistant} poate fi testată.
+              The shop is invented. We built it so {BRAND.assistant} would have a real place to
+              work, with 300 products, six categories and a cart that behaves like any other.
             </p>
             <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-gray-600">
-              Poți parcurge catalogul, îi poți cere recomandări, poți compara produse, adăuga
-              articole în coș și simula procesul de finalizare a comenzii.
+              Browse the catalog, ask {BRAND.assistant} what to buy, compare two products, put
+              something in the cart and go through checkout. Everything runs except the payment.
             </p>
 
             <div className="mt-7 flex gap-3 rounded-lg border border-[#f0e2c9] bg-[#fdf8f0] p-4">
@@ -185,12 +185,10 @@ export default function Landing() {
                 <Info className="h-3.5 w-3.5 text-[#8a6a34]" />
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-gray-900">
-                  Acesta este un mediu demo.
-                </p>
+                <p className="text-[13px] font-semibold text-gray-900">This is a demo.</p>
                 <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">
-                  Toate produsele, prețurile, promoțiile și pașii de checkout sunt fictivi și
-                  sunt afișați exclusiv în scop demonstrativ.
+                  Products, prices and promotions are invented. Checkout runs all the way to the
+                  last step and stops there.
                 </p>
               </div>
             </div>
@@ -199,11 +197,11 @@ export default function Landing() {
               to="/store"
               className="mt-7 inline-flex items-center gap-2.5 rounded-lg bg-brand-600 px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-700"
             >
-              Intră în magazinul demo <ArrowRight className="h-4 w-4" />
+              Enter the demo store <ArrowRight className="h-4 w-4" />
             </Link>
 
             <ul className="mt-7 flex flex-wrap gap-x-7 gap-y-3">
-              {promisiuni.map(({ icon: Icon, text }) => (
+              {promises.map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-2 text-[12.5px] text-gray-500">
                   <Icon className="h-4 w-4 text-gray-400" strokeWidth={1.6} />
                   {text}
@@ -218,9 +216,9 @@ export default function Landing() {
 
             <div className="pointer-events-none absolute -bottom-1 right-6 hidden items-end gap-2 md:flex">
               <p className="font-display text-[13px] italic leading-snug text-brand-700">
-                Apasă aici ca să
+                Click here to
                 <br />
-                vorbești cu {BRAND.assistant}
+                talk to {BRAND.assistant}
               </p>
               <svg viewBox="0 0 60 46" className="h-11 w-14 text-brand-600" aria-hidden="true">
                 <path
@@ -244,23 +242,22 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* --------------------------------------------------- ce arată acest demo */}
+      {/* ------------------------------------------------------- what it shows */}
       <section className="bg-[#fbfaf8] px-5 py-14">
         <div className="mx-auto max-w-5xl">
           <h2 className="flex items-center justify-center gap-2.5 font-display text-2xl font-semibold">
-            <Stea className="h-4 w-4 text-[#c9963f]" />
-            Ce arată acest demo
+            <Star4 className="h-4 w-4 text-[#c9963f]" />
+            What the demo shows
           </h2>
           <p className="mx-auto mt-3 max-w-3xl text-center text-[13.5px] leading-relaxed text-gray-500">
-            Demo-ul e construit ca să arate cum poate {BRAND.assistant} să însoțească un client pe
-            tot parcursul cumpărăturii — de la exprimarea unei nevoi în limbaj natural până la
-            descoperirea produselor, compararea opțiunilor și înaintarea spre finalizarea comenzii.
+            {BRAND.assistant}'s job is to take someone from a vague idea to a product they would
+            actually buy. Three parts of that are worth watching.
           </p>
 
           <div className="mt-10 grid gap-8 md:grid-cols-3 md:gap-0">
-            {capabilitati.map(({ icon: Icon, titlu, text }, i) => (
+            {showcase.map(({ icon: Icon, title, text }, i) => (
               <div
-                key={titlu}
+                key={title}
                 className={`flex gap-4 md:px-7 ${
                   i > 0 ? "md:border-l md:border-gray-200" : ""
                 }`}
@@ -269,7 +266,7 @@ export default function Landing() {
                   <Icon className="h-5 w-5 text-[#8a6a34]" strokeWidth={1.6} />
                 </span>
                 <div>
-                  <h3 className="text-[14px] font-semibold">{titlu}</h3>
+                  <h3 className="text-[14px] font-semibold">{title}</h3>
                   <p className="mt-1.5 text-[12.5px] leading-relaxed text-gray-500">{text}</p>
                 </div>
               </div>
@@ -278,32 +275,31 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------- ce poți testa */}
+      {/* ------------------------------------------------------ what to test */}
       <section className="bg-[#fbfaf8] px-5 pb-14">
         <div className="mx-auto max-w-5xl rounded-xl border border-gray-200 bg-white p-6 md:p-8">
           <h2 className="flex items-center justify-center gap-2.5 font-display text-2xl font-semibold">
-            <Stea className="h-4 w-4 text-[#c9963f]" />
-            Ce poți testa cu {BRAND.assistant}
+            <Star4 className="h-4 w-4 text-[#c9963f]" />
+            What you can test with {BRAND.assistant}
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-[13px] leading-relaxed text-gray-500">
-            {BRAND.assistant} e construită să înțeleagă limbajul natural și să ducă clientul de la
-            o nevoie inițială la un produs potrivit.
+            Six things worth trying. The quotes are prompts you can type as they are.
           </p>
 
           <ol className="mt-8 space-y-2">
-            {testabile.map(({ icon: Icon, titlu, exemplu }, i) => (
+            {testable.map(({ icon: Icon, title, example }, i) => (
               <li
-                key={titlu}
+                key={title}
                 className="flex items-stretch overflow-hidden rounded-lg border border-gray-200"
               >
                 <span className="grid w-12 shrink-0 place-items-center border-r border-gray-200 bg-[#faf6ee]">
                   <Icon className="h-4 w-4 text-[#8a6a34]" strokeWidth={1.6} />
                 </span>
                 <span className="flex flex-1 items-center px-4 py-3 text-[13px] font-medium md:w-[38%] md:flex-none">
-                  {i + 1}. {titlu}
+                  {i + 1}. {title}
                 </span>
                 <span className="hidden flex-1 items-center border-l border-gray-200 px-4 py-3 text-[12.5px] italic text-gray-500 md:flex">
-                  „{exemplu}”
+                  “{example}”
                 </span>
                 <span className="grid w-9 shrink-0 place-items-center">
                   <ChevronRight className="h-3.5 w-3.5 text-gray-300" />
@@ -314,21 +310,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* --------------------------------------- idei de întrebări + cum explorezi */}
+      {/* ------------------------------------------- openers + where to start */}
       <section className="bg-[#fbfaf8] px-5 pb-14">
         <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="font-display text-lg font-semibold">Nu știi ce să întrebi?</h3>
-            <p className="mt-1.5 text-[12.5px] text-gray-500">
-              Încearcă una dintre aceste întrebări ca să începi.
-            </p>
+            <h3 className="font-display text-lg font-semibold">Not sure what to ask?</h3>
+            <p className="mt-1.5 text-[12.5px] text-gray-500">Copy one of these to start.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {intrebari.map((intrebare) => (
+              {openers.map((opener) => (
                 <div
-                  key={intrebare}
+                  key={opener}
                   className="flex min-h-[92px] flex-col justify-between rounded-lg border border-gray-200 p-3"
                 >
-                  <p className="text-[12px] leading-relaxed text-gray-700">{intrebare}</p>
+                  <p className="text-[12px] leading-relaxed text-gray-700">{opener}</p>
                   <ChevronRight className="mt-2 h-3.5 w-3.5 self-end text-gray-300" />
                 </div>
               ))}
@@ -336,49 +330,45 @@ export default function Landing() {
           </div>
 
           <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="font-display text-lg font-semibold">Cum explorezi demo-ul</h3>
-            <p className="mt-1.5 text-[12.5px] text-gray-500">
-              Un mod simplu de a vedea {BRAND.assistant} în acțiune.
-            </p>
+            <h3 className="font-display text-lg font-semibold">Where to start</h3>
+            <p className="mt-1.5 text-[12.5px] text-gray-500">Three steps, about two minutes.</p>
 
             {/* narrowed only where the illustration is visible, so the steps
                 keep the full width on phones */}
             <ol className="mt-5 space-y-4 sm:max-w-[68%]">
-              {pasi.map((pas, i) => (
-                <li key={pas.titlu} className="flex gap-3">
+              {steps.map((step, i) => (
+                <li key={step.title} className="flex gap-3">
                   <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="text-[13px] font-semibold">{pas.titlu}</p>
-                    <p className="mt-0.5 text-[12px] leading-relaxed text-gray-500">{pas.text}</p>
+                    <p className="text-[13px] font-semibold">{step.title}</p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-gray-500">{step.text}</p>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <IlustratieSacosa className="pointer-events-none absolute -bottom-1 right-3 hidden h-36 w-36 sm:block" />
+            <BagIllustration className="pointer-events-none absolute -bottom-1 right-3 hidden h-36 w-36 sm:block" />
           </div>
         </div>
       </section>
 
-      {/* -------------------------------------------------------------- CTA final */}
+      {/* ---------------------------------------------------------- closing CTA */}
       <section className="bg-[#fbfaf8] px-5 pb-12">
         <div className="mx-auto flex max-w-5xl flex-col items-start gap-6 rounded-xl bg-[#f6e7ce] px-6 py-7 md:flex-row md:items-center md:px-9">
           <Sparkles className="h-8 w-8 shrink-0 text-[#c9963f]" strokeWidth={1.4} />
           <div className="flex-1">
             <h2 className="font-display text-[22px] font-semibold">
-              Gata să încerci {BRAND.assistant}?
+              Ready to try {BRAND.assistant}?
             </h2>
-            <p className="mt-1 text-[13px] text-[#6b5b42]">
-              Deschide magazinul demo și vezi cum funcționează cumpărarea ghidată.
-            </p>
+            <p className="mt-1 text-[13px] text-[#6b5b42]">The store is one click away.</p>
           </div>
           <Link
             to="/store"
             className="inline-flex items-center gap-2.5 rounded-lg bg-brand-600 px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-700"
           >
-            Deschide magazinul demo <ArrowRight className="h-4 w-4" />
+            Open the demo store <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -387,8 +377,8 @@ export default function Landing() {
         <p className="flex items-center justify-center gap-2 text-center text-[11.5px] text-gray-400">
           <Info className="h-3.5 w-3.5" />
           <span>
-            <span className="font-semibold text-gray-500">Reamintire:</span> acesta este un mediu
-            demo. Nu se procesează plăți reale și nu se plasează comenzi.
+            <span className="font-semibold text-gray-500">Reminder:</span> this is a demo. No
+            payments are taken and no orders are placed.
           </span>
         </p>
       </footer>
