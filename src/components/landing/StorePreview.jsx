@@ -76,7 +76,7 @@ export default function StorePreview() {
       {/* header */}
       <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5">
         <span className="flex flex-col leading-none">
-          <span className="font-display text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-900">
+          <span className="font-brand-serif text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-900">
             {BRAND.name}
           </span>
           {/* Written out rather than read from BRAND.tagline: the landing page is
@@ -102,10 +102,10 @@ export default function StorePreview() {
 
       {/* title block */}
       <div className="px-3 pt-3">
-        <p className="text-[5.5px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+        <p className="font-brand-eyebrow text-[5.5px] font-extrabold uppercase tracking-[0.2em] text-gray-400">
           {BRAND.name} catalog
         </p>
-        <h3 className="mt-1 font-display text-[13px] font-semibold text-gray-900">
+        <h3 className="mt-1 font-brand-serif text-[13px] font-semibold text-gray-900">
           All categories
         </h3>
         <p className="mt-0.5 text-[6px] leading-relaxed text-gray-500">

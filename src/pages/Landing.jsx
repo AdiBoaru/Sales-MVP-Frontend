@@ -150,24 +150,26 @@ function BagIllustration({ className = "" }) {
 
 export default function Landing() {
   return (
-    <main className="min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen bg-white font-brand-ui text-gray-900">
       {/* ------------------------------------------------------------------ hero */}
       <section className="border-b border-gray-100 px-5 py-10 md:py-14">
         <div className="mx-auto grid max-w-6xl items-start gap-10 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:gap-14">
           <div>
             <div className="flex items-center gap-2">
               <Star4 className="h-5 w-5 text-gray-900" />
-              <span className="font-display text-2xl font-semibold uppercase tracking-[0.14em]">
+              <span className="font-brand-serif text-2xl font-semibold uppercase tracking-[0.14em]">
                 {BRAND.name}
               </span>
             </div>
 
-            <p className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#f7efe1] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8a6a34]">
+            <p className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#f7efe1] px-2.5 py-1.5 font-brand-eyebrow text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#8a6a34]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#c9963f]" />
               Demo environment
             </p>
 
-            <h1 className="mt-5 font-display text-[34px] font-semibold leading-[1.1] tracking-tight md:text-[44px]">
+            {/* -0.015em and weight 600 are the display-heading settings on
+                nativextech.com, so the two pages set Fraunces identically */}
+            <h1 className="mt-5 font-brand-serif text-[34px] font-semibold leading-[1.1] tracking-[-0.015em] md:text-[44px]">
               Try {BRAND.assistant} in a working online store
             </h1>
 
@@ -215,7 +217,7 @@ export default function Landing() {
             <StorePreview />
 
             <div className="pointer-events-none absolute -bottom-1 right-6 hidden items-end gap-2 md:flex">
-              <p className="font-display text-[13px] italic leading-snug text-brand-700">
+              <p className="font-brand-serif text-[13px] italic leading-snug text-brand-700">
                 Click here to
                 <br />
                 talk to {BRAND.assistant}
@@ -245,7 +247,7 @@ export default function Landing() {
       {/* ------------------------------------------------------- what it shows */}
       <section className="bg-[#fbfaf8] px-5 py-14">
         <div className="mx-auto max-w-5xl">
-          <h2 className="flex items-center justify-center gap-2.5 font-display text-2xl font-semibold">
+          <h2 className="flex items-center justify-center gap-2.5 font-brand-serif text-2xl font-semibold">
             <Star4 className="h-4 w-4 text-[#c9963f]" />
             What the demo shows
           </h2>
@@ -278,7 +280,7 @@ export default function Landing() {
       {/* ------------------------------------------------------ what to test */}
       <section className="bg-[#fbfaf8] px-5 pb-14">
         <div className="mx-auto max-w-5xl rounded-xl border border-gray-200 bg-white p-6 md:p-8">
-          <h2 className="flex items-center justify-center gap-2.5 font-display text-2xl font-semibold">
+          <h2 className="flex items-center justify-center gap-2.5 font-brand-serif text-2xl font-semibold">
             <Star4 className="h-4 w-4 text-[#c9963f]" />
             What you can test with {BRAND.assistant}
           </h2>
@@ -314,7 +316,7 @@ export default function Landing() {
       <section className="bg-[#fbfaf8] px-5 pb-14">
         <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="font-display text-lg font-semibold">Not sure what to ask?</h3>
+            <h3 className="font-brand-serif text-lg font-semibold">Not sure what to ask?</h3>
             <p className="mt-1.5 text-[12.5px] text-gray-500">Copy one of these to start.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {openers.map((opener) => (
@@ -330,7 +332,7 @@ export default function Landing() {
           </div>
 
           <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="font-display text-lg font-semibold">Where to start</h3>
+            <h3 className="font-brand-serif text-lg font-semibold">Where to start</h3>
             <p className="mt-1.5 text-[12.5px] text-gray-500">Three steps, about two minutes.</p>
 
             {/* narrowed only where the illustration is visible, so the steps
@@ -359,7 +361,7 @@ export default function Landing() {
         <div className="mx-auto flex max-w-5xl flex-col items-start gap-6 rounded-xl bg-[#f6e7ce] px-6 py-7 md:flex-row md:items-center md:px-9">
           <Sparkles className="h-8 w-8 shrink-0 text-[#c9963f]" strokeWidth={1.4} />
           <div className="flex-1">
-            <h2 className="font-display text-[22px] font-semibold">
+            <h2 className="font-brand-serif text-[22px] font-semibold">
               Ready to try {BRAND.assistant}?
             </h2>
             <p className="mt-1 text-[13px] text-[#6b5b42]">The store is one click away.</p>

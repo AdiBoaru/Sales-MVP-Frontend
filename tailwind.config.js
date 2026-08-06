@@ -81,7 +81,11 @@ module.exports = {
   			heading: ['var(--font-heading)'],
   			body: ['var(--font-body)'],
   			display: ['var(--font-display)'],
-  			mono: ['var(--font-mono)']
+  			mono: ['var(--font-mono)'],
+  			/* nativextech.com type system — landing page only */
+  			'brand-serif': ['var(--font-brand-serif)'],
+  			'brand-ui': ['var(--font-brand-ui)'],
+  			'brand-eyebrow': ['var(--font-brand-eyebrow)']
   		},
   		keyframes: {
   			'accordion-down': {

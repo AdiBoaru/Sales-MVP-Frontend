@@ -35,6 +35,11 @@
        A cosmetics retailer sets its name in a serif; the UI sans stays for
        everything that is chrome rather than merchandise. */
     --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+    /* The nativextech.com type system, used by the landing page (font-brand-*).
+       Fallbacks mirror the company site's own stacks. */
+    --font-brand-serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-brand-ui: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-brand-eyebrow: "Poppins", ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
