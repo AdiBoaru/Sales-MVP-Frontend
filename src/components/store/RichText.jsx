@@ -94,28 +94,29 @@ const LEAD_CLASS = "text-[15px] font-bold leading-[1.45] text-[var(--aria-text)]
 const SUMMARY_CLASS = "text-[13.5px] leading-[1.6] text-[var(--aria-accent-line)]";
 const BODY_CLASS = "text-[13.5px] leading-[1.65] text-[var(--aria-text-2)]";
 
-// The reference interleaves the answer with the product cards: the lead + summary
-// come first, then the card, then the detail sections. `part` slices the parsed
-// blocks at the first heading/list so a caller can render each side of the cards.
-//   "intro" — everything before the first heading/list (nothing if it starts with one)
-//   "rest"  — the first heading/list onwards (nothing if there is none)
-// Exported so a caller can skip rendering an empty half.
-export function hasReplyPart(text, part) {
-  return sliceBlocks(parseBlocks(text), part).length > 0;
+// The reference interleaves the answer with the products: the bold lead and its
+// accent summary line introduce them, everything else follows them. That's the
+// first two paragraphs — a third paragraph already reads as commentary and belongs
+// underneath. `withHeading` additionally keeps the heading that LABELS a figure
+// ("Diferențe principale" above a comparison table) on the intro side.
+//
+// Returns the block index to split at, plus the total, so a caller can tell
+// whether either half is empty before rendering it.
+export function replySplit(text, { withHeading = false } = {}) {
+  const blocks = parseBlocks(text);
+  let index = 0;
+  while (index < 2 && blocks[index]?.type === "p") index++;
+  if (withHeading && blocks[index]?.type === "h") index++;
+  return { index, total: blocks.length };
 }
 
-function sliceBlocks(blocks, part) {
-  if (part !== "intro" && part !== "rest") return blocks;
-  const cut = blocks.findIndex((b) => b.type !== "p");
-  if (cut === -1) return part === "intro" ? blocks : [];
-  return part === "intro" ? blocks.slice(0, cut) : blocks.slice(cut);
-}
-
-function Reply({ text, part }) {
+function Reply({ text, part, split }) {
   const all = parseBlocks(text);
-  const blocks = sliceBlocks(all, part);
+  const blocks = part === "intro" ? all.slice(0, split) : part === "rest" ? all.slice(split) : all;
   if (blocks.length === 0) return null;
   let paragraphs = 0; // paragraphs seen before the first heading/list
+  // Past the intro, paragraphs are ordinary body copy — the lead/summary rhythm
+  // belongs to the opening of the answer only.
   let structured = part === "rest";
 
   return (
@@ -124,7 +125,7 @@ function Reply({ text, part }) {
         if (b.type === "h") {
           structured = true;
           return (
-            <h4 key={i} className="aria-heading text-[16.5px] leading-snug text-[var(--aria-text)] pt-1">
+            <h4 key={i} className="aria-heading text-[16.5px] leading-snug text-[var(--aria-text)] pt-2">
               <Inline text={b.text} />
             </h4>
           );
@@ -156,6 +157,6 @@ function Reply({ text, part }) {
   );
 }
 
-export default function RichText({ text, variant = "inline", part = "all" }) {
-  return variant === "reply" ? <Reply text={text} part={part} /> : <Inline text={text} />;
+export default function RichText({ text, variant = "inline", part = "all", split = 0 }) {
+  return variant === "reply" ? <Reply text={text} part={part} split={split} /> : <Inline text={text} />;
 }

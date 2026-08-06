@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ThumbsUp, ThumbsDown, AlertTriangle, Heart, Package, User } from "lucide-react";
 import { useWished, toggleWish, keyOfProduct } from "@/lib/wishlist";
-import RichText, { hasReplyPart } from "@/components/store/RichText";
+import RichText, { replySplit } from "@/components/store/RichText";
 import ChatProductCard from "@/components/store/ChatProductCard";
 import ChatOffer from "@/components/store/ChatOffer";
 
@@ -73,21 +73,26 @@ function ComparisonTable({ comparison }) {
   const cell = (v) => (v == null || v === "" ? "—" : v);
 
   const ProductHead = ({ col }) => {
+    // The image alone identifies the column, as in the reference — the compared
+    // prices belong to the table's own "Preț" row. A column that IS discounted still
+    // shows it, since a markdown is a signal no row carries.
+    const discounted = col.list_price != null && col.list_price > col.price;
     const head = (
       <>
-        <div className="w-14 h-14 mx-auto bg-white overflow-hidden flex items-center justify-center">
+        <div className="w-14 h-14 bg-white overflow-hidden flex items-center justify-center">
           {col.image_url ? (
             <img src={col.image_url} alt="" className="w-full h-full object-contain" />
           ) : (
             <Package className="w-6 h-6 text-[var(--aria-text-5)]" />
           )}
         </div>
-        {/* The image identifies the product visually; the name stays in the DOM for
-            screen readers (and so the column is never anonymous). */}
+        {/* The name stays in the DOM for screen readers, so the column is never anonymous. */}
         <span className="sr-only">{col.name}</span>
-        <div className="mt-1.5 text-[11px] text-center">
-          <ComparisonPrice price={col.price} listPrice={col.list_price} currency={col.currency} />
-        </div>
+        {discounted && (
+          <div className="mt-1.5 text-[11px]">
+            <ComparisonPrice price={col.price} listPrice={col.list_price} currency={col.currency} />
+          </div>
+        )}
       </>
     );
     return col.url ? (
@@ -425,18 +430,23 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
   }
 
   // The answer wraps the products the way the reference does: the lead paragraph and
-  // its accent summary line introduce the cards, and the detail sections ("De ce ți-l
-  // recomand", "Funcționalități principale"…) come after them. With nothing to show
-  // between the two halves the whole body simply renders in one run.
+  // its accent summary line introduce them, everything else ("De ce ți-l recomand",
+  // "Funcționalități principale", the closing advice…) comes after. A comparison
+  // additionally keeps the heading that names the table on the intro side.
   const wrapsProducts = hasContent && (hasProducts || Boolean(m.comparison));
-  const hasTail = wrapsProducts && hasReplyPart(m.content, "rest");
+  const split = wrapsProducts
+    ? replySplit(m.content, { withHeading: Boolean(m.comparison) })
+    : { index: 0, total: 0 };
+  const hasTail = wrapsProducts && split.index < split.total;
 
   return (
     <div className="flex flex-col gap-4">
       {hasTitle && <h3 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{m.title}</h3>}
 
       {/* The answer body — lead paragraph, accent summary line, sections, lists. */}
-      {hasContent && <RichText text={m.content} variant="reply" part={wrapsProducts ? "intro" : "all"} />}
+      {hasContent && (
+        <RichText text={m.content} variant="reply" part={wrapsProducts ? "intro" : "all"} split={split.index} />
+      )}
 
       {hasStatus && <StatusRows status={m.status} />}
       {hasConfidence && <ConfidenceBar value={m.confidence} />}
@@ -459,7 +469,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       ) : null}
 
       {/* The detail sections of the answer, below the products they describe. */}
-      {hasTail && <RichText text={m.content} variant="reply" part="rest" />}
+      {hasTail && <RichText text={m.content} variant="reply" part="rest" split={split.index} />}
 
       {/* Step-by-step routine timeline. */}
       {m.routine && <RoutineTimeline routine={m.routine} />}

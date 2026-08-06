@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Star, ShoppingCart, Heart, ChevronRight, ChevronDown, Package, Sparkles,
+  Star, ShoppingCart, Heart, ChevronRight, Package, Sparkles,
   Truck, Tag, Percent, ShieldCheck, Clock, Gift, Info,
 } from "lucide-react";
 import { addToCart } from "@/lib/cart";
@@ -308,13 +308,13 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
     >
       <Sparkles className="w-4 h-4 shrink-0 text-[var(--aria-purple)]" />
       <span className="flex-1 text-left text-[13px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
-      {canExpand ? (
-        <ChevronDown
-          className={`w-4 h-4 shrink-0 text-[var(--aria-text-5)] transition-transform ${showDetails ? "rotate-180" : ""}`}
-        />
-      ) : (
-        <ChevronRight className="w-4 h-4 shrink-0 text-[var(--aria-text-5)]" />
-      )}
+      {/* Always the reference's "›". When the bar expands in place it rotates a
+          quarter turn, so it reads as a disclosure rather than a dead arrow. */}
+      <ChevronRight
+        className={`w-4 h-4 shrink-0 text-[var(--aria-text-5)] transition-transform ${
+          canExpand && showDetails ? "rotate-90" : ""
+        }`}
+      />
     </button>
   );
 

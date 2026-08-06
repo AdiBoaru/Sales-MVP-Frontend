@@ -74,7 +74,7 @@
         ]
       }
     },
-    "assert": { "comparisonTable": true, "columnHeaders": 2, "dash": true, "productCards": 0, "textPresent": ["Iată diferențele principale.", "Crema A", "Crema B", "58,99", "Adaugă Crema A"] }
+    "assert": { "comparisonTable": true, "columnHeaders": 2, "dash": true, "productCards": 0, "textPresent": ["Iată diferențele principale.", "Crema A", "Crema B", "58.99 lei", "Adaugă Crema A"] }
   },
   {
     "case": "comparison_3col_sparse",
