@@ -72,7 +72,7 @@
 ### Domenii reale (din `vite.config.js` și `.github/workflows/deploy.yml`)
 | Rol | URL |
 |---|---|
-| Magazin (frontend) | `https://shop.nativextech.com` |
+| Magazin (frontend) | `https://demo.nativextech.com` |
 | Bot de chat | `https://bot.nativextech.com` |
 | Supabase | `https://xfczucwqntefethxxien.supabase.co` |
 
@@ -293,18 +293,30 @@ VITE_CHAT_PUBLIC_TOKEN = pub_…                        (browser-safe; CORS-lock
 ```
 `isChatConfigured = Boolean(PUBLIC_TOKEN) && (Boolean(API_BASE) || import.meta.env.DEV)`.
 
-### ⚠️ Capcana CORS / proxy (important!)
-Botul permite CORS **doar** pentru `https://shop.nativextech.com`. De aceea:
-- **Dev:** Vite proxează `/web/*` către `https://bot.nativextech.com` și **falsifică**
-  `Origin: https://shop.nativextech.com` (server-side, fără CORS). Vezi `vite.config.js`:
+### ⚠️ Capcana Origin / proxy (important!)
+Botul allowlistează `https://demo.nativextech.com` și verifică `Origin` **server-side pe fiecare
+rută `/web/*`** (NX-229), nu doar la bootstrap: CORS-ul de browser oprește doar CITIREA
+răspunsului de către JS, nu procesarea pe server — un bot îl ignoră complet. Potrivirea e
+**exactă** după normalizare: `demo.x` ≠ `www.demo.x` ≠ `http://demo.x` ≠ `demo.x:8443`.
+
+- **Dev:** Vite proxează `/web/*` către bot și **falsifică** originul (server-side, deci fără
+  CORS). Valoarea vine din `VITE_CHAT_DEV_ORIGIN`, cu default-ul originului vitrinei:
 ```js
-server: { proxy: { '/web': {
-  target: 'https://bot.nativextech.com',
+// vite.config.js — vezi fișierul pentru varianta completă
+'/web': {
+  target: env.VITE_CHAT_API_BASE || 'https://bot.nativextech.com',
   changeOrigin: true,
-  headers: { Origin: 'https://shop.nativextech.com' },
-}}}
+  headers: { Origin: env.VITE_CHAT_DEV_ORIGIN || 'https://demo.nativextech.com' },
+}
 ```
-- **Prod:** build-ul lovește botul direct prin `VITE_CHAT_API_BASE` (origine reală = shop).
+- **Prod:** build-ul lovește botul direct prin `VITE_CHAT_API_BASE`, iar originul real e chiar
+  vitrina.
+
+> **Istoric, ca să nu se repete.** Până acum aici scria `shop.nativextech.com`, iar comentariul din
+> `vite.config.js` afirma că botul acceptă doar acel origin. Era fals: botul n-a allowlistat
+> niciodată `shop.`. Câtă vreme originul se verifica DOAR la bootstrap, dev-ul mergea din
+> întâmplare. Valoarea era duplicată în două repo-uri, deci nimeni nu observa că diverge — de aceea
+> e acum o variabilă de mediu cu un singur default.
 
 ### Widget — `IziChatWidget.jsx`
 - Buton flotant dreapta-jos → panou lateral fix de 400px.
@@ -433,7 +445,7 @@ Când avem designul nou (din base44 sau alt builder), strategia e:
 - **Comenzi reale** în Supabase? (tabel + RLS de insert) — vezi §11.1.
 - **Auth / protejarea adminului**? (Supabase Auth) — §11.4.
 - **Categorii**: rămânem pe clasificatorul prin keyword sau le mutăm în DB? — §11.3.
-- **Domeniu**: păstrăm `shop.nativextech.com` + `bot.nativextech.com` + același proiect Supabase?
+- **Domeniu**: păstrăm `demo.nativextech.com` + `bot.nativextech.com` + același proiect Supabase?
   (dacă da, deploy-ul și env-urile rămân identice).
 
 ### Pași de wiring după ce avem designul nou
