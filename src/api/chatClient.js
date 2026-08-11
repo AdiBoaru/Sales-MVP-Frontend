@@ -9,9 +9,10 @@
 // New fields are ADDITIVE: missing -> simply not rendered (zero regression for old replies).
 //   On 403 (expired session, e.g. server restart) -> re-bootstrap once automatically.
 //
-// CORS: the bot only allows https://shop.nativextech.com. In dev, Vite proxies /web/*
-// and spoofs the Origin header (see vite.config.js). In prod the build hits the bot
-// directly via VITE_CHAT_API_BASE (real origin = the shop).
+// Origin: the bot allowlists https://demo.nativextech.com and checks `Origin` SERVER-SIDE on
+// every /web/* route (NX-229), not just at bootstrap — matching is exact after normalisation.
+// In dev, Vite proxies /web/* and spoofs that origin (see vite.config.js). In prod the build
+// hits the bot directly via VITE_CHAT_API_BASE, and the real origin is the storefront itself.
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 const PUBLIC_TOKEN = import.meta.env.VITE_CHAT_PUBLIC_TOKEN || "";
