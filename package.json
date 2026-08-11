@@ -11,7 +11,10 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "chat:contract:generate": "node scripts/generate-chat-contract-validator.mjs",
+    "chat:contract:check": "node scripts/generate-chat-contract-validator.mjs --check",
+    "chat:contract:sync": "node scripts/sync-chat-contract-from-backend.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -34,6 +37,8 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.3.4",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",

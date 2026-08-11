@@ -1,0 +1,11 @@
+{
+  "_note": "GENERAT de scripts/sync-chat-contract-from-backend.mjs — nu edita manual.",
+  "backend_repo": "Sales Ass",
+  "backend_sha": "685dd6bc31de059a5976722b85e21cdb8577538c",
+  "schema_file": "src/chat/contract/schema/web-view.v2.schema.json",
+  "schema_sha256": "1ba3eb43d19de07f9ffe0489c9b90e8b9c0980d1583e559878da44728b11c172",
+  "fixtures": {
+    "valid_views.json": "0296d35080db8d823ecb04578d9ae1b1cf68af81a68a8c0a7b15ba0ec2e5d096",
+    "invalid_views.json": "fc1213b4031b9f20e10ee9ca57f4abf2d7c87dce4d3f782a3f8bb3482980dbf3"
+  }
+}

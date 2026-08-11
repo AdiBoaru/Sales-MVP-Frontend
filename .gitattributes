@@ -1,0 +1,7 @@
+# NX-242 — artifactele contractului `web-view.v2` se compară BYTE cu byte (schema e hash-uită,
+# validatorul e regenerat și verificat). Cu `core.autocrlf=true` pe Windows, git ar livra CRLF în
+# working tree, iar `npm run chat:contract:check` ar raporta drift acolo unde nu există.
+src/chat/contract/** text eol=lf
+test/fixtures/web-v2/** text eol=lf
+scripts/generate-chat-contract-validator.mjs text eol=lf
+scripts/sync-chat-contract-from-backend.mjs text eol=lf

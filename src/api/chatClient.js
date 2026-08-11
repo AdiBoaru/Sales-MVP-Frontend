@@ -404,3 +404,23 @@ export async function sendChatMessage(message) {
 
   return normalizeReply(await res.json());
 }
+
+// ── NX-242: seam-ul `web-view.v2` — INACTIV ────────────────────────────────────────────────
+// Tot ce e deasupra rămâne calea v1, singura activă. Nu există auto-detect după shape și nicio
+// conversie v1→v2: cele două protocoale au intrări separate, iar comutarea aparține transportului
+// (NX-243) și rolloutului (NX-249). Aici există doar punctul în care se vor lega.
+//
+// Import DINAMIC intenționat: validatorul generat e mare, iar widgetul nu trebuie să-l plătească
+// în chunkul principal câtă vreme v2 e stins. Constanta de hash e statică și minusculă — bootstrapul
+// o anunță ca și capabilitate, iar serverul proiectează numai un contract pe care clientul îl
+// acceptă (`negotiate_schema`, NX-228).
+export {
+  WEB_VIEW_V2_SCHEMA_HASH,
+  WEB_VIEW_V2_SCHEMA_VERSION,
+} from "../chat/contract/generated/webViewV2SchemaHash.js";
+
+/** Încarcă decoderul v2 la cerere. Nimic din aplicație nu îl apelează încă. */
+export async function loadWebViewV2Decoder() {
+  const { decodeWebViewV2, WebViewContractError } = await import("../chat/contract/webViewV2.js");
+  return { decodeWebViewV2, WebViewContractError };
+}
