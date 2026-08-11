@@ -57,4 +57,54 @@ export default [
       "react-hooks/rules-of-hooks": "error",
     },
   },
+  // NX-242 — frontiera de contract. `src/chat/**` are voie să știe forma payloadului v2 și
+  // NIMIC din domeniu: fără catalog, fără coș, fără componente, fără client de date. În clipa în
+  // care decoderul poate importa `lib/cart`, redevine motorul al doilea pe care cardul îl scoate.
+  {
+    files: ["src/chat/**/*.{js,mjs}"],
+    ignores: ["src/chat/contract/generated/**"],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaVersion: 2022, sourceType: "module" },
+    },
+    rules: {
+      ...pluginJs.configs.recommended.rules,
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/lib/*",
+                "@/api/*",
+                "@/components/*",
+                "@/pages/*",
+                "../lib/*",
+                "../../lib/*",
+                "../api/*",
+                "../../api/*",
+                "../components/*",
+                "../../components/*",
+                "../pages/*",
+                "../../pages/*",
+              ],
+              message:
+                "src/chat/** e frontiera de contract: fără domeniu (catalog, coș, componente, transport).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Scripturile de build rulează în Node, nu în browser.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: { ecmaVersion: 2022, sourceType: "module" },
+    },
+    rules: { ...pluginJs.configs.recommended.rules },
+  },
+  // Artifactele generate nu se lintează: sunt cod emis de AJV, verificat prin regenerare.
+  { ignores: ["src/chat/contract/generated/**"] },
 ];
