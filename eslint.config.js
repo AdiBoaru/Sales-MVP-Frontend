@@ -10,6 +10,8 @@ export default [
       "src/components/**/*.{js,mjs,cjs,jsx}",
       "src/pages/**/*.{js,mjs,cjs,jsx}",
       "src/api/**/*.{js,mjs,cjs,jsx}",
+      // NX-243: layoutul persistent care deține singura instanță de ChatWidget.
+      "src/layouts/**/*.{js,mjs,cjs,jsx}",
     ],
     ignores: ["src/lib/**/*", "src/components/ui/**/*"],
     ...pluginJs.configs.recommended,
@@ -65,10 +67,15 @@ export default [
     ignores: ["src/chat/contract/generated/**"],
     languageOptions: {
       globals: globals.browser,
+      // NX-243 a adus un hook aici (`useWebChatController`), deci fișierele pot conține JSX-free
+      // React. Parserul are nevoie de `ecmaFeatures.jsx` dezactivat, dar de regulile de hooks da.
       parserOptions: { ecmaVersion: 2022, sourceType: "module" },
     },
+    plugins: { "react-hooks": pluginReactHooks },
     rules: {
       ...pluginJs.configs.recommended.rules,
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "no-restricted-imports": [
         "error",
         {

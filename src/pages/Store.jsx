@@ -6,7 +6,9 @@ import ProductCard from "@/components/store/ProductCard";
 import CategorySidebar from "@/components/store/CategorySidebar";
 import StoreLogo from "@/components/store/StoreLogo";
 import Pagination from "@/components/store/Pagination";
-import ChatWidget, { openAria } from "@/components/store/ChatWidget";
+// NX-243: widgetul e montat O SINGURĂ dată, de `ProtectedStorefrontChatLayout`.
+// Pagina păstrează doar seam-ul de deschidere programatică.
+import { openAria } from "@/components/store/ChatWidget";
 import { useCartCount } from "@/lib/cart";
 import { BRAND } from "@/lib/brand";
 
@@ -264,8 +266,6 @@ export default function Store() {
         </div>
       </div>
 
-      {/* Aria chat */}
-      <ChatWidget />
     </div>
   );
 }

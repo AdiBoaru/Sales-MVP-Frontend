@@ -405,22 +405,26 @@ export async function sendChatMessage(message) {
   return normalizeReply(await res.json());
 }
 
-// ── NX-242: seam-ul `web-view.v2` — INACTIV ────────────────────────────────────────────────
-// Tot ce e deasupra rămâne calea v1, singura activă. Nu există auto-detect după shape și nicio
-// conversie v1→v2: cele două protocoale au intrări separate, iar comutarea aparține transportului
-// (NX-243) și rolloutului (NX-249). Aici există doar punctul în care se vor lega.
+// ── NX-243: granița v1 / v2 ────────────────────────────────────────────────────────────────
+// Tot ce e deasupra rămâne calea v1 și rămâne NEATINSĂ până la cutoverul NX-249. Modulul acesta
+// NU mai e proprietarul lifecycle-ului v2: acceptul, recovery-ul, SSE-ul și sesiunea aparțin lui
+// `src/chat/transport/webTurnTransport.js` + `src/chat/state/useWebChatController.js`. Aici rămâne
+// doar configurația comună (aceeași bază de API, același token public) și comutatorul.
 //
-// Import DINAMIC intenționat: validatorul generat e mare, iar widgetul nu trebuie să-l plătească
-// în chunkul principal câtă vreme v2 e stins. Constanta de hash e statică și minusculă — bootstrapul
-// o anunță ca și capabilitate, iar serverul proiectează numai un contract pe care clientul îl
-// acceptă (`negotiate_schema`, NX-228).
+// Comutatorul e EXPLICIT, la build: nu există auto-detectare după forma payloadului și nicio
+// conversie v1→v2. Un client care „ghicește" protocolul din răspuns e un client care va ghici
+// greșit exact în ziua migrării.
 export {
   WEB_VIEW_V2_SCHEMA_HASH,
   WEB_VIEW_V2_SCHEMA_VERSION,
 } from "../chat/contract/generated/webViewV2SchemaHash.js";
 
-/** Încarcă decoderul v2 la cerere. Nimic din aplicație nu îl apelează încă. */
-export async function loadWebViewV2Decoder() {
-  const { decodeWebViewV2, WebViewContractError } = await import("../chat/contract/webViewV2.js");
-  return { decodeWebViewV2, WebViewContractError };
-}
+/** Configurația de transport, împărțită de ambele protocoale. */
+export const CHAT_TRANSPORT_CONFIG = Object.freeze({
+  apiBase: API_BASE,
+  publicToken: PUBLIC_TOKEN,
+});
+
+/** Protocolul v2 e pornit? OFF implicit — rolloutul e al NX-249. */
+export const isChatProtocolV2Enabled =
+  import.meta.env.VITE_CHAT_PROTOCOL_V2 === "1" && Boolean(PUBLIC_TOKEN);

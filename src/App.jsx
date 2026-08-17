@@ -4,6 +4,9 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from '@/lib/PageNotFound';
 import ScrollToTop from '@/components/ScrollToTop';
+// NX-243: layoutul care deține SINGURA instanță de ChatWidget. Deliberat NU e `lazy`: un layout
+// suspendabil s-ar remonta la prima navigare între rutele copil, adică exact bug-ul reparat aici.
+import ProtectedStorefrontChatLayout from '@/layouts/ProtectedStorefrontChatLayout';
 
 // Route-level code splitting: each page (and its heavy deps — supabase on the
 // store routes) lands in its own chunk instead of one monolithic bundle on
@@ -30,8 +33,13 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/store" element={<Store />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
+            {/* Rutele de vitrină împart un layout persistent: paginile se schimbă prin
+                `<Outlet />`, widgetul rămâne montat. Allowlist strict — landing și /Cart
+                rămân în afara lui. */}
+            <Route element={<ProtectedStorefrontChatLayout />}>
+              <Route path="/store" element={<Store />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+            </Route>
             <Route path="/Cart" element={<Cart />} />
             <Route path="/cart" element={<Navigate to="/Cart" replace />} />
             <Route path="*" element={<PageNotFound />} />
