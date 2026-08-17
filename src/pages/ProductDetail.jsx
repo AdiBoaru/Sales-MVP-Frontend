@@ -27,7 +27,8 @@ import { keyOfProduct, toggleWish, useWished } from "@/lib/wishlist";
 import { buildHighlights, buildProductPanels, deliveryEta, stripNamePrefix } from "@/lib/productContent";
 import { formatCurrency } from "@/utils";
 import StoreHeader from "@/components/store/StoreHeader";
-import ChatWidget from "@/components/store/ChatWidget";
+// NX-243: mountul widgetului s-a mutat în `ProtectedStorefrontChatLayout` — o singură
+// instanță pentru /store și /product/:id, care supraviețuiește navigării.
 import ProductPanels from "@/components/store/ProductPanels";
 
 // Highlight pills carry an icon name (lib/productContent.js stays React-free);
@@ -350,7 +351,6 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      <ChatWidget />
     </div>
   );
 }

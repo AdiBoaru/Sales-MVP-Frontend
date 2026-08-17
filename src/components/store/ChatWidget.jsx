@@ -4,7 +4,15 @@ import {
   MessageCircle, X, Send, Plus, Minus, Check, ShoppingCart, Trash2,
   ChevronDown, Bookmark, ArrowRight, Mic,
 } from "lucide-react";
-import { sendChatMessage, resetChatSession, isChatConfigured } from "@/api/chatClient";
+import {
+  sendChatMessage,
+  resetChatSession,
+  isChatConfigured,
+  isChatProtocolV2Enabled,
+  CHAT_TRANSPORT_CONFIG,
+} from "@/api/chatClient";
+import { useWebChatController } from "@/chat/state/useWebChatController";
+import ChatV2View from "@/components/store/ChatV2View";
 import { addToCart, useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
 import { useWishlist, removeWish } from "@/lib/wishlist";
 import { formatCurrency } from "@/utils";
@@ -77,6 +85,10 @@ const DEMO = (() => {
 // generic process copy (not fabricated product facts — the bot doesn't stream real
 // reasoning steps today), revealed in sequence; collapsible while running, like the
 // design prototype's timeline card.
+//
+// ⚠️ NX-243: acesta e progres SIMULAT cu timere locale și rămâne EXCLUSIV pe calea v1. Pe v2 nu
+// se folosește: acolo statusul vine din ledgerul serverului (`accepted`/`working`/`validating`),
+// cu textul lui, iar dacă serverul nu spune nimic, nu se afișează nicio etapă inventată.
 const THINKING_STEPS = ["Analizez cerința ta", "Caut în catalogul magazinului", "Pregătesc răspunsul"];
 
 function ThinkingIndicator() {
@@ -134,6 +146,22 @@ function ThinkingIndicator() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// NX-243 — indicatorul de progres pe calea v2: TEXT SERVER-OWNED, fără timere și fără etape
+// inventate. `label` vine din `view.progress` (dacă serverul îl trimite) sau din anunțul a11y
+// corespunzător statusului real al turului. Fără niciuna dintre ele nu se afișează nimic.
+function ServerProgress({ label, detail }) {
+  if (!label) return null;
+  return (
+    <div className="flex justify-start" role="status" aria-live="polite">
+      <div className="inline-flex items-center gap-2.5 bg-white border border-[var(--aria-border)] rounded-2xl rounded-bl-md shadow-sm px-3.5 py-2.5">
+        <span className="w-[13px] h-[13px] rounded-full border-2 border-[rgba(47,102,76,0.2)] border-t-[#7C3AED] aria-think-spinner shrink-0" />
+        <span className="text-xs font-medium text-[var(--aria-purple)]">{label}</span>
+        {detail ? <span className="text-[11px] text-[var(--aria-text-4)]">{detail}</span> : null}
       </div>
     </div>
   );
@@ -381,9 +409,27 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(DEMO);
   const [showCart, setShowCart] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
-  const [messages, setMessages] = useState(() => (DEMO ? demoMessages() : loadMessages()));
+  // Pe v2 transcriptul NU se mai citește din localStorage: adevărul vine din backend. Lista v1
+  // rămâne pentru calea veche, neatinsă până la cutoverul NX-249.
+  const [messages, setMessages] = useState(() =>
+    DEMO ? demoMessages() : isChatProtocolV2Enabled ? [] : loadMessages(),
+  );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+
+  // NX-243 — controllerul v2. Hook necondiționat (regula hooks); cu `enabled: false` e complet
+  // inert: nu face niciun request, nu atinge storage-ul și nu programează niciun timer.
+  const v2 = useWebChatController({
+    enabled: isChatProtocolV2Enabled,
+    apiBase: CHAT_TRANSPORT_CONFIG.apiBase,
+    publicToken: CHAT_TRANSPORT_CONFIG.publicToken,
+  });
+  // `?preview=1` / `?demo=1` seedează un thread v1 CLIENT-SIDE, fără backend. Îl ținem pe
+  // randarea v1 chiar și cu protocolul v2 pornit: altfel unealta de review vizual ar arăta un
+  // widget gol (view-urile v2 vin doar de la server).
+  const v2Active = isChatProtocolV2Enabled && !DEMO;
+  // Un singur adevăr pentru „e ceva în lucru": pe v2 îl deține mașina de stare, nu un boolean.
+  const busy = v2Active ? v2.busy : sending;
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
   const cartCount = useCartCount();
   const wishlist = useWishlist();
@@ -445,10 +491,15 @@ export default function ChatWidget() {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const grew = messages.length > prevLenRef.current;
-    prevLenRef.current = messages.length; // keep the baseline current (incl. reset/shrink)
-    const last = messages[messages.length - 1];
-    if (grew && last?.role === "assistant" && lastMsgRef.current) {
+    const thread = v2Active ? v2.views : messages;
+    const grew = thread.length > prevLenRef.current;
+    prevLenRef.current = thread.length; // keep the baseline current (incl. reset/shrink)
+    // Pe v2 fiecare intrare din listă e un view al asistentului (backendul nu emite încă mesaje
+    // cu `role: "user"`), deci alinierea la început se aplică mereu.
+    const lastIsAssistant = v2Active
+      ? thread.length > 0
+      : messages[messages.length - 1]?.role === "assistant";
+    if (grew && lastIsAssistant && lastMsgRef.current) {
       // A new bot reply: align its top so the reader starts at the beginning (long
       // hero/routine replies used to jump to the very bottom). One frame's delay lets
       // the freshly-rendered reply settle to its final height first.
@@ -459,22 +510,33 @@ export default function ChatWidget() {
       // Your own message, the thinking indicator, or a reset: conventional bottom.
       el.scrollTop = el.scrollHeight;
     }
-  }, [messages, sending]);
+  }, [messages, v2.views, v2Active, busy]);
 
   // Mirror the conversation to localStorage so closing (X) or navigating keeps it.
   // Skipped in demo mode so the sample thread never overwrites a real conversation.
   useEffect(() => {
-    if (DEMO) return;
+    // NX-243: pe v2 nu există transcript local. Oglindirea rămâne strict pe calea v1.
+    if (DEMO || v2Active) return;
     try {
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
     } catch {
       /* ignore quota / private mode */
     }
-  }, [messages]);
+  }, [messages, v2Active]);
 
-  const send = async (text) => {
+  const send = async (text, source = "composer") => {
     const message = (text ?? input).trim();
-    if (!message || sending) return;
+    if (!message) return;
+
+    if (v2Active) {
+      // Guardul real e SINCRON, în controller (înainte de orice `await`): un al doilea Enter/click
+      // în același tick e refuzat acolo. Inputul se golește DOAR dacă turul chiar a pornit — altfel
+      // am șterge textul clientului fără să fi trimis nimic.
+      if (v2.sendText(message, { source })) setInput("");
+      return;
+    }
+
+    if (sending) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", content: message }]);
     setSending(true);
@@ -505,6 +567,13 @@ export default function ChatWidget() {
   };
 
   const handleReset = () => {
+    if (v2Active) {
+      // Pe v2 „conversație nouă" înseamnă sesiune nouă (alt `visitor_id` = altă conversație).
+      // Controllerul refuză resetul cât timp există un turn activ: un răspuns în zbor nu are voie
+      // să se lipească de conversația următoare.
+      v2.reset();
+      return;
+    }
     resetChatSession();
     try {
       localStorage.removeItem(MESSAGES_KEY);
@@ -515,10 +584,24 @@ export default function ChatWidget() {
   };
 
   // Before the first user message we show a centered welcome screen instead of the thread.
-  const hasConversation = messages.some((m) => m.role === "user");
+  // Pe v2 „există conversație" înseamnă că serverul a livrat cel puțin un view sau că un turn e
+  // în lucru — niciodată un mesaj compus local.
+  const hasConversation = v2Active
+    ? v2.views.length > 0 || busy || v2.sessionOutcome !== null || v2.fault !== null
+    : messages.some((m) => m.role === "user");
   const visibleMessages = hasConversation
     ? messages.filter((msg, i) => !isInitialWelcomeMessage(msg, i))
     : messages;
+
+  // Progresul afișat pe v2: exclusiv text server-owned. `view.progress` dacă serverul îl trimite,
+  // altfel anunțul a11y al statusului REAL. Fără sursă ⇒ fără etichetă, nu o etapă inventată.
+  const v2Progress = (() => {
+    if (!v2Active || v2.progressStatus === null) return null;
+    const progress = v2.view?.progress;
+    if (progress?.label) return { label: progress.label, detail: progress.detail };
+    const announcement = v2.view?.a11y?.announcements?.[v2.progressStatus];
+    return announcement ? { label: announcement, detail: null } : null;
+  })();
 
   return (
     <>
@@ -554,8 +637,9 @@ export default function ChatWidget() {
               {hasConversation && (
                 <button
                   onClick={handleReset}
+                  disabled={v2Active && !v2.canSubmit}
                   title="Începe un chat nou"
-                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-2.5 py-1 rounded-full transition-colors"
+                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-2.5 py-1 rounded-full transition-colors disabled:opacity-40"
                 >
                   <Plus className="w-3.5 h-3.5" /> Chat nou
                 </button>
@@ -632,7 +716,8 @@ export default function ChatWidget() {
                 {INITIAL_SUGGESTIONS.map((s, j) => (
                   <button
                     key={j}
-                    onClick={() => send(s)}
+                    disabled={v2Active && !v2.canSubmit}
+                    onClick={() => send(s, "suggestion")}
                     className="flex items-center gap-3 text-left px-3.5 min-[380px]:px-4 py-3 min-[380px]:py-3.5 bg-white border border-[var(--aria-border)] rounded-[13px] text-[13px] text-[var(--aria-text-2)] shadow-sm hover:border-[var(--aria-purple)] hover:shadow-md transition-all"
                   >
                     <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg shrink-0" />
@@ -644,19 +729,55 @@ export default function ChatWidget() {
             </div>
           ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-6 bg-[var(--aria-bg)]">
-            {visibleMessages.map((msg, i) => (
-              <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
-                <ChatMessage
-                  message={msg}
-                  isFirst={i === 0}
-                  onSuggestion={send}
-                  onQuickReply={send}
-                  onToast={showToast}
-                />
-              </div>
-            ))}
+            {v2Active ? (
+              <>
+                {/* Sesiune nouă: bannerul e CHROME tehnic, nu un mesaj de asistent. Istoricul
+                    vechi nu se păstrează și nu se atașează noii conversații. */}
+                {v2.sessionOutcome === "new_session" && (
+                  <div className="rounded-xl border border-[var(--aria-border)] bg-[var(--aria-surface-2)] px-3 py-2 text-[12px] text-[var(--aria-text-4)]">
+                    Sesiunea a expirat, așa că am pornit o conversație nouă.
+                  </div>
+                )}
+                {v2.views.map((view, i) => (
+                  <div key={view.turn.id} ref={i === v2.views.length - 1 ? lastMsgRef : null}>
+                    <ChatV2View view={view} onAction={v2.sendAction} disabled={!v2.canSubmit} />
+                  </div>
+                ))}
+                {v2Progress && <ServerProgress label={v2Progress.label} detail={v2Progress.detail} />}
+                {/* Eroare TEHNICĂ (transport/sesiune/contract): se arată ca stare a widgetului, cu
+                    reîncercare pe ACELAȘI turn. Niciodată ca replică a asistentului. */}
+                {v2.fault && !busy && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] text-amber-900" role="alert">
+                    {v2.fault.serverMessage || "Conexiunea cu asistentul s-a întrerupt."}
+                    {v2.canRetry && (
+                      <button
+                        type="button"
+                        onClick={v2.retry}
+                        className="ml-2 font-semibold underline"
+                      >
+                        Reîncearcă
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {visibleMessages.map((msg, i) => (
+                  <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
+                    <ChatMessage
+                      message={msg}
+                      isFirst={i === 0}
+                      onSuggestion={send}
+                      onQuickReply={send}
+                      onToast={showToast}
+                    />
+                  </div>
+                ))}
 
-            {sending && <ThinkingIndicator />}
+                {sending && <ThinkingIndicator />}
+              </>
+            )}
           </div>
           )}
 
@@ -677,16 +798,23 @@ export default function ChatWidget() {
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Întreabă orice despre produse..."
-                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2"
+                    /* NX-243: pe v2 inputul chiar se DEZACTIVEAZĂ cât timp există un turn activ.
+                       În v1 rămânea editabil, iar guardul se aplica abia în `send()`. */
+                    disabled={v2Active && !v2.canSubmit}
+                    aria-label={v2Active ? v2.view?.composer?.label : undefined}
+                    placeholder={
+                      (v2Active && v2.view?.composer?.placeholder) || "Întreabă orice despre produse..."
+                    }
+                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60"
                   />
                   <MicButton
-                    disabled={sending}
+                    disabled={busy || (v2Active && !v2.canSubmit)}
                     onTranscript={(t) => setInput((v) => (v.trim() ? `${v.trim()} ${t}` : t))}
                   />
                   <button
                     type="submit"
-                    disabled={sending || !input.trim()}
+                    title={v2Active ? v2.view?.composer?.send_label : undefined}
+                    disabled={(v2Active ? !v2.canSubmit : sending) || !input.trim()}
                     className="w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-90"
                   >
                     <Send className="w-4 h-4" />
