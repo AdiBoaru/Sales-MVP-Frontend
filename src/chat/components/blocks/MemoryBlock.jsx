@@ -16,15 +16,22 @@ export default function MemoryBlock({ block }) {
           {block.title}
         </span>
       ) : null}
-      {block.criteria.map((criterion, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(47,102,76,0.07)] border border-[rgba(47,102,76,0.22)] rounded-full text-[11px] text-[var(--aria-purple)]"
-        >
-          <span className="w-1 h-1 rounded-full bg-[#38BDF8] shrink-0" aria-hidden="true" />
-          {criterion}
-        </span>
-      ))}
+      {/* NX-245: criteriile sunt o LISTĂ, nu o propoziție. Fără `<ul>`, screen readerul citește
+          „ten gras sub 100 lei fără parfum" ca pe un singur șir și cele trei criterii se topesc
+          într-unul singur; cu listă, se aude „listă cu 3 elemente" și pot fi parcurse pe rând.
+          `key` pe index e singura opțiune: `criteria` e o listă de string-uri în schemă, fără ID —
+          și e un snapshot înlocuit integral la fiecare tur, deci nu se reordonează sub focus. */}
+      <ul className="flex flex-wrap items-center gap-1.5 list-none">
+        {block.criteria.map((criterion, i) => (
+          <li
+            key={i}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(47,102,76,0.07)] border border-[rgba(47,102,76,0.22)] rounded-full text-[11px] text-[var(--aria-purple)]"
+          >
+            <span className="w-1 h-1 rounded-full bg-[#38BDF8] shrink-0" aria-hidden="true" />
+            {criterion}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

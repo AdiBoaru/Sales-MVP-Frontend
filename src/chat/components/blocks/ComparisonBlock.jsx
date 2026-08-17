@@ -26,7 +26,18 @@ function Cell({ cell }) {
 
 export default function ComparisonBlock({ block }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--aria-border)] bg-white">
+    // NX-245: `tabIndex={0}` pe containerul care derulează orizontal. Un tabel de comparație la
+    // 320px sau la 400% zoom nu încape, iar o regiune care se derulează DOAR cu degetul sau cu
+    // mouse-ul e inaccesibilă de la tastatură (WCAG 2.1.1, regula axe `scrollable-region-focusable`).
+    // `role="group"`, nu `region`: `region` e landmark și cere nume, iar numele ar trebui să fie
+    // server-owned și localizat — contractul nu-l are, iar un landmark anonim în lista de repere e
+    // mai rău decât niciunul. Din exact același motiv tabelul rămâne fără `<caption>`; ambele sunt
+    // follow-up de backend, nu ceva de inventat aici.
+    <div
+      className="overflow-x-auto rounded-xl border border-[var(--aria-border)] bg-white"
+      role="group"
+      tabIndex={0}
+    >
       <table className="w-full text-[12px]">
         <thead>
           <tr className="border-b border-[var(--aria-border-2)]">

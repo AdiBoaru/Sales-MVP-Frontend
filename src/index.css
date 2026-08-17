@@ -275,3 +275,69 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   NX-245 — accesibilitatea widgetului v2, în CSS.
+
+   Regulile de aici sunt despre PERCEPȚIE, nu despre conținut: unde se vede
+   focusul, ce se mișcă, unde se termină ecranul fizic. Nimic nu depinde de
+   payload, deci nimic nu poate deveni al doilea creier.
+--------------------------------------------------------------------------- */
+
+/* Textul citit de screen reader și de nimeni altcineva. NU `display:none` și nu
+   `visibility:hidden` — ambele scot nodul din arborele de accesibilitate, adică
+   exact opusul scopului. Rămâne un dreptunghi de 1px, decupat. */
+.nx-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus vizibil, pe ORICE fundal. Inelul e navy închis, nu violetul de accent:
+   violetul pe butonul cu gradient violet→roz ar avea sub 3:1, adică un indicator
+   de focus invizibil fix pe controlul cel mai important (launcherul). Navy dă
+   ~14:1 pe alb și ~4.5:1 pe gradient. `:focus-visible`, nu `:focus`, ca un click
+   de mouse să nu lase inel în urmă. */
+.aria-widget :focus-visible,
+.nx-chat-launcher:focus-visible {
+  outline: 3px solid #16213e;
+  outline-offset: 2px;
+}
+
+/* Transcriptul primește focus PROGRAMATIC când composerul se dezactivează sub
+   degetul utilizatorului (`:focus-visible` n-ar prinde, fiindcă nu vine de la
+   tastatură). Fără indicator, focusul ar dispărea într-un container mut. */
+.aria-widget [role="log"]:focus {
+  outline: 2px solid #16213e;
+  outline-offset: -2px;
+}
+
+/* Ecranul fizic: crestătura de sus și bara de gesturi de jos. Panelul e
+   `inset-y-0`, deci fără asta antetul (cu butonul de închidere) intră sub
+   crestătură pe telefon. Composerul își are deja marginea de jos în componentă. */
+.nx-chat-panel {
+  padding-top: env(safe-area-inset-top);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Mișcarea nonesențială dispare; STATUSUL rămâne, fiindcă e text, nu animație.
+     Spinnerul de progres devine un punct static lângă textul serverului. */
+  .aria-widget .aria-think-spinner,
+  .aria-widget .aria-think-dot,
+  .aria-widget .aria-confidence-bar,
+  .aria-widget .aria-msg-in {
+    animation: none !important;
+  }
+  .aria-widget *,
+  .nx-chat-launcher {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,5 +1,6 @@
 import globals from "globals";
 import pluginJs from "@eslint/js";
+import pluginJsxA11y from "eslint-plugin-jsx-a11y";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginUnusedImports from "eslint-plugin-unused-imports";
@@ -81,10 +82,23 @@ export default [
       react: pluginReact,
       "react-hooks": pluginReactHooks,
       "unused-imports": pluginUnusedImports,
+      // NX-245 — accesibilitatea, ca regulă de lint. Suita de teste prinde stările pe care le
+      // randează; linterul prinde clasa de greșeli care nu apare în niciun fixture: un `<div>` cu
+      // `onClick`, un `<img>` fără `alt`, un `aria-*` scris greșit. Amândouă sunt necesare.
+      "jsx-a11y": pluginJsxA11y,
     },
     rules: {
       ...pluginJs.configs.recommended.rules,
       ...pluginReact.configs.flat.recommended.rules,
+      ...pluginJsxA11y.flatConfigs.recommended.rules,
+      // O regiune care se derulează trebuie să fie focusabilă de la tastatură (axe
+      // `scrollable-region-focusable`), iar `group` e rolul care descrie asta fără să pretindă un
+      // nume server-owned pe care contractul nu-l are. Fără excepția de aici, cele două verificări
+      // s-ar contrazice: linterul ar cere scoaterea lui `tabIndex`, axe ar cere punerea lui.
+      "jsx-a11y/no-noninteractive-tabindex": [
+        "error",
+        { tags: [], roles: ["tabpanel", "group"], allowExpressionValues: true },
+      ],
       "react/prop-types": "off",
       "react/react-in-jsx-scope": "off",
       "react-hooks/rules-of-hooks": "error",

@@ -21,8 +21,29 @@
 // suprafața e mică și deliberat plicticoasă.
 
 export const TECHNICAL_COPY = Object.freeze({
-  /** Numele accesibil al launcherului cât timp serverul n-a livrat încă `chrome`. */
+  /**
+   * Numele accesibil al launcherului cât timp serverul n-a livrat încă `chrome`. NX-245 îl
+   * refolosește și ca nume al dialogului în aceeași situație: un `role="dialog"` fără nume
+   * accesibil e violare axe, iar starea „bootstrap picat" e una dintre stările canonice pe care
+   * cardul cere zero violări.
+   */
   launcherFallback: 'Asistent',
+  /**
+   * NX-245 — numele butonului de închidere când `chrome` lipsește. Butonul e doar o iconiță, deci
+   * fără el nu are NICIUN nume accesibil: cineva care navighează cu screen readerul aude „buton"
+   * și n-are cum să afle că e singura ieșire din panel. Aceeași regulă ca mai sus — tehnic, nu
+   * comercial — și tot temporar: cu bootstrapul reușit, `chrome.close_label` câștigă întotdeauna.
+   */
+  closeFallback: 'Închide',
+  /**
+   * NX-245 — numele câmpului de text și al butonului de trimitere când `composer` lipsește.
+   * NX-244 a decis DELIBERAT ca în starea „backend indisponibil" composerul să rămână vizibil și
+   * dezactivat, ca starea să fie evidentă în loc de tăcută. Consecința: două controale fără nume
+   * accesibil (`label` și `button-name`, ambele critice la axe). Fallbackurile le acoperă exact pe
+   * durata în care serverul n-a livrat nimic — cu bootstrapul reușit, `composer.*` câștigă mereu.
+   */
+  composerFallback: 'Mesaj',
+  sendFallback: 'Trimite',
   /** Transport căzut, timeout, buget epuizat. Însoțit de reîncercare când are sens. */
   connectionLost: 'Conexiunea cu asistentul s-a întrerupt.',
   retry: 'Reîncearcă',

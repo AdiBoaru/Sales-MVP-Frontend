@@ -43,11 +43,28 @@ export default function ActionControl({ action, onSubmitAction, disabled = false
     // inactivă: un `<a href>` rămâne focusabil și se activează cu Enter chiar și cu
     // `pointer-events-none`, adică butonul „dezactivat" ar naviga oricum de la tastatură.
     if (enabled === false || disabled) {
+      // NX-245: buton NATIV dezactivat, nu un `<span aria-disabled>`. Un span nu are rol, deci
+      // `aria-disabled` pe el nu înseamnă nimic pentru tehnologia asistivă: utilizatorul aude o
+      // etichetă suspendată în aer și n-are cum să afle că e un control momentan indisponibil. Un
+      // `<button disabled>` se anunță „buton, indisponibil", nu e focusabil și nu e activabil.
+      //
+      // Rămâne, ca în NX-244, un NE-link: nu are `href`, deci nu apare în lista de linkuri a
+      // screen readerului și Enter nu-l poate duce nicăieri. Rolul diferă între stări (link când
+      // e activ, buton când nu e) fiindcă în starea inertă nu există nicio destinație de promis.
       return (
-        <span className={`${className} ${INACTIVE_CLASS}`} aria-disabled="true">
+        <button
+          type="button"
+          disabled
+          // `disabled` + `aria-disabled` împreună: primul e adevărul pentru browser (fără focus,
+          // fără activare), al doilea e redundant pe hârtie, dar face starea EXPLICITĂ și
+          // identică pe ambele ramuri (submit și navigate) — cardul cere coerență între ele, iar
+          // o suită care verifică o singură formă e o suită care nu observă când ramurile diverg.
+          aria-disabled="true"
+          className={`${className} ${INACTIVE_CLASS} disabled:opacity-40`}
+        >
           <ActionIcon icon={action.icon} />
           {label}
-        </span>
+        </button>
       )
     }
     return (
@@ -69,6 +86,7 @@ export default function ActionControl({ action, onSubmitAction, disabled = false
         type="button"
         data-action-id={id}
         disabled={disabled || enabled === false}
+        aria-disabled={disabled || enabled === false ? true : undefined}
         onClick={() => {
           onMetric?.('web_action_activate_total', { activation_type: 'submit', appearance })
           // Tokenul, ATÂT. Fără label, fără id, fără text construit din el.
