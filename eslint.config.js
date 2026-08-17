@@ -63,19 +63,35 @@ export default [
   // NIMIC din domeniu: fără catalog, fără coș, fără componente, fără client de date. În clipa în
   // care decoderul poate importa `lib/cart`, redevine motorul al doilea pe care cardul îl scoate.
   {
-    files: ["src/chat/**/*.{js,mjs}"],
+    // NX-244 a extins tiparul la `.jsx`: rendererul pasiv trăiește tot în `src/chat/**`, iar până
+    // acum fișierele JSX de aici nu erau prinse de NICIUN bloc de config — adică frontiera exista
+    // pe hârtie, dar nu se aplica exact componentelor care ating domeniul cel mai des.
+    files: ["src/chat/**/*.{js,mjs,jsx}"],
     ignores: ["src/chat/contract/generated/**"],
     languageOptions: {
       globals: globals.browser,
-      // NX-243 a adus un hook aici (`useWebChatController`), deci fișierele pot conține JSX-free
-      // React. Parserul are nevoie de `ecmaFeatures.jsx` dezactivat, dar de regulile de hooks da.
-      parserOptions: { ecmaVersion: 2022, sourceType: "module" },
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: "module",
+        ecmaFeatures: { jsx: true },
+      },
     },
-    plugins: { "react-hooks": pluginReactHooks },
+    settings: { react: { version: "detect" } },
+    plugins: {
+      react: pluginReact,
+      "react-hooks": pluginReactHooks,
+      "unused-imports": pluginUnusedImports,
+    },
     rules: {
       ...pluginJs.configs.recommended.rules,
+      ...pluginReact.configs.flat.recommended.rules,
+      "react/prop-types": "off",
+      "react/react-in-jsx-scope": "off",
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "unused-imports/no-unused-imports": "error",
+      // NX-244 — boundary-ul EXECUTABIL. Fără el, „frontend pasiv" e o intenție dintr-un card;
+      // cu el, prima încercare de a reintroduce coșul sau catalogul în widget pică la lint.
       "no-restricted-imports": [
         "error",
         {
@@ -86,20 +102,33 @@ export default [
                 "@/api/*",
                 "@/components/*",
                 "@/pages/*",
+                "@/utils",
+                "@/utils/*",
                 "../lib/*",
                 "../../lib/*",
                 "../api/*",
                 "../../api/*",
-                "../components/*",
-                "../../components/*",
                 "../pages/*",
                 "../../pages/*",
+                "../utils",
+                "../../utils",
+                // `../components/*` NU e în listă intenționat: din `src/chat/v2/` el înseamnă
+                // `src/chat/components/` (legitim), iar din alt nivel înseamnă `src/components/`
+                // (interzis). Un tipar de cale nu poate distinge cele două fără să știe adâncimea
+                // fișierului. Evadările relative către `src/components/**` sunt prinse de
+                // `test/passive-renderer-boundary.test.js`, care REZOLVĂ căile în loc să le
+                // potrivească textual.
               ],
               message:
-                "src/chat/** e frontiera de contract: fără domeniu (catalog, coș, componente, transport).",
+                "src/chat/** e frontiera de contract: fără domeniu (catalog, coș, wishlist, componente v1, formatare de bani).",
             },
           ],
         },
+      ],
+      // Formatarea de bani/numere NU are ce căuta în renderer: prețul vine text de la server.
+      "no-restricted-globals": [
+        "error",
+        { name: "Intl", message: "NX-244: valorile comerciale vin deja formatate din backend." },
       ],
     },
   },

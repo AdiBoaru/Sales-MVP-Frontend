@@ -55,6 +55,9 @@ describe('parseRecord — validare strictă', () => {
     active_turn_id: 'turn_1',
     client_turn_id: 'client_1',
     last_event_id: '2',
+    // NX-244: copy-ul de shell e singurul conținut afișabil din record. `null` = record tehnic
+    // pur, exact ca înainte.
+    view_copy: null,
   }
 
   it('acceptă recordul canonic', () => {

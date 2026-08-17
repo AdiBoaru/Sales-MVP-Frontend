@@ -23,6 +23,7 @@
 // Ce NU face transportul: nu ține stare, nu decide când să reîncerce, nu inventează un turn nou,
 // nu inspectează `action_token` și nu transformă un label în text. Politica e a controllerului.
 
+import { decodeShellCopy } from '../contract/shellCopy.js'
 import { WEB_TURN_ERROR_CODES as E, WebTurnTransportError, asTransportError } from './webTurnErrors.js'
 
 /**
@@ -331,9 +332,17 @@ export function createWebTurnTransport({
   }
 
   /**
-   * Sesiune nouă de vizitator. Nu întoarce nicio conversație și niciun turn activ: backendul
-   * nu are (încă) un snapshot de conversație pe v2 — recovery-ul după refresh pornește din
-   * `active_turn_id`-ul tehnic salvat local și se CONFIRMĂ cu `getTurn`.
+   * Sesiune nouă de vizitator + copy-ul de shell. Nu întoarce nicio conversație și niciun turn
+   * activ: backendul nu are (încă) un snapshot de conversație pe v2 — recovery-ul după refresh
+   * pornește din `active_turn_id`-ul tehnic salvat local și se CONFIRMĂ cu `getTurn`.
+   *
+   * NX-244: `view_copy` e copy-ul RAMEI (chrome/composer/a11y), de care widgetul are nevoie
+   * înainte să existe primul view. Absent = ruta v2 e stinsă pe server; invalid = defect de
+   * contract, care oprește bootstrapul. Handle-ul rămâne separat de copy: `session` are EXACT
+   * cele trei câmpuri opace, fiindcă exact atât se persistă și se retrimite.
+   *
+   * @returns {Promise<{session: {token: string, visitor_id: string, sig: string},
+   *   shellCopy: object|null}>}
    */
   /** @param {RequestOptions} [options] */
   async function bootstrap({ signal, timeoutMs } = {}) {
@@ -346,8 +355,17 @@ export function createWebTurnTransport({
     if (!isNonEmptyString(data?.token) || !isNonEmptyString(data?.visitor_id) || !isNonEmptyString(data?.sig)) {
       throw contractError('bootstrap_invalid')
     }
+    let shellCopy
+    try {
+      shellCopy = decodeShellCopy(data?.view_copy)
+    } catch (err) {
+      throw contractError(err?.reason ? `bootstrap_${err.reason}` : 'bootstrap_shell_copy_invalid')
+    }
     // Handle OPAC: cele trei câmpuri se retrimit ca atare, niciodată interpretate.
-    return { token: data.token, visitor_id: data.visitor_id, sig: data.sig }
+    return {
+      session: { token: data.token, visitor_id: data.visitor_id, sig: data.sig },
+      shellCopy,
+    }
   }
 
   return {
@@ -491,8 +509,8 @@ export function createWebTurnTransport({
      */
     /** @param {RequestOptions} [options] */
     async renewSession({ signal, timeoutMs } = {}) {
-      const session = await this.bootstrap({ signal, timeoutMs })
-      return { outcome: 'new_session', session }
+      const { session, shellCopy } = await this.bootstrap({ signal, timeoutMs })
+      return { outcome: 'new_session', session, shellCopy }
     },
   }
 }

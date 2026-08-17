@@ -71,6 +71,12 @@ export const initialWebChatState = Object.freeze({
   phase: WEB_CHAT_PHASES.UNINITIALIZED,
   /** Handle opac (token/visitor_id/sig). Niciodată interpretat. */
   session: null,
+  /**
+   * NX-244 — copy-ul RAMEI de la bootstrap (`{composer, chrome, a11y}`), server-owned. Ține
+   * shell-ul cu nume înainte să existe primul view. Din primul view încolo, `view.chrome` are
+   * prioritate: e copy-ul turului curent, în locale-ul lui. `null` = serverul nu l-a trimis.
+   */
+  shellCopy: null,
   conversationId: null,
   /** `{ turnId: string|null, clientTurnId: string, rank: number, sseOffered: boolean }` */
   activeTurn: null,
@@ -201,9 +207,17 @@ export function webChatReducer(state, action) {
       // Un record tehnic care pomenește un turn activ NU e o dovadă: e un indiciu care se
       // confirmă cu serverul. De aceea intrăm în `recovering`, nu direct în `waiting`.
       const resumed = action.resumeTurn
+      // `?? state.shellCopy`: o sesiune restaurată dintr-un record fără copy nu are voie să
+      // ȘTEARGĂ un copy deja obținut — ar lăsa shell-ul fără nume după un simplu remount.
+      const shellCopy = action.shellCopy ?? state.shellCopy
       if (resumed) {
         return adopt(
-          { ...state, session: action.session, conversationId: action.conversationId ?? null },
+          {
+            ...state,
+            session: action.session,
+            shellCopy,
+            conversationId: action.conversationId ?? null,
+          },
           resumed,
           RECOVERY_REASONS.REFRESH,
         )
@@ -213,6 +227,7 @@ export function webChatReducer(state, action) {
         ...CLEARED_TURN,
         phase: P.READY,
         session: action.session,
+        shellCopy,
         conversationId: action.conversationId ?? null,
         fault: null,
       }
@@ -389,6 +404,9 @@ export function webChatReducer(state, action) {
         ...CLEARED_TURN,
         phase: P.READY,
         session: action.session,
+        // Copy-ul vine din bootstrapul NOU (sesiunea nouă poate fi pe alt locale); dacă serverul
+        // nu l-a trimis, îl păstrăm pe cel curent în loc să rămânem cu un shell fără nume.
+        shellCopy: action.shellCopy ?? state.shellCopy,
         conversationId: null,
         views: [],
         sessionOutcome: 'new_session',
@@ -413,8 +431,15 @@ export function webChatReducer(state, action) {
 
     case A.RESET:
       // „Conversație nouă": permis DOAR fără turn activ (guardul e în controller + UI).
+      // Copy-ul de shell SUPRAVIEȚUIEȘTE: e rama, nu conversația. Aruncarea lui ar lăsa widgetul
+      // fără titlu și fără placeholder exact în secunda de după apăsarea butonului.
       if (state.activeTurn !== null) return state
-      return { ...initialWebChatState, phase: P.BOOTSTRAPPING, diagnostics: state.diagnostics }
+      return {
+        ...initialWebChatState,
+        phase: P.BOOTSTRAPPING,
+        shellCopy: state.shellCopy,
+        diagnostics: state.diagnostics,
+      }
 
     case 'diagnostics_drained':
       return state.diagnostics.length === 0 ? state : { ...state, diagnostics: [] }
