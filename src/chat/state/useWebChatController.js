@@ -294,6 +294,9 @@ export function useWebChatController({
         safeDispatch({
           type: A.BOOTSTRAP_OK,
           session: record.session_handle,
+          // NX-244: copy-ul persistat odată cu sesiunea. Bootstrapul e rate-limitat pe server,
+          // deci o sesiune restaurată nu-l mai poate cere — fără el, shell-ul ar fi fără nume.
+          shellCopy: record.view_copy,
           conversationId: record.conversation_id,
           resumeTurn: record.active_turn_id !== null
             ? { turnId: record.active_turn_id, clientTurnId: record.client_turn_id }
@@ -302,15 +305,21 @@ export function useWebChatController({
         return
       }
       try {
-        const session = await transport.bootstrap({
+        const { session, shellCopy } = await transport.bootstrap({
           signal: newAbort(),
           timeoutMs: policy.bootstrapTimeoutMs,
         })
         if (cancelled || disposedRef.current) return
-        storage.start(session)
+        storage.start(session, shellCopy)
         metric('web_widget_bootstrap_total', { outcome: 'ok' })
         metric('web_widget_bootstrap_ms', { ms: Date.now() - startedAt })
-        safeDispatch({ type: A.BOOTSTRAP_OK, session, conversationId: null, resumeTurn: null })
+        safeDispatch({
+          type: A.BOOTSTRAP_OK,
+          session,
+          shellCopy,
+          conversationId: null,
+          resumeTurn: null,
+        })
       } catch (error) {
         if (cancelled || disposedRef.current || error?.code === E.ABORTED) return
         safeDispatch({ type: A.BOOTSTRAP_FAILED, fault: faultOf(error) })
@@ -620,7 +629,7 @@ export function useWebChatController({
 
     const run = async () => {
       try {
-        const { session } = await transport.renewSession({
+        const { session, shellCopy } = await transport.renewSession({
           signal: newAbort(),
           timeoutMs: policy.bootstrapTimeoutMs,
         })
@@ -629,11 +638,11 @@ export function useWebChatController({
         // Un record parțial ar putea lăsa un `active_turn_id` din sesiunea moartă, iar clientul
         // ar cere serverului un turn care nu îi mai aparține.
         storage.clear()
-        storage.start(session)
+        storage.start(session, shellCopy)
         pendingRef.current = null
         inFlightRef.current = false
         metric('web_widget_session_transition_total', { outcome: 'new_session' })
-        safeDispatch({ type: A.SESSION_RENEWED, session })
+        safeDispatch({ type: A.SESSION_RENEWED, session, shellCopy })
       } catch (error) {
         if (cancelled || disposedRef.current || error?.code === E.ABORTED) return
         metric('web_widget_session_transition_total', { outcome: 'unauthorized' })
@@ -748,6 +757,14 @@ export function useWebChatController({
     state,
     /** Ultimul view server (copy de composer/chrome/a11y + progres). Niciodată compus local. */
     view,
+    /**
+     * NX-244 — copy-ul ramei, cu precedență EXPLICITĂ: view-ul curent bate bootstrapul, fiindcă
+     * e copy-ul turului real. UN singur loc decide asta, ca shell-ul să nu aleagă altfel decât
+     * composerul. `null` peste tot = serverul n-a trimis nimic; FE-ul NU inventează un înlocuitor.
+     */
+    chrome: view?.chrome ?? state.shellCopy?.chrome ?? null,
+    composer: view?.composer ?? state.shellCopy?.composer ?? null,
+    announcements: view?.a11y?.announcements ?? state.shellCopy?.a11y?.announcements ?? null,
     /** Toate view-urile livrate în sesiunea curentă, în ordinea sosirii. Nepersistate. */
     views: state.views,
     // Derivat EXCLUSIV din stare: e singurul lucru pe care React îl re-randează.

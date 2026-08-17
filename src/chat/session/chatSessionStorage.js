@@ -13,8 +13,19 @@
 //
 // Toate operațiile sunt tolerante la mediu: private mode, quota depășită, storage indisponibil
 // sau record corupt nu au voie să rupă widgetul — degradează la „fără record" (bootstrap curat).
+//
+// NX-244 a adăugat O SINGURĂ excepție la regula „doar identificatori opaci": `view_copy`, copy-ul
+// de shell emis de server la bootstrap. Nu e conversație și nu e text al cumpărătorului — e rama
+// (eticheta launcherului, titlul dialogului, placeholderul composerului). Se persistă fiindcă
+// bootstrapul e rate-limitat pe server: o sesiune restaurată NU mai face round-trip, deci fără
+// copy persistat shell-ul ar rămâne fără nume până la primul răspuns. Rămâne server-owned și
+// revalidat la citire; nu se compune și nu se completează nimic local.
 
-export const CHAT_STORAGE_VERSION = 2
+import { decodeShellCopy } from '../contract/shellCopy.js'
+
+// NX-244 a urcat versiunea la 3: recordul poartă acum și copy-ul de shell. Un record v2 e IGNORAT
+// (nu migrat), deci prima încărcare după upgrade face un bootstrap curat și primește copy-ul.
+export const CHAT_STORAGE_VERSION = 3
 
 /** Cheile permise în record. Enum ÎNCHIS: un câmp nou cere o decizie, nu o scăpare. */
 const ALLOWED_KEYS = Object.freeze([
@@ -24,6 +35,7 @@ const ALLOWED_KEYS = Object.freeze([
   'active_turn_id',
   'client_turn_id',
   'last_event_id',
+  'view_copy',
 ])
 
 /** Câmpurile handle-ului de sesiune. Opace: nu se decodează și nu se compară pe bucăți. */
@@ -76,6 +88,17 @@ export function parseRecord(raw) {
     if (!ALLOWED_KEYS.includes(key)) return null // câmp străin ⇒ record de neîncredere
   }
   if (!isHandle(raw.session_handle)) return null
+  // NX-244: copy-ul de shell e singurul conținut afișabil din record — și tocmai de aceea trece
+  // prin ACELAȘI decoder strict ca la sosirea de pe rețea. Un record cu copy stricat nu e „record
+  // fără copy", ci record de neîncredere: îl aruncăm întreg și facem bootstrap curat.
+  let viewCopy = null
+  if (raw.view_copy !== undefined && raw.view_copy !== null) {
+    try {
+      viewCopy = decodeShellCopy(raw.view_copy)
+    } catch {
+      return null
+    }
+  }
   const record = {
     storage_version: CHAT_STORAGE_VERSION,
     session_handle: {
@@ -87,6 +110,7 @@ export function parseRecord(raw) {
     active_turn_id: null,
     client_turn_id: null,
     last_event_id: null,
+    view_copy: viewCopy,
   }
   for (const key of NULLABLE_ID_KEYS) {
     const value = raw[key]
@@ -140,7 +164,7 @@ export function createChatSessionStorage({ namespace, storage } = {}) {
     read,
 
     /** Scrie un record complet nou (sesiune nouă). Șterge orice corelație veche. */
-    start(sessionHandle) {
+    start(sessionHandle, viewCopy = null) {
       const record = {
         storage_version: CHAT_STORAGE_VERSION,
         session_handle: sessionHandle,
@@ -148,6 +172,7 @@ export function createChatSessionStorage({ namespace, storage } = {}) {
         active_turn_id: null,
         client_turn_id: null,
         last_event_id: null,
+        view_copy: viewCopy,
       }
       return this.write(record, { replace: true })
     },
@@ -169,6 +194,7 @@ export function createChatSessionStorage({ namespace, storage } = {}) {
       for (const field of NULLABLE_ID_KEYS) {
         if (next[field] === undefined) next[field] = null
       }
+      if (next.view_copy === undefined) next.view_copy = null
       return safe(() => {
         backing.setItem(key, JSON.stringify(next))
         return next

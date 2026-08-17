@@ -12,6 +12,12 @@ import { WEB_TURN_ERROR_CODES, WebTurnTransportError } from '@/chat/transport/we
 import { createChatSessionStorage } from '@/chat/session/chatSessionStorage.js'
 
 const SESSION = { token: 'pub_tok', visitor_id: 'web_abc', sig: 'v2.a.b' }
+/** NX-244 — copy-ul ramei, derivat dintr-o fixtură de view sincronizată din backend. */
+const SHELL_COPY = {
+  composer: validViews.greeting.composer,
+  chrome: validViews.greeting.chrome,
+  a11y: validViews.greeting.a11y,
+}
 
 function memoryStorage() {
   const map = new Map()
@@ -61,12 +67,13 @@ function makeTransport() {
     },
     async bootstrap() {
       calls.bootstrap.push(true)
-      return SESSION
+      // NX-244: bootstrapul livrează handle-ul ȘI copy-ul ramei (chrome/composer/a11y).
+      return { session: SESSION, shellCopy: SHELL_COPY }
     },
     async renewSession() {
       calls.renew.push(true)
       const session = { ...SESSION, visitor_id: `web_new_${calls.renew.length}`, sig: 'v2.new' }
-      return { outcome: 'new_session', session }
+      return { outcome: 'new_session', session, shellCopy: SHELL_COPY }
     },
     async createTurn({ clientTurnId, input }) {
       calls.createTurn.push({ clientTurnId, input })
@@ -697,15 +704,22 @@ describe('privacy — nimic sensibil nu părăsește memoria', () => {
       expect(persisted).not.toContain(sentinel)
       expect(labels).not.toContain(sentinel)
     }
-    // Storage-ul ține DOAR identificatori tehnici din enumul închis.
-    expect(Object.keys(JSON.parse(backing.map.get(ctx.storage.key))).sort()).toEqual([
+    // Storage-ul ține DOAR identificatori tehnici din enumul închis — plus, de la NX-244,
+    // copy-ul de shell emis de server. Enumul rămâne ÎNCHIS: un câmp nou cere o decizie.
+    const record = JSON.parse(backing.map.get(ctx.storage.key))
+    expect(Object.keys(record).sort()).toEqual([
       'active_turn_id',
       'client_turn_id',
       'conversation_id',
       'last_event_id',
       'session_handle',
       'storage_version',
+      'view_copy',
     ])
+    // Iar `view_copy` e RAMA, nu conversația: exact cele trei secțiuni server-owned, niciun
+    // mesaj, niciun produs, niciun token de acțiune. (Sentinelele de mai sus acoperă deja
+    // conținutul; asta ține forma sub control ca nimeni să nu strecoare un transcript aici.)
+    expect(Object.keys(record.view_copy).sort()).toEqual(['a11y', 'chrome', 'composer'])
   })
 
   it('etichetele de metrici nu conțin id-uri de turn/conversație', async () => {

@@ -3,6 +3,11 @@
 // care se pot rupe doar la îmbinare:
 //
 //   • cu flagul STINS, widgetul nu atinge deloc v2 (nici măcar bootstrapul);
+//
+// NX-244 a schimbat DELIBERAT ce se vede pe calea v2: shell-ul nu mai împrumută copy-ul inventat
+// de v1 („Aria", „Întreabă orice despre produse…"). Numele launcherului, titlul și placeholderul
+// vin acum din `chrome`/`composer`, adică de la server. Aserțiunile v2 de mai jos verifică exact
+// asta; cele v1 au rămas neatinse, fiindcă v1 a rămas neatins.
 //   • cu flagul pornit, un backend indisponibil NU produce un widget mut — starea tehnică se vede
 //     și are reîncercare (bug găsit la review: `hasConversation` nu includea `fault`, iar butonul
 //     de retry depindea de `fault.retryable`, care e `false` pentru defectele de transport);
@@ -35,7 +40,20 @@ function jsonResponse(status, body, headers = {}) {
   }
 }
 
-const bootstrapBody = { token: PUBLIC_TOKEN, visitor_id: 'web_v2', sig: 'v2.a.b', sse_url: '/web/stream' }
+// NX-244: bootstrapul real livrează și copy-ul ramei. Derivat dintr-o fixtură de view, ca forma
+// să rămână legată de contract, nu de imaginația testului.
+const VIEW_COPY = {
+  composer: validViews.greeting.composer,
+  chrome: validViews.greeting.chrome,
+  a11y: validViews.greeting.a11y,
+}
+const bootstrapBody = {
+  token: PUBLIC_TOKEN,
+  visitor_id: 'web_v2',
+  sig: 'v2.a.b',
+  sse_url: '/web/stream',
+  view_copy: VIEW_COPY,
+}
 
 function statusBody(clientTurnId, status = 'accepted') {
   return {
@@ -91,18 +109,65 @@ describe('flag PORNIT — backend indisponibil', () => {
     const ChatWidget = await loadWidget({ v2: true })
     const user = userEvent.setup()
     render(<ChatWidget />)
-    await user.click(screen.getByRole('button', { name: /aria/i }))
+    // Bootstrapul a picat, deci nu există `chrome`: launcherul poartă numele TEHNIC de rezervă.
+    // Un buton fără nume accesibil ar fi mai rău decât unul generic — dar copy-ul comercial tot
+    // nu se inventează.
+    await user.click(await screen.findByRole('button', { name: /Asistent/i }))
 
-    const alert = await screen.findByRole('alert')
-    expect(alert).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Reîncearcă/i })).toBeInTheDocument()
-    // Composerul e inactiv cât nu există sesiune — dar starea e VIZIBILĂ, nu tăcută.
-    expect(screen.getByPlaceholderText(/Întreabă orice/i)).toBeDisabled()
 
-    // Reîncercarea chiar reia bootstrapul.
+    // Composerul e inactiv cât nu există sesiune — dar starea e VIZIBILĂ, nu tăcută. Fără
+    // `composer` de la server, câmpul n-are placeholder: îl găsim după rol, nu după copy inventat.
+    const input = screen.getByRole('textbox')
+    expect(input).toBeDisabled()
+    expect(input).not.toHaveAttribute('placeholder')
+
     fetchMock.mockResolvedValue(jsonResponse(200, bootstrapBody))
     await user.click(screen.getByRole('button', { name: /Reîncearcă/i }))
-    await waitFor(() => expect(screen.getByPlaceholderText(/Întreabă orice/i)).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('textbox')).toBeEnabled())
+  })
+})
+
+describe('flag PORNIT — shell-ul poartă numele serverului', () => {
+  it('launcher, titlu, close și placeholder vin din `view_copy`, nu din FE', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, bootstrapBody))
+    const ChatWidget = await loadWidget({ v2: true })
+    const user = userEvent.setup()
+    render(<ChatWidget />)
+
+    const launcher = await screen.findByRole('button', { name: VIEW_COPY.chrome.launcher_label })
+    await user.click(launcher)
+
+    expect(screen.getByRole('dialog', { name: VIEW_COPY.chrome.dialog_title })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: VIEW_COPY.chrome.close_label })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(VIEW_COPY.composer.placeholder)).toBeEnabled(),
+    )
+
+    // Copy-ul v1 a DISPĂRUT de pe calea v2 — asta e jumătate din card.
+    expect(screen.queryByText(/Întreabă orice despre produse/i)).toBeNull()
+    expect(screen.queryByText(/Recomandă-mi un ser pentru ten gras/i)).toBeNull()
+    expect(screen.queryByText(/Sunt Aria/i)).toBeNull()
+  })
+
+  it('copy-ul supraviețuiește unui refresh, fără al doilea bootstrap', async () => {
+    // Bootstrapul e rate-limitat pe server: o sesiune restaurată nu-l mai poate cere. Dacă am
+    // pierde copy-ul la remount, shell-ul ar rămâne fără nume exact pe calea cea mai frecventă.
+    fetchMock.mockResolvedValue(jsonResponse(200, bootstrapBody))
+    const ChatWidget = await loadWidget({ v2: true })
+    const user = userEvent.setup()
+    const first = render(<ChatWidget />)
+    await user.click(await screen.findByRole('button', { name: VIEW_COPY.chrome.launcher_label }))
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(VIEW_COPY.composer.placeholder)).toBeEnabled(),
+    )
+    first.unmount()
+
+    fetchMock.mockClear()
+    render(<ChatWidget />)
+    await user.click(await screen.findByRole('button', { name: VIEW_COPY.chrome.launcher_label }))
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
 
@@ -121,9 +186,9 @@ describe('flag PORNIT — turul complet', () => {
     const ChatWidget = await loadWidget({ v2: true })
     const user = userEvent.setup()
     render(<ChatWidget />)
-    await user.click(screen.getByRole('button', { name: /aria/i }))
+    await user.click(await screen.findByRole('button', { name: VIEW_COPY.chrome.launcher_label }))
 
-    const input = await screen.findByPlaceholderText(/Întreabă orice/i)
+    const input = await screen.findByPlaceholderText(VIEW_COPY.composer.placeholder)
     await waitFor(() => expect(input).toBeEnabled())
 
     // Enter în câmp = submit-ul formularului, adică exact calea folosită de utilizator.
@@ -140,15 +205,13 @@ describe('flag PORNIT — turul complet', () => {
     // Prețul e cel formatat de backend; browserul nu recalculează nimic.
     expect(screen.getByText('89,00 lei')).toBeInTheDocument()
 
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText(/Scrie un mesaj|Întreabă orice/i)).toBeEnabled(),
-    )
+    await waitFor(() => expect(screen.getByRole('textbox')).toBeEnabled())
 
     // POST exact o dată; restul sunt bootstrap + status.
     const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')
     expect(posts).toHaveLength(1)
 
-    // Zero transcript local: doar recordul tehnic, sub cheia lui.
+    // Zero transcript local: doar recordul tehnic + copy-ul de ramă, sub cheia lor.
     expect(localStorage.getItem('aria-chat-messages')).toBeNull()
     const dump = JSON.stringify(Object.entries(localStorage))
     expect(dump).not.toContain('ser pentru ten gras')
