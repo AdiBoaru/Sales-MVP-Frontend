@@ -79,7 +79,11 @@ const CURRENCY_LABEL = { RON: "Lei" };
 // Price with raised decimals ("7⁸⁷ Lei"). Locale-correct via Intl.formatToParts —
 // the fraction is rendered small/superscript. Falls back to flat formatting if the
 // parts come back oddly (very old engines / unusual currency).
-function Price({ value, currency = "RON", className = "" }) {
+//
+// `struck` draws the markdown rule as an absolutely-positioned bar rather than
+// `line-through`: the parts are flex items, and text-decoration does not propagate
+// into those, so the CSS property would silently strike nothing.
+function Price({ value, currency = "RON", className = "", weight = "font-extrabold", struck = false }) {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
 
@@ -104,21 +108,37 @@ function Price({ value, currency = "RON", className = "" }) {
   if (!intPart) return <span className={className}>{formatCurrency(n, currency)}</span>;
 
   return (
-    <span className={`inline-flex items-start whitespace-nowrap leading-none ${className}`}>
-      <span className="font-extrabold">{intPart}</span>
-      {fracPart && <span className="text-[0.55em] font-extrabold mt-[0.08em]">{fracPart}</span>}
-      <span className="ml-1 text-[0.6em] font-bold self-end mb-[0.08em]">{label}</span>
+    <span className={`relative inline-flex items-start whitespace-nowrap leading-none ${className}`}>
+      <span className={weight}>{intPart}</span>
+      {fracPart && <span className={`text-[0.55em] ${weight} mt-[0.08em]`}>{fracPart}</span>}
+      {/* The live price drops its currency label to the baseline; a struck one centres
+          it instead, so a single rule crosses the digits and the label at one height. */}
+      <span className={`ml-1 text-[0.6em] font-bold ${struck ? "self-center" : "self-end mb-[0.08em]"}`}>
+        {label}
+      </span>
+      {/* 54%, not 50%: with `leading-none` the digits sit low in their box, so a rule
+          on the geometric centre grazes their tops instead of crossing them. */}
+      {struck && (
+        <span aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-[54%] h-px bg-current" />
+      )}
     </span>
   );
 }
 
-// Struck original price, shown above the current one when it's a real markdown.
+// Struck original price, above the current one when it's a real markdown. Same
+// raised-decimal setting as the live price, just smaller, muted and ruled through
+// — the reference never drops back to a flat "21,53 Lei" here.
 function ListPrice({ value, currency }) {
   return (
-    <span className="text-[11px] text-[var(--aria-text-5)] line-through whitespace-nowrap">
-      {Number(value).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-      {CURRENCY_LABEL[currency] || currency}
-    </span>
+    <Price
+      value={value}
+      currency={currency}
+      struck
+      weight="font-semibold"
+      // `self-start` matters: as a flex item this would otherwise stretch to the
+      // price column's width and the rule would run out past "Lei".
+      className="self-start text-[13.5px] text-[var(--aria-text-5)]"
+    />
   );
 }
 
@@ -126,7 +146,7 @@ function Badge({ label, tone }) {
   if (!label) return null;
   return (
     <span
-      className={`text-[10px] font-bold leading-none text-white px-1.5 py-[3px] rounded-[3px] ${badgeToneClass(tone, label)}`}
+      className={`text-[10px] font-bold leading-none text-white px-[7px] py-[4px] rounded-[4px] ${badgeToneClass(tone, label)}`}
     >
       {label}
     </span>
@@ -261,17 +281,32 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
     onAdd?.();
   };
 
-  // Optional discount: strike the original price, show the saved percentage as a badge.
+  // Optional discount: strike the original price. The saved percentage is NOT derived
+  // here — the reference shows "-5%" next to "Smart Deals" on a campaign product, and
+  // shows nothing at all on a card that is merely below its list price. That badge is
+  // catalogue merchandising, so it arrives in `badges` like every other one or not at all.
   const hasDiscount = product.list_price != null && product.list_price > product.price;
-  const discountPct = hasDiscount
-    ? Math.round(((product.list_price - product.price) / product.list_price) * 100)
-    : 0;
 
   const badges = product.badges || [];
   const highlights = product.highlights || [];
   const meta = product.meta || [];
   const pros = product.pros || [];
   const cons = product.cons || [];
+
+  // The reference has two card shapes, and which one you get is decided purely by
+  // the data. The full card carries a badge row, and the save heart rides at its
+  // right end. When none of the merchandising extras arrive — the shape a
+  // "Spune-mi mai multe" answer returns — the badge row disappears, the image slot
+  // shrinks, the heart drops down beside the cart button as a bordered control, and
+  // the card stops offering to tell you more about what you just asked about.
+  const hasBadgeRow = badges.length > 0;
+  const compact =
+    !hasBadgeRow &&
+    product.rating == null &&
+    !product.reason &&
+    !product.brand &&
+    highlights.length === 0 &&
+    meta.length === 0;
 
   // Image + name link to the product page (new tab keeps the chat open). We don't
   // wrap the whole card so the buttons stay valid, isolated targets.
@@ -293,7 +328,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
   // when there is none — asks Aria for more about this product. With neither
   // available it isn't rendered at all, so it's never a dead control.
   const canExpand = Boolean(product.details);
-  const canAsk = !canExpand && Boolean(onAsk);
+  const canAsk = !canExpand && !compact && Boolean(onAsk);
   const moreBar = (canExpand || canAsk) && (
     <button
       type="button"
@@ -304,7 +339,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
         else onAsk?.(`Spune-mi mai multe despre ${product.name}`);
       }}
       aria-expanded={canExpand ? showDetails : undefined}
-      className="flex items-center gap-2.5 w-full px-3.5 py-4 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
+      className="flex items-center gap-2.5 w-full px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
     >
       <Sparkles className="w-[17px] h-[17px] shrink-0 text-[var(--aria-purple)]" />
       <span className="flex-1 text-left text-[14px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
@@ -325,34 +360,26 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
         <div className="flex gap-3 p-3">
           {linkProps ? (
             <a {...linkProps} className="shrink-0">
-              <CardImage product={product} />
+              <CardImage product={product} compact={compact} />
             </a>
           ) : (
-            <CardImage product={product} />
+            <CardImage product={product} compact={compact} />
           )}
 
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
             {/* Badges + save heart share the top line, so a long badge row never
-                pushes the heart off the card. */}
-            <div className="flex items-start gap-2">
-              <div className="flex-1 flex flex-wrap items-center gap-1">
-                {badges.map((b, i) => (
-                  <Badge key={i} label={b.label} tone={b.tone} />
-                ))}
-                {discountPct > 0 && <Badge label={`-${discountPct}%`} tone="warning" />}
+                pushes the heart off the card. With no badges the whole line is gone
+                and the heart moves to the action row below. */}
+            {hasBadgeRow && (
+              <div className="flex items-start gap-2">
+                <div className="flex-1 flex flex-wrap items-center gap-1">
+                  {badges.map((b, i) => (
+                    <Badge key={i} label={b.label} tone={b.tone} />
+                  ))}
+                </div>
+                <WishButton product={product} wished={wished} />
               </div>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleWish(product);
-                }}
-                title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
-                className="shrink-0 -mt-0.5 -mr-0.5 p-0.5 text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] transition-colors"
-              >
-                <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
-              </button>
-            </div>
+            )}
 
             {product.brand && (
               <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--aria-text-5)]">
@@ -361,15 +388,12 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
             )}
             {nameEl}
 
+            {/* Stars + the numeric rating only. The reference never puts the review
+                count on the card — it lives on the product page. */}
             {product.rating != null && (
               <div className="flex items-center gap-1.5">
                 <Stars rating={product.rating} />
-                <span className="text-[11px] font-semibold text-[var(--aria-text)]">{product.rating}</span>
-                {product.review_count > 0 && (
-                  <span className="text-[11px] text-[var(--aria-text-5)]">
-                    ({product.review_count.toLocaleString(LOCALE)})
-                  </span>
-                )}
+                <span className="text-[11.5px] font-bold text-[var(--aria-text)]">{product.rating}</span>
               </div>
             )}
 
@@ -381,7 +405,8 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
               </div>
             )}
 
-            {/* Price block and the cart button sit on the card's baseline. */}
+            {/* Price block and the cart button sit on the card's baseline. On a card
+                with no badge row the heart joins them here, outlined, to the cart's left. */}
             <div className="mt-auto pt-1 flex items-end justify-between gap-2">
               <div className="min-w-0 flex flex-col gap-0.5">
                 {hasDiscount && <ListPrice value={product.list_price} currency={product.currency} />}
@@ -390,13 +415,16 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
                   <ScorePill score={product.score} />
                 </div>
               </div>
-              <button
-                onClick={handleAdd}
-                title="Adaugă în coș"
-                className="shrink-0 w-11 h-9 rounded-[9px] bg-[var(--aria-cart)] hover:bg-[var(--aria-cart-hover)] text-white flex items-center justify-center transition-colors"
-              >
-                <ShoppingCart className="w-[18px] h-[18px]" />
-              </button>
+              <div className="shrink-0 flex items-center gap-2">
+                {!hasBadgeRow && <WishButton product={product} wished={wished} outlined />}
+                <button
+                  onClick={handleAdd}
+                  title="Adaugă în coș"
+                  className="shrink-0 w-11 h-9 rounded-[9px] bg-[var(--aria-cart)] hover:bg-[var(--aria-cart-hover)] text-white flex items-center justify-center transition-colors"
+                >
+                  <ShoppingCart className="w-[18px] h-[18px]" />
+                </button>
+              </div>
             </div>
 
             <MetaList items={meta} />
@@ -455,14 +483,50 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
 
 // Product image — a square slot on the left of the card. `object-contain` on white
 // so packshots read the way they do on the shop. Muted icon when there's no image.
-function CardImage({ product }) {
+// The compact card uses the reference's smaller slot.
+function CardImage({ product, compact = false }) {
+  const box = compact ? "w-[58px] h-[58px]" : "w-[86px] h-[86px]";
   return (
-    <div className="w-[86px] h-[86px] rounded-[8px] bg-white overflow-hidden flex items-center justify-center">
+    <div className={`${box} rounded-[8px] bg-white overflow-hidden flex items-center justify-center`}>
       {product.image_url ? (
         <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
       ) : (
-        <Package className="w-7 h-7 text-[var(--aria-text-5)]" />
+        <Package className={`${compact ? "w-5 h-5" : "w-7 h-7"} text-[var(--aria-text-5)]`} />
       )}
     </div>
+  );
+}
+
+// Save-to-list heart. Two presentations, same control: a bare icon riding at the end
+// of the badge row, or — on a card with no badge row — an outlined button standing
+// next to the cart, which is how the reference renders it there.
+function WishButton({ product, wished, outlined = false }) {
+  const onClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWish(product);
+  };
+  const title = wished ? "Scoate de la favorite" : "Adaugă la favorite";
+
+  if (outlined) {
+    return (
+      <button
+        onClick={onClick}
+        title={title}
+        className="shrink-0 w-11 h-9 rounded-[9px] border border-[var(--aria-cart)] text-[var(--aria-cart)] flex items-center justify-center hover:bg-[rgba(29,95,214,0.06)] transition-colors"
+      >
+        <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current" : ""}`} />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="shrink-0 -mt-0.5 -mr-0.5 p-0.5 text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] transition-colors"
+    >
+      <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
+    </button>
   );
 }

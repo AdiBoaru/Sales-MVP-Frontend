@@ -69,18 +69,18 @@ describe('mount unic pe rutele de vitrină', () => {
 
     // Deschidem panoul: starea trăiește în instanța widgetului.
     await user.click(screen.getByRole('button', { name: /aria/i }))
-    expect(await screen.findByPlaceholderText(/Întreabă orice/i)).toBeInTheDocument()
+    expect(await screen.findByPlaceholderText(/Caută produse sau inspirație/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: /Vezi produsul/i }))
     await screen.findByText('Produs 42')
     // Dacă s-ar fi remontat, `open` ar fi redevenit `false` și inputul ar fi dispărut.
-    expect(screen.getByPlaceholderText(/Întreabă orice/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Caută produse sau inspirație/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: /Înapoi/i }))
     await screen.findByText('Magazin')
-    expect(screen.getByPlaceholderText(/Întreabă orice/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Caută produse sau inspirație/i)).toBeInTheDocument()
     // Și tot una singură, nu două panouri suprapuse.
-    expect(screen.getAllByPlaceholderText(/Întreabă orice/i)).toHaveLength(1)
+    expect(screen.getAllByPlaceholderText(/Caută produse sau inspirație/i)).toHaveLength(1)
   })
 
   it('rutele din afara allowlistului nu primesc widgetul', async () => {

@@ -43,21 +43,6 @@ function money(value, currency) {
   return `${amount} ${CURRENCY_LABEL[currency] || currency || "RON"}`;
 }
 
-// Inline price for a comparison column: current price (bold) + optional struck list price.
-function ComparisonPrice({ price, listPrice, currency }) {
-  const hasDiscount = listPrice != null && listPrice > price;
-  return (
-    <span className="inline-flex items-baseline justify-center gap-1 flex-wrap">
-      <span className="font-bold whitespace-nowrap text-[var(--aria-price)]">{money(price, currency)}</span>
-      {hasDiscount && (
-        <span className="text-[10px] text-[var(--aria-text-5)] line-through whitespace-nowrap">
-          {money(listPrice, currency)}
-        </span>
-      )}
-    </span>
-  );
-}
-
 // Product-comparison table — rendered only when the bot returns a `comparison`.
 // The izi layout: product images are the column headers, and each dimension is a
 // full-width label band followed by one value per column, so long values never get
@@ -73,26 +58,20 @@ function ComparisonTable({ comparison }) {
   const cell = (v) => (v == null || v === "" ? "—" : v);
 
   const ProductHead = ({ col }) => {
-    // The image alone identifies the column, as in the reference — the compared
-    // prices belong to the table's own "Preț" row. A column that IS discounted still
-    // shows it, since a markdown is a signal no row carries.
-    const discounted = col.list_price != null && col.list_price > col.price;
+    // The image alone identifies the column, exactly as in the reference: no name,
+    // no price, no badge. Everything comparable belongs to the table's own rows —
+    // repeating the price in the header would state it twice, differently.
     const head = (
       <>
-        <div className="w-14 h-14 bg-white overflow-hidden flex items-center justify-center">
+        <div className="w-10 h-10 bg-white overflow-hidden flex items-center justify-center">
           {col.image_url ? (
             <img src={col.image_url} alt="" className="w-full h-full object-contain" />
           ) : (
-            <Package className="w-6 h-6 text-[var(--aria-text-5)]" />
+            <Package className="w-5 h-5 text-[var(--aria-text-5)]" />
           )}
         </div>
         {/* The name stays in the DOM for screen readers, so the column is never anonymous. */}
         <span className="sr-only">{col.name}</span>
-        {discounted && (
-          <div className="mt-1.5 text-[11px]">
-            <ComparisonPrice price={col.price} listPrice={col.list_price} currency={col.currency} />
-          </div>
-        )}
       </>
     );
     return col.url ? (
@@ -111,7 +90,7 @@ function ComparisonTable({ comparison }) {
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i} scope="col" className="p-3 align-top font-normal" style={{ width: `${100 / n}%` }}>
+                <th key={i} scope="col" className="px-3 pt-3 pb-2.5 align-top font-normal" style={{ width: `${100 / n}%` }}>
                   <ProductHead col={col} />
                 </th>
               ))}
@@ -120,10 +99,13 @@ function ComparisonTable({ comparison }) {
           <tbody>
             {rows.map((row, r) => (
               <React.Fragment key={r}>
+                {/* Each dimension is a tinted full-width label band, then one value per
+                    column on white — the reference's banding, which is what keeps a
+                    long value readable instead of squeezed into a narrow labelled cell. */}
                 <tr>
                   <td
                     colSpan={n}
-                    className="px-3 pt-2.5 pb-1 border-t border-[var(--aria-border-2)] text-[11.5px] text-[#9a8b80]"
+                    className="px-3 py-[7px] border-t border-[var(--aria-border-2)] bg-[#f8f7f8] text-[11.5px] text-[#9a8b80]"
                   >
                     {row.label}
                   </td>
@@ -132,7 +114,7 @@ function ComparisonTable({ comparison }) {
                   {columns.map((_, i) => (
                     <td
                       key={i}
-                      className={`px-3 pb-3 align-top text-[14px] leading-snug font-bold ${
+                      className={`px-3 pt-2.5 pb-3 align-top text-[14px] leading-snug font-bold ${
                         row.winner === i ? "text-[var(--aria-purple)]" : "text-[var(--aria-text)]"
                       }`}
                     >
@@ -178,20 +160,20 @@ function MessageFeedback() {
       <button
         onClick={() => setVote("up")}
         title="Răspuns util"
-        className={`p-1.5 rounded-md transition-colors ${
+        className={`p-1 rounded-md transition-colors ${
           vote === "up" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
         }`}
       >
-        <ThumbsUp className="w-5 h-5" />
+        <ThumbsUp className="w-[18px] h-[18px]" strokeWidth={1.75} />
       </button>
       <button
         onClick={() => setVote("down")}
         title="Răspuns neutil"
-        className={`p-1.5 rounded-md transition-colors ${
+        className={`p-1 rounded-md transition-colors ${
           vote === "down" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
         }`}
       >
-        <ThumbsDown className="w-5 h-5" />
+        <ThumbsDown className="w-[18px] h-[18px]" strokeWidth={1.75} />
       </button>
       {vote && <span className="text-[11px] text-[var(--aria-text-4)]">Mulțumesc!</span>}
     </div>
@@ -423,7 +405,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
           <RichText text={m.content} />
         </div>
         <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--aria-user-bubble)] flex items-center justify-center">
-          <User className="w-3.5 h-3.5 text-[var(--aria-purple)]" />
+          <User className="w-3.5 h-3.5 text-[var(--aria-text-3)]" />
         </span>
       </div>
     ) : null;
