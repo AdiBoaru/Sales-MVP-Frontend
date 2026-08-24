@@ -736,7 +736,7 @@ export default function ChatWidget() {
               <div className="flex flex-col items-center gap-2 text-center">
                 <h3 className="aria-heading text-2xl text-[var(--aria-text)]">Bună! Sunt {BRAND.assistant}.</h3>
                 <p className="text-[13.5px] leading-relaxed text-[var(--aria-text-4)] max-w-[320px]">
-                  Spune-mi ce cauți. Analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva —
+                  Spune-mi ce cauți. Analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva,
                   nu doar ce.
                 </p>
               </div>
