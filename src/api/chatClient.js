@@ -14,6 +14,8 @@
 // In dev, Vite proxies /web/* and spoofs that origin (see vite.config.js). In prod the build
 // hits the bot directly via VITE_CHAT_API_BASE, and the real origin is the storefront itself.
 
+import { supabase } from "@/api/supabaseClient";
+
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 const PUBLIC_TOKEN = import.meta.env.VITE_CHAT_PUBLIC_TOKEN || "";
 const SESSION_KEY = "izi-web-session";
@@ -51,10 +53,26 @@ export function resetChatSession() {
   }
 }
 
+// The bot is the expensive thing behind the demo gate: PUBLIC_TOKEN ships in the
+// bundle, so an unauthenticated /web/* endpoint is somebody else's LLM bill waiting
+// to happen. Every call carries the demo session JWT so the bot can refuse
+// anonymous traffic and meter per code. Sending it is harmless while the bot still
+// ignores the header — see DEMO_ACCESS.md, "Botul".
+async function demoAuthHeaders() {
+  if (!supabase) return {};
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function bootstrap() {
   const res = await fetch(url(`/web/bootstrap?token=${encodeURIComponent(PUBLIC_TOKEN)}`), {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...(await demoAuthHeaders()) },
   });
   if (!res.ok) throw new Error(`bootstrap failed: ${res.status}`);
   const data = await res.json();
@@ -373,7 +391,11 @@ export function normalizeReply(data) {
 async function postChat(session, message, clientMsgId) {
   return fetch(url("/web/chat"), {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(await demoAuthHeaders()),
+    },
     body: JSON.stringify({
       token: session.token,
       visitor_id: session.visitor_id,

@@ -56,7 +56,9 @@ const ATTRIBUTES = {
 const PRODUCT = { name: "Mira Atelier Balance Ser pentru ten", description: DESCRIPTION, attributes: ATTRIBUTES };
 
 const panelById = (id) => buildProductPanels(PRODUCT).find((panel) => panel.id === id);
-const titlesOf = (panel) => panel.blocks.map((block) => block.title);
+// Paragraphs are matched by their opening words: the bucketing is what matters,
+// not the prose.
+const openingsOf = (panel) => panel.paragraphs.map((text) => text.split(" ").slice(0, 2).join(" "));
 
 describe("stripNamePrefix", () => {
   it("drops the restated product name and re-capitalizes", () => {
@@ -107,27 +109,30 @@ describe("buildProductPanels", () => {
   });
 
   it("files an ingredient-named section under benefits, not description", () => {
-    // The generic "Ingredientele-cheie" heading is dropped: it would print right
-    // under the chips label that already says it.
-    expect(titlesOf(panelById("benefits"))).toEqual(["Acid hialuronic", null]);
+    expect(openingsOf(panelById("benefits"))).toEqual(["Trage apa", "Acid hialuronic"]);
     expect(panelById("benefits").chips).toEqual(["Acid hialuronic", "Vitamina C"]);
     expect(panelById("benefits").lead).toBe("Hidratează și echilibrează pielea.");
   });
 
   it("routes usage and fit sections to their own panels", () => {
-    expect(titlesOf(panelById("usage"))).toEqual(["Textură și folosire", "În rutină"]);
+    expect(openingsOf(panelById("usage"))).toEqual(["Textura de", "Aplică 3-4"]);
     expect(panelById("usage").chips).toEqual(["Dimineața și seara"]);
-    expect(titlesOf(panelById("fit"))).toEqual(["Pentru cine"]);
+    expect(openingsOf(panelById("fit"))).toEqual(["Formula e"]);
     expect(panelById("fit").chips).toEqual(["Hidratare", "Ten mixt", "Uz zilnic"]);
     // `best_for` ("ten deshidratat și mixt și uscat") is deliberately not printed.
     expect(panelById("fit").lead).toBeUndefined();
   });
 
-  it("never drops an unknown heading — it lands in the description", () => {
-    const description = panelById("description");
-    expect(titlesOf(description)).toEqual([null, "Ce face", "Titlu nou din catalog"]);
+  it("never drops an unknown heading — its text lands in the description", () => {
+    const paragraphs = panelById("description").paragraphs;
+    // Lead, "Ce face", then the heading the section map has never seen.
+    expect(openingsOf(panelById("description"))).toEqual(["Pentru hidratare,", "Pielea deshidratată", "Text pe"]);
     // The lead loses the restated name; the <h1> right above it already said it.
-    expect(description.blocks[0].body).toMatch(/^Pentru hidratare/);
+    expect(paragraphs[0]).toMatch(/^Pentru hidratare/);
+  });
+
+  it("flags the spec sheet as not being an ingredients list", () => {
+    expect(panelById("specs").note).toMatch(/ambalajul produsului/);
   });
 
   it("hides specs that already have their own panel, plus the lone variant", () => {

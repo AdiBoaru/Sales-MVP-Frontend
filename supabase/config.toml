@@ -1,0 +1,7 @@
+project_id = "xfczucwqntefethxxien"
+
+[functions.redeem-code]
+# The caller has no session yet — that is the whole point of the endpoint.
+# Authorization is the demo code, checked inside the function against a peppered
+# hash, behind a per-IP throttle.
+verify_jwt = false

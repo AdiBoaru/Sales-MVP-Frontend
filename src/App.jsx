@@ -15,6 +15,9 @@ const Landing = lazy(() => import('@/pages/Landing'));
 const Store = lazy(() => import('@/pages/Store'));
 const ProductDetail = lazy(() => import('@/pages/ProductDetail'));
 const Cart = lazy(() => import('@/pages/Cart'));
+// Lazy like the pages it guards: the gate pulls in supabase-js, and the public
+// landing page must not pay for that chunk.
+const DemoGate = lazy(() => import('@/components/DemoGate'));
 
 function RouteFallback() {
   return (
@@ -24,7 +27,12 @@ function RouteFallback() {
   );
 }
 
-// Public storefront — anonymous visitors, no auth, no third-party app SDK.
+// The storefront routes are gated behind a demo access code. The gate here is the
+// visible half — the enforcing half is the database (see DEMO_ACCESS.md): without
+// a redeemed session the catalog reads empty no matter what the client does.
+const Protected = ({ children }) => <DemoGate>{children}</DemoGate>;
+
+// The landing page stays public — it explains the demo and points at the signup.
 function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
@@ -35,12 +43,15 @@ function App() {
             <Route path="/" element={<Landing />} />
             {/* Rutele de vitrină împart un layout persistent: paginile se schimbă prin
                 `<Outlet />`, widgetul rămâne montat. Allowlist strict — landing și /Cart
-                rămân în afara lui. */}
-            <Route element={<ProtectedStorefrontChatLayout />}>
+                rămân în afara lui.
+                Poarta stă PESTE layout, nu în interiorul lui: așa se evaluează o
+                singură dată pentru toată vitrina, iar `/store ↔ /product` nu o
+                traversează din nou — deci nici widgetul nu se remontează. */}
+            <Route element={<Protected><ProtectedStorefrontChatLayout /></Protected>}>
               <Route path="/store" element={<Store />} />
               <Route path="/product/:id" element={<ProductDetail />} />
             </Route>
-            <Route path="/Cart" element={<Cart />} />
+            <Route path="/Cart" element={<Protected><Cart /></Protected>} />
             <Route path="/cart" element={<Navigate to="/Cart" replace />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>

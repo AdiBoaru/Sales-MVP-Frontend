@@ -113,14 +113,20 @@ describe('sursa: mountul a plecat din pagini', () => {
     // Layoutul NU e lazy: un layout suspendabil s-ar remonta la prima navigare între copii.
     expect(source).not.toMatch(/lazy\(\(\)\s*=>\s*import\('@\/layouts/)
     // Rutele de vitrină sunt copii ai layoutului; /Cart și landing rămân în afara lui.
+    // Ancora e ELEMENTUL de layout, nu `<Route element={…}>`: poarta de acces demo îl
+    // înfășoară, iar o potrivire pe deschiderea rutei ar căuta un text care nu mai există.
     const layoutBlock = source.slice(
-      source.indexOf('<Route element={<ProtectedStorefrontChatLayout />}>'),
+      source.indexOf('<ProtectedStorefrontChatLayout />'),
       source.indexOf('</Route>'),
     )
     expect(layoutBlock).toContain('path="/store"')
     expect(layoutBlock).toContain('path="/product/:id"')
     expect(layoutBlock).not.toContain('path="/Cart"')
     expect(layoutBlock).not.toContain('path="/"')
+
+    // Poarta stă PESTE layout. Mutată înăuntru, s-ar reevalua la fiecare navigare
+    // între rutele copil și ar remonta widgetul — exact bug-ul pe care îl păzim aici.
+    expect(source).toMatch(/<Protected>\s*<ProtectedStorefrontChatLayout \/>\s*<\/Protected>/)
   })
 
   it('layoutul randează `<Outlet />` + un singur `<ChatWidget />`', () => {

@@ -101,8 +101,6 @@ const PANEL_OF_SECTION = new Map(
   }).map(([title, panel]) => [norm(title), panel])
 );
 
-const GENERIC_INGREDIENT_TITLE = /^ingrediente(le)?-cheie$/;
-
 // Specs surfaced by a dedicated panel — kept out of the spec table so the same
 // value isn't printed twice on one page.
 const SPECS_SHOWN_ELSEWHERE = new Set(
@@ -256,9 +254,15 @@ function specRows(attrs) {
  * The collapsible panels under the buy box, in display order. Panels with no
  * content are omitted, so a thin product doesn't render empty rows.
  *
+ * Each panel's prose arrives as flat `paragraphs`, not as titled blocks: the
+ * authored headings ("Ce face", "De ce contează", "Acid hialuronic") are useful
+ * for deciding WHICH panel a paragraph belongs to, but printing them turns the
+ * page into an outline. The copy already names its own subject in the first
+ * sentence, so under one serif heading it reads as an editorial description.
+ *
  * @param {{ name?: string, description?: string, attributes?: any }} product
  * @returns {Array<{id: string, title: string, lead?: string, chipsLabel?: string,
- *   chips?: string[], blocks?: Array<{title: string|null, body: string}>,
+ *   chips?: string[], paragraphs?: string[], note?: string,
  *   specs?: Array<{label: string, value: string}>}>}
  */
 export function buildProductPanels(product) {
@@ -267,18 +271,17 @@ export function buildProductPanels(product) {
   const ingredients = (attrs.key_ingredients || []).filter(Boolean);
   const ingredientTitles = new Set(ingredients.map(norm));
 
-  const blocks = { description: [], benefits: [], usage: [], fit: [] };
-  if (lead) blocks.description.push({ title: null, body: stripNamePrefix(lead, product?.name) });
+  const prose = { description: [], benefits: [], usage: [], fit: [] };
+  const push = (panel, body) => prose[panel].push(...body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean));
+
+  if (lead) push("description", stripNamePrefix(lead, product?.name));
   for (const section of sections) {
     // Some products name the ingredient block after the ingredient itself
     // ("**Ceai verde**") instead of using the generic heading.
     const panel = ingredientTitles.has(norm(section.title))
       ? "benefits"
       : PANEL_OF_SECTION.get(norm(section.title)) || "description";
-    // The generic heading would land right under the "Ingrediente-cheie" chips
-    // and say the same thing twice.
-    const title = GENERIC_INGREDIENT_TITLE.test(norm(section.title)) ? null : section.title;
-    blocks[panel].push({ title, body: section.body });
+    push(panel, section.body);
   }
 
   const specs = specRows(attrs);
@@ -289,7 +292,7 @@ export function buildProductPanels(product) {
     {
       id: "description",
       title: "Descriere",
-      blocks: blocks.description,
+      paragraphs: prose.description,
     },
     {
       id: "benefits",
@@ -297,14 +300,14 @@ export function buildProductPanels(product) {
       lead: attrs.key_benefit || "",
       chipsLabel: ingredients.length ? "Ingrediente-cheie" : "",
       chips: ingredients.map(capitalize),
-      blocks: blocks.benefits,
+      paragraphs: prose.benefits,
     },
     {
       id: "usage",
       title: "Cum se folosește",
       chipsLabel: moment ? "Moment de folosire" : "",
       chips: moment ? [capitalize(moment)] : [],
-      blocks: blocks.usage,
+      paragraphs: prose.usage,
     },
     {
       // No lead line here: `attributes.best_for` reads as generated text ("ten
@@ -312,17 +315,22 @@ export function buildProductPanels(product) {
       id: "fit",
       title: "Potrivit pentru",
       chips: fit,
-      blocks: blocks.fit,
+      paragraphs: prose.fit,
     },
     {
       id: "specs",
       title: "Specificații",
       specs,
+      // The catalogue has no INCI list, and a spec sheet is not one. Say so
+      // rather than letting the panel imply completeness.
+      note: specs.length
+        ? "Pentru lista completă de ingrediente și informațiile cele mai recente, verifică ambalajul produsului înainte de folosire."
+        : "",
     },
   ];
 
   return panels.filter(
-    (panel) => panel.lead || panel.chips?.length || panel.blocks?.length || panel.specs?.length
+    (panel) => panel.lead || panel.chips?.length || panel.paragraphs?.length || panel.specs?.length
   );
 }
 

@@ -346,7 +346,7 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        <div className="mt-8 md:mt-10">
+        <div className="mt-10 md:mt-16">
           <ProductPanels panels={panels} />
         </div>
       </div>
