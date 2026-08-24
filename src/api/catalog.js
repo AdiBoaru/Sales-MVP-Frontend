@@ -20,8 +20,8 @@ const STORE_BUSINESS_ID =
 // ── Categories ────────────────────────────────────────────────────────────────
 // Read from the DB, not guessed. Source is the `store_categories` view (migration
 // 039): it exposes only categories that actually carry active products — 6 roots
-// over ~36 children, from the 102 rows in the table — each with a SUBTREE product
-// count. One request feeds both the menu and its badges.
+// over ~36 children, for our business — each with a SUBTREE product count. One
+// round trip feeds both the menu and its badges.
 //
 // The view deliberately omits `categories.path`: 19 of 102 rows have a `path`
 // that contradicts `parent_id`, so the hierarchy comes from `parent_id` alone.
