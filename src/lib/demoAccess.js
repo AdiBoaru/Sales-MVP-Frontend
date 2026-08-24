@@ -17,10 +17,61 @@ const REDEEM_URL = `${SUPABASE_URL}/functions/v1/redeem-code`;
 
 const GENERIC_ERROR = "Nu am putut verifica codul. Verifică conexiunea și încearcă din nou.";
 
+/** Aceeași normalizare ca în funcția edge: majuscule, fără separatori. Cratimele
+ *  și spațiile nu fac parte din secret — oamenii retasteaza codul dintr-un e-mail. */
+function normalizeCode(raw) {
+  return String(raw ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+// ── Codul implicit ──────────────────────────────────────────────────────────
+// Jumătatea de SERVER a porții nu e instalată pe proiectul Supabase: `public.
+// redeem_demo_code` nu există, iar `anon` citește în continuare catalogul
+// (verificat cu cheia de service). Cu funcția `redeem-code` nedeploiată, orice
+// cod cade pe ramura de rețea de mai jos, deci poarta nu lasă pe nimeni înăuntru
+// — nici pe tine. Constanta asta e ușa de serviciu până se fac pașii 1–6 din
+// DEMO_ACCESS.md.
+//
+// Ce NU e: protecție. Stă în clar în bundle, deci o vede oricine deschide
+// DevTools. Nu slăbește însă nimic real, fiindcă azi catalogul e public oricum.
+// Iar în ziua în care rulezi migrația de lockdown, ușa se închide de la sine:
+// fără sesiune Supabase, `anon` nu mai citește nimic și magazinul rămâne gol —
+// exact proprietatea pe care se sprijină tot designul („poarta nu e în React").
+//
+// Ca s-o scoți: `VITE_DEMO_DEFAULT_CODE=` (gol) în env, sau șterge constanta.
+const DEFAULT_CODE = normalizeCode(import.meta.env.VITE_DEMO_DEFAULT_CODE ?? "1234");
+
+/** Cel mai scurt cod acceptabil — coboară cu codul implicit, ca butonul de
+ *  submit să nu rămână blocat pe o parolă de 4 cifre. */
+export const MIN_CODE_LEN = DEFAULT_CODE ? Math.min(6, DEFAULT_CODE.length) : 6;
+
+const LOCAL_OPEN_KEY = "nx-demo-default-open";
+
+/** localStorage aruncă în private mode / cu cookies blocate; o poartă căzută
+ *  acolo ar fi mai rea decât una care doar nu ține minte. */
+function readDefaultOpen() {
+  try {
+    return localStorage.getItem(LOCAL_OPEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeDefaultOpen(open) {
+  try {
+    if (open) localStorage.setItem(LOCAL_OPEN_KEY, "1");
+    else localStorage.removeItem(LOCAL_OPEN_KEY);
+  } catch {
+    /* fără persistență: rămâne deschis până la reload */
+  }
+}
+
 /** Display helper: NX4K7M2P9QAF -> NX-4K7M2-P9QAF. Cosmetic only — the server
- *  strips separators before hashing, so formatting can never break a valid code. */
+ *  strips separators before hashing, so formatting can never break a valid code.
+ *  Gruparea se aplică DOAR formei emise (`NX…`): un cod ales de mână, „1234" sau
+ *  „adi-nativex-2026", n-are structura aia și grupat ar apărea „12-34". */
 export function formatCode(raw) {
-  const clean = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  const clean = normalizeCode(raw).slice(0, 12);
+  if (!clean.startsWith("NX")) return clean;
   const parts = [clean.slice(0, 2), clean.slice(2, 7), clean.slice(7, 12)].filter(Boolean);
   return parts.join("-");
 }
@@ -31,6 +82,13 @@ export function formatCode(raw) {
  * @returns {Promise<{ ok: boolean, message?: string, label?: string|null, expiresAt?: string }>}
  */
 export async function redeemCode(code) {
+  // Înaintea oricărui apel de rețea: cât timp funcția edge nu e deployată, nu are
+  // cine valida nimic, iar un round-trip inutil ar întoarce doar GENERIC_ERROR.
+  if (DEFAULT_CODE && normalizeCode(code) === DEFAULT_CODE) {
+    writeDefaultOpen(true);
+    return { ok: true, label: null, expiresAt: null };
+  }
+
   if (!supabase) return { ok: false, message: GENERIC_ERROR };
 
   let payload;
@@ -62,6 +120,7 @@ export async function redeemCode(code) {
 }
 
 export async function endDemoSession() {
+  writeDefaultOpen(false);
   if (supabase) await supabase.auth.signOut();
 }
 
@@ -73,6 +132,11 @@ export function useDemoAccess() {
   const [status, setStatus] = useState("checking");
 
   useEffect(() => {
+    // Ușa de serviciu, verificată prima: e singura care nu depinde de un server.
+    if (readDefaultOpen()) {
+      setStatus("open");
+      return;
+    }
     if (!supabase) {
       setStatus("locked");
       return;

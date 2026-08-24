@@ -26,6 +26,24 @@ sesiune Supabase (sessionStorage) ─► RLS lasă catalogul să fie citit
 Codul în clar nu ajunge niciodată în DB și nu se poate recupera. Parola userului
 sintetic nu se stochează deloc — se derivă din `id`.
 
+## Codul implicit (stare actuală: poarta reală NU e instalată)
+
+Pe proiectul Supabase nu există încă `public.redeem_demo_code`, iar `anon` citește
+în continuare catalogul — adică pașii 2 și 6 de mai jos n-au fost rulați. Cu funcția
+edge nedeploiată, orice cod introdus cade pe eroare de rețea, deci poarta n-ar lăsa
+pe nimeni înăuntru.
+
+Până atunci există un cod implicit, verificat în browser, înaintea oricărui apel:
+
+```
+VITE_DEMO_DEFAULT_CODE=1234     # gol = dezactivat
+```
+
+Nu e securitate și nu pretinde să fie: stă în clar în bundle. Nu slăbește nimic
+real, fiindcă azi catalogul e public oricum — iar după pasul 6 ușa asta se închide
+singură, fiindcă fără sesiune Supabase magazinul rămâne gol indiferent ce arată
+ecranul. Când ajungi acolo, golește variabila.
+
 ## Instalare
 
 **1. Pepperele** (o singură dată; nu le pierde, nu le rota fără să reemiți codurile):

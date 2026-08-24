@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ArrowRight, KeyRound, Loader2 } from "lucide-react";
-import { formatCode, useDemoAccess } from "@/lib/demoAccess";
+import { formatCode, useDemoAccess, MIN_CODE_LEN } from "@/lib/demoAccess";
 import { BRAND } from "@/lib/brand";
 
 const SIGNUP_URL = "https://nativextech.com/";
@@ -40,7 +40,9 @@ export default function DemoGate({ children }) {
     }
   }
 
-  const tooShort = code.replace(/[^A-Z0-9]/gi, "").length < 6;
+  // Pragul vine din `demoAccess`, nu e o constantă locală: cu un cod implicit de
+  // 4 cifre, un `< 6` hardcodat aici ar ține butonul dezactivat pe parola corectă.
+  const tooShort = code.replace(/[^A-Z0-9]/gi, "").length < MIN_CODE_LEN;
 
   return (
     <main className="aria-lux is-light min-h-screen bg-[var(--color-void)] flex items-center justify-center px-4 py-12">

@@ -18,7 +18,7 @@ vi.mock("@/api/supabaseClient", () => ({
   isSupabaseConfigured: true,
 }));
 
-const { formatCode, redeemCode } = await import("@/lib/demoAccess");
+const { formatCode, redeemCode, endDemoSession } = await import("@/lib/demoAccess");
 
 const SESSION = { access_token: "at", refresh_token: "rt" };
 
@@ -48,6 +48,50 @@ describe("formatCode", () => {
   it("groups partial input without inventing separators", () => {
     expect(formatCode("nx4")).toBe("NX-4");
     expect(formatCode("")).toBe("");
+  });
+
+  it("leaves a hand-picked code alone — 1234 must not read as 12-34", () => {
+    expect(formatCode("1234")).toBe("1234");
+    expect(formatCode("adi-nativex-2026")).toBe("ADINATIVEX20");
+  });
+});
+
+// Ușa de serviciu cât timp jumătatea de server a porții nu e instalată. Ce se
+// verifică aici nu e „codul e corect" — e că NU pleacă nicio cerere: cu funcția
+// edge nedeploiată, un round-trip ar întoarce doar eroarea generică de rețea, iar
+// utilizatorul ar vedea „verifică conexiunea" pe parola bună.
+describe("codul implicit", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("deschide fără să atingă rețeaua", async () => {
+    const result = await redeemCode("1234");
+
+    expect(result.ok).toBe(true);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockAuth.setSession).not.toHaveBeenCalled();
+  });
+
+  it("acceptă aceleași variații ca serverul: separatori și spații", async () => {
+    expect((await redeemCode("  12-34 ")).ok).toBe(true);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("ține minte peste reload", async () => {
+    await redeemCode("1234");
+    expect(localStorage.length).toBeGreaterThan(0);
+
+    await endDemoSession();
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("orice alt cod merge mai departe la server", async () => {
+    global.fetch.mockResolvedValue({ json: async () => ({ ok: true, session: SESSION }) });
+
+    await redeemCode("1235");
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
 
