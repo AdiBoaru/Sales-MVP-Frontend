@@ -9,8 +9,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  MessageCircle, X, Send, Plus, Minus, Check, ShoppingCart, Trash2,
-  ChevronDown, Bookmark, ArrowRight, Mic,
+  MessageCircle, X, Plus, Minus, Check, ShoppingCart, Trash2,
+  ChevronDown, Bookmark, ArrowRight, ArrowUp, Camera, Sparkle,
+  SquarePen, MoreHorizontal,
 } from "lucide-react";
 import {
   sendChatMessage,
@@ -341,55 +342,98 @@ function scrollNodeToTop(container, node, pad = 10) {
   container.scrollTop = Math.max(0, top - pad);
 }
 
-// Ghost microphone button in the composer (matches the design's mic + send pair).
-// Wired to the browser Web Speech API and feature-detected: it renders ONLY where
-// dictation actually works, so there's never a dead control. Dictated text is
-// appended to the input for the user to review before sending.
-function MicButton({ onTranscript, disabled }) {
-  const [listening, setListening] = useState(false);
-  const recRef = useRef(/** @type {any} */ (null));
-  const w = /** @type {any} */ (typeof window !== "undefined" ? window : {});
-  const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
-  if (!SR) return null;
+// Within a couple of pixels of the end. The slack absorbs sub-pixel layout rounding,
+// which otherwise leaves the jump-to-end chevron showing on an already-ended thread.
+function isScrolledToEnd(el) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+}
 
-  const toggle = () => {
-    if (listening) {
-      recRef.current?.stop();
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "ro-RO";
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    rec.onresult = (e) => {
-      const t = e.results?.[0]?.[0]?.transcript;
-      if (t) onTranscript(t.trim());
-    };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
-    recRef.current = rec;
-    setListening(true);
-    try {
-      rec.start();
-    } catch {
-      setListening(false);
-    }
-  };
+// Visual-search button in the composer — the camera-with-sparkle the reference puts
+// at the composer's bottom-left. It opens a real picker, but /web/chat carries a
+// single text `message` and nothing else, so an image has nowhere to go yet: the
+// handler says so instead of silently discarding the file.
+function CameraButton({ onPick, disabled }) {
+  const fileRef = useRef(/** @type {HTMLInputElement | null} */ (null));
 
   return (
+    <>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.[0]) onPick();
+          e.target.value = ""; // let the same file be picked again
+        }}
+      />
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => fileRef.current?.click()}
+        title="Caută după imagine"
+        className="shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center text-[var(--aria-accent-line)] hover:bg-[var(--aria-surface-2)] disabled:opacity-40 transition-colors"
+      >
+        <span className="relative inline-flex">
+          <Camera className="w-[21px] h-[21px]" strokeWidth={1.7} />
+          <Sparkle className="absolute -top-[3px] -left-[5px] w-[11px] h-[11px] fill-current" strokeWidth={0} />
+        </span>
+      </button>
+    </>
+  );
+}
+
+// The "⋯" header menu. The reference keeps its header to four controls — new chat,
+// wordmark, overflow, close — so the saved list and the cart live in here rather
+// than as their own buttons.
+function HeaderMenu({ savedCount, cartCount, showCart, onSaved, onCart }) {
+  const [open, setOpen] = useState(false);
+
+  const Item = ({ icon: Icon, label, count, onClick }) => (
     <button
       type="button"
-      onClick={toggle}
-      disabled={disabled}
-      title={listening ? "Ascult… apasă pentru stop" : "Dictează"}
-      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-        listening
-          ? "text-[var(--aria-purple)] bg-[rgba(47,102,76,0.1)]"
-          : "text-[var(--aria-text-3)] hover:bg-[var(--aria-border-2)]"
-      }`}
+      onClick={() => {
+        setOpen(false);
+        onClick();
+      }}
+      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-[var(--aria-text)] hover:bg-[var(--aria-surface-2)] transition-colors"
     >
-      <Mic className="w-4 h-4" />
+      <Icon className="w-4 h-4 shrink-0 text-[var(--aria-text-3)]" />
+      <span className="flex-1">{label}</span>
+      {count > 0 && (
+        <span className="shrink-0 min-w-[18px] px-1 py-px rounded-full bg-[rgba(124,58,237,0.1)] text-[10px] font-bold text-center text-[var(--aria-purple)]">
+          {count}
+        </span>
+      )}
     </button>
+  );
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        title="Mai multe"
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)] transition-colors"
+      >
+        <MoreHorizontal className="w-[18px] h-[18px]" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-9 z-40 w-52 py-1 rounded-xl border border-[var(--aria-border)] bg-white shadow-[0_10px_30px_rgba(22,33,62,0.16)]">
+            <Item icon={Bookmark} label="Lista salvată" count={savedCount} onClick={onSaved} />
+            <Item
+              icon={ShoppingCart}
+              label={showCart ? "Înapoi la chat" : "Coșul tău"}
+              count={cartCount}
+              onClick={onCart}
+            />
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -405,6 +449,10 @@ export default function ChatWidget() {
 
   const busy = sending;
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
+  // Drives the floating "jump to the end" chevron above the composer. It appears
+  // exactly when there is conversation below the fold — including right after a new
+  // bot reply, which we align to its own top rather than to the bottom.
+  const [atBottom, setAtBottom] = useState(true);
   const cartCount = useCartCount();
   const wishlist = useWishlist();
   const scrollRef = useRef(null);
@@ -453,7 +501,10 @@ export default function ChatWidget() {
   // On open, jump to the latest (bottom) — the panel remounts each time, so scrollTop
   // starts at 0 otherwise.
   useEffect(() => {
-    if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (open && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setAtBottom(true);
+    }
   }, [open]);
 
   // Scroll behavior on new messages:
@@ -473,11 +524,15 @@ export default function ChatWidget() {
       // hero/routine replies used to jump to the very bottom). One frame's delay lets
       // the freshly-rendered reply settle to its final height first.
       requestAnimationFrame(() => {
-        if (scrollRef.current && lastMsgRef.current) scrollNodeToTop(scrollRef.current, lastMsgRef.current);
+        if (scrollRef.current && lastMsgRef.current) {
+          scrollNodeToTop(scrollRef.current, lastMsgRef.current);
+          setAtBottom(isScrolledToEnd(scrollRef.current));
+        }
       });
     } else {
       // Your own message, the thinking indicator, or a reset: conventional bottom.
       el.scrollTop = el.scrollHeight;
+      setAtBottom(true);
     }
   }, [messages, busy]);
 
@@ -558,62 +613,45 @@ export default function ChatWidget() {
       {/* Panel */}
       {open && (
         <div className="aria-widget fixed inset-y-0 right-0 z-50 w-full max-w-full sm:w-[452px] bg-white border-l border-[var(--aria-border-2)] shadow-2xl flex flex-col">
-          {/* Brand accent bar */}
-          <div className="h-[2px] aria-gradient-bg flex-shrink-0" />
+          {/* Header — the reference's four slots: "new chat" left, the wordmark dead
+              centre, then overflow and close. The wordmark is positioned absolutely so
+              it stays centred on the panel regardless of how wide the two sides get. */}
+          <div className="relative flex items-center justify-between gap-2 px-3 py-2.5 border-b border-[var(--aria-border-2)] flex-shrink-0 bg-white">
+            <button
+              onClick={handleReset}
+              title="Începe un chat nou"
+              className="relative z-10 inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-[10px] border border-[var(--aria-border-3)] bg-white text-[12px] font-medium text-[var(--aria-text)] hover:border-[var(--aria-purple)] transition-colors"
+            >
+              <SquarePen className="w-[15px] h-[15px]" strokeWidth={1.9} />
+              <span>Chat nou</span>
+            </button>
 
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2 min-[380px]:gap-3 px-3 min-[380px]:px-[18px] py-3 min-[380px]:py-3.5 border-b border-[var(--aria-border-2)] flex-shrink-0">
-            {/* Left: "new chat" — only once the user has sent a message */}
-            <div className="flex items-center gap-2 min-[380px]:gap-3 min-w-0 flex-1">
-              <AriaMark size={30} className="min-[380px]:hidden" />
-              <AriaMark size={34} className="hidden min-[380px]:grid" />
-              <div className="min-w-0">
-                <div className="aria-heading text-base leading-tight text-[var(--aria-text)]">{BRAND.assistant}</div>
-                <div className="hidden min-[360px]:block text-[10.5px] leading-tight tracking-[0.04em] text-[var(--aria-text-3)] truncate">
-                  Consultant de cumpărături
-                </div>
-              </div>
-              {hasConversation && (
-                <button
-                  onClick={handleReset}
-                  title="Începe un chat nou"
-                  className="hidden min-[430px]:inline-flex items-center gap-1 text-xs font-medium text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-2.5 py-1 rounded-full transition-colors disabled:opacity-40"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Chat nou
-                </button>
-              )}
+            <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              <AriaMark size={24} />
+              <span className="relative">
+                <span className="absolute -top-[7px] left-0 text-[7px] font-bold leading-none tracking-[0.08em] text-[var(--aria-text-5)]">
+                  BETA
+                </span>
+                <span className="aria-heading text-[19px] leading-none text-[var(--aria-text)]">
+                  {BRAND.assistant}
+                </span>
+              </span>
             </div>
 
-            {/* Right: saved + cart toggle + close */}
-            <div className="flex items-center gap-0.5 min-[380px]:gap-1 shrink-0">
-              <button
-                onClick={() => setSavedOpen((s) => !s)}
-                title="Lista salvată"
-                className="relative inline-flex items-center gap-1 min-[380px]:gap-1.5 h-8 px-2 min-[380px]:px-3 rounded-full border border-[var(--aria-border-3)] bg-white text-[12px] font-medium text-[var(--aria-text-2)] hover:border-[var(--aria-purple)] transition-colors"
-              >
-                <Bookmark className="w-4 h-4" />
-                <span>{wishlist.length}</span>
-              </button>
-              <button
-                onClick={() => setShowCart((s) => !s)}
-                title={showCart ? "Înapoi la chat" : "Vezi coșul"}
-                className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  showCart ? "bg-[rgba(47,102,76,0.1)] text-[var(--aria-purple)]" : "text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
-                }`}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 aria-gradient-bg text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
+            <div className="relative z-10 flex items-center gap-0.5 shrink-0">
+              <HeaderMenu
+                savedCount={wishlist.length}
+                cartCount={cartCount}
+                showCart={showCart}
+                onSaved={() => setSavedOpen((s) => !s)}
+                onCart={() => setShowCart((s) => !s)}
+              />
               <button
                 onClick={() => setOpen(false)}
                 title="Închide"
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
               >
-                <X className="w-4 h-4" />
+                <X className="w-[18px] h-[18px]" />
               </button>
             </div>
           </div>
@@ -665,7 +703,11 @@ export default function ChatWidget() {
               </div>
             </div>
           ) : (
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-6 bg-[var(--aria-bg)]">
+          <div
+            ref={scrollRef}
+            onScroll={(e) => setAtBottom(isScrolledToEnd(e.currentTarget))}
+            className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-6 bg-[var(--aria-bg)]"
+          >
             {visibleMessages.map((msg, i) => (
               <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
                 <ChatMessage
@@ -686,36 +728,55 @@ export default function ChatWidget() {
               disclaimer is no longer pinned here — it sits under each bot answer
               (ChatMessage), the way the reference design shows it. */}
           {!showCart && (
-            <>
-              {/* Input — single pill containing the field + send button, like the design. */}
+            <div className="relative flex-shrink-0 bg-white px-3 pt-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+              {/* Jump to the end — floats over the conversation just above the composer,
+                  and only while there is something below the fold. */}
+              {hasConversation && !atBottom && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = scrollRef.current;
+                    if (!el) return;
+                    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+                  }}
+                  title="Mergi la sfârșitul conversației"
+                  className="absolute -top-5 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-white border border-[var(--aria-border-2)] shadow-[0_2px_10px_rgba(22,33,62,0.16)] flex items-center justify-center text-[var(--aria-text-3)] hover:text-[var(--aria-text)] transition-colors"
+                >
+                  <ChevronDown className="w-[18px] h-[18px]" />
+                </button>
+              )}
+
+              {/* Composer — the reference's two-row card: the field on top, the visual
+                  search and send controls on the row beneath it. */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   send();
                 }}
-                className="px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-[var(--aria-border-2)] bg-white flex-shrink-0"
+                className="px-3 pt-2 pb-2 bg-white border border-[var(--aria-border)] rounded-[16px] shadow-[0_1px_4px_rgba(22,33,62,0.06)] focus-within:border-[var(--aria-purple)] transition-colors"
               >
-                <div className="flex items-center gap-2 pl-4 pr-1.5 py-1 bg-[var(--aria-surface-2)] border border-[var(--aria-border)] rounded-full focus-within:border-[var(--aria-purple)] transition-colors">
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Întreabă orice despre produse..."
-                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60"
-                  />
-                  <MicButton
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Caută produse sau inspirație"
+                  className="w-full bg-transparent border-none outline-none text-[15px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-1.5 disabled:opacity-60"
+                />
+                <div className="mt-0.5 flex items-center justify-between">
+                  <CameraButton
                     disabled={busy}
-                    onTranscript={(t) => setInput((v) => (v.trim() ? `${v.trim()} ${t}` : t))}
+                    onPick={() => showToast("Căutarea după imagine ajunge în curând.")}
                   />
                   <button
                     type="submit"
                     disabled={sending || !input.trim()}
-                    className="w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-90"
+                    title="Trimite"
+                    className="w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-50 text-white flex items-center justify-center shrink-0 transition-opacity hover:opacity-90"
                   >
-                    <Send className="w-4 h-4" />
+                    <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </button>
                 </div>
               </form>
-            </>
+            </div>
           )}
 
           {/* Add-to-cart confirmation toast */}

@@ -94,7 +94,7 @@ describe('flag STINS — v2 nu există', () => {
     const user = userEvent.setup()
     render(<ChatWidget />)
     await user.click(screen.getByRole('button', { name: /aria/i }))
-    await screen.findByPlaceholderText(/Întreabă orice/i)
+    await screen.findByPlaceholderText(/Caută produse sau inspirație/i)
 
     // Zero atingeri de rețea la montare: v1 vorbește abia la primul mesaj.
     expect(fetchMock).not.toHaveBeenCalled()
@@ -146,7 +146,7 @@ describe('flag PORNIT — shell-ul poartă numele serverului', () => {
     )
 
     // Copy-ul v1 a DISPĂRUT de pe calea v2 — asta e jumătate din card.
-    expect(screen.queryByText(/Întreabă orice despre produse/i)).toBeNull()
+    expect(screen.queryByText(/Caută produse sau inspirație/i)).toBeNull()
     expect(screen.queryByText(/Recomandă-mi un ser pentru ten gras/i)).toBeNull()
     expect(screen.queryByText(/Sunt Aria/i)).toBeNull()
   })

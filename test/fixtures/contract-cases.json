@@ -33,9 +33,10 @@
       ]
     },
     "assert": {
-      "textPresent": ["Pentru ten uscat, uite ce merge.", "Când alegi, uită-te la textură și la confort.", "Crema A", "Crema B", "Top Favorit", "Super Preț", "4.8", "(120)", "pentru ten uscat — hidratează intens", "opțiune mai accesibilă", "79,99", "Una mai ieftină", "Trimite-mi linkul"],
+      "textPresent": ["Pentru ten uscat, uite ce merge.", "Când alegi, uită-te la textură și la confort.", "Crema A", "Crema B", "Top Favorit", "Super Preț", "4.8", "pentru ten uscat — hidratează intens", "opțiune mai accesibilă", "7999", "Una mai ieftină", "Trimite-mi linkul"],
+      "textAbsent": ["(120)"],
       "productCards": 2,
-      "discountBadge": true,
+      "discountBadge": false,
       "paragraphs": 2
     }
   },
@@ -102,7 +103,7 @@
       },
       "products": [{ "product_id": "p1", "name": "A", "price": 50, "list_price": 80 }, { "product_id": "p2", "name": "B", "price": 60 }]
     },
-    "assert": { "comparisonTable": true, "productCards": 0, "textPresent": ["80,00", "de la 80.00"] }
+    "assert": { "comparisonTable": true, "productCards": 0, "textPresent": ["de la 80.00"], "textAbsent": ["80,00"] }
   },
   {
     "case": "comparison_longnames",
@@ -155,7 +156,7 @@
       "suggestions": ["A cheaper one", "Compare the first two"],
       "products": [{ "product_id": "p1", "name": "Cream A", "price": 12.99, "rating": 4.8, "review_count": 30, "reason": "deeply hydrating" }]
     },
-    "assert": { "textPresent": ["For dry skin, here are some options.", "I run on artificial intelligence", "Cream A", "4.8", "(30)", "deeply hydrating", "A cheaper one", "Compare the first two"], "productCards": 1 }
+    "assert": { "textPresent": ["For dry skin, here are some options.", "I run on artificial intelligence", "Cream A", "4.8", "deeply hydrating", "A cheaper one", "Compare the first two"], "textAbsent": ["(30)"], "productCards": 1 }
   },
   {
     "case": "locale_hu_comparison",
@@ -206,10 +207,10 @@
       }]
     },
     "assert": {
-      "textPresent": ["Fluid matifiant X", "genius", "Super Preț", "Comandă până la 18:00, livrare mâine", "-100 Lei în Coș", "Livrare:", "Marți, 7 Iul.", "controlează sebumul", "4.81", "(1.234)", "99,00"],
-      "textAbsent": ["acid salicilic + zinc"],
+      "textPresent": ["Fluid matifiant X", "genius", "Super Preț", "Comandă până la 18:00, livrare mâine", "-100 Lei în Coș", "Livrare:", "Marți, 7 Iul.", "controlează sebumul", "4.81", "9900"],
+      "textAbsent": ["acid salicilic + zinc", "(1.234)"],
       "productCards": 1,
-      "discountBadge": true,
+      "discountBadge": false,
       "moreDetails": true,
       "linkHrefs": ["https://x/p1"]
     }

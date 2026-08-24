@@ -42,7 +42,11 @@ describe("contract conformance — every payload shape renders faithfully", () =
       expect(within(container).getAllByRole("columnheader")).toHaveLength(a.columnHeaders);
     }
     if (a.dash === true) expect(container).toHaveTextContent("—");
+    // A saved-percentage badge is catalogue merchandising: it renders when the bot
+    // sends it and never because the frontend divided two prices. `false` locks that
+    // in — a card with a list price above its price must NOT grow a "-x%" of its own.
     if (a.discountBadge === true) expect(container.innerHTML).toMatch(/-\d+%/);
+    if (a.discountBadge === false) expect(container.innerHTML).not.toMatch(/-\d+%/);
     // Blank-line-separated content becomes distinct <p> blocks, never one run-on line.
     if (a.paragraphs != null) {
       expect(container.querySelectorAll(".aria-reply > p")).toHaveLength(a.paragraphs);
