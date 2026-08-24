@@ -311,6 +311,31 @@
   outline-offset: 2px;
 }
 
+/* Excepția: inputul composerului. Regula de sus îl lovește la FIECARE focus, nu
+   doar la cel de tastatură — un câmp de text primește `:focus-visible` inclusiv
+   pe click, fiindcă browserul știe că urmează tastare. Rezultatul e un dreptunghi
+   navy de 3px apărut la simplul click în composer: navy pe lavandă e cel mai tare
+   contrast din widget, pus fix pe controlul unde utilizatorul se uită oricum.
+   Aici indicatorul nu trebuie să strige — cine dă click ȘTIE unde a dat click.
+   Deci: inelul se mută de pe input pe containerul VIZUAL (pilula la v2, cardul la
+   v1, ambele rotunjite — `outline` respectă `border-radius`), și devine violetul
+   de accent, aceeași culoare cu borderul care se aprinde deja pe `focus-within`.
+   NU dispare: 1px violet solid (5.7:1 pe alb) plus haloul, adică un indicator care
+   trece 2.4.7 fără să arate a artefact de browser. Navy rămâne pe butoane și pe
+   launcher, unde e nevoie de el.
+   `@supports` fiindcă pe un browser fără `:has()` alternativa ar fi un input FĂRĂ
+   niciun indicator de focus, iar dreptunghiul urât e strict mai bun decât nimic. */
+@supports selector(:has(*)) {
+  .aria-widget form input:focus-visible {
+    outline: none;
+  }
+  .aria-widget form:has(> input:focus-visible),
+  .aria-widget form > div:has(> input:focus-visible) {
+    outline: 3px solid rgb(124 58 237 / 0.25);
+    outline-offset: 0;
+  }
+}
+
 /* Transcriptul primește focus PROGRAMATIC când composerul se dezactivează sub
    degetul utilizatorului (`:focus-visible` n-ar prinde, fiindcă nu vine de la
    tastatură). Fără indicator, focusul ar dispărea într-un container mut. */
