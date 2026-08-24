@@ -304,36 +304,38 @@
    violetul pe butonul cu gradient violet→roz ar avea sub 3:1, adică un indicator
    de focus invizibil fix pe controlul cel mai important (launcherul). Navy dă
    ~14:1 pe alb și ~4.5:1 pe gradient. `:focus-visible`, nu `:focus`, ca un click
-   de mouse să nu lase inel în urmă. */
-.aria-widget :focus-visible,
+   de mouse să nu lase inel în urmă.
+   `:not(input)` fiindcă premisa aia cade exact pe inputuri: un câmp de text
+   primește `:focus-visible` ȘI la click (browserul știe că urmează tastare), deci
+   aici regula ar picta un inel pe mouse, adică fix ce evită. Singurul input din
+   widget e cel al composerului, tratat separat mai jos. */
+.aria-widget :focus-visible:not(input),
 .nx-chat-launcher:focus-visible {
   outline: 3px solid #16213e;
   outline-offset: 2px;
 }
 
-/* Excepția: inputul composerului. Regula de sus îl lovește la FIECARE focus, nu
-   doar la cel de tastatură — un câmp de text primește `:focus-visible` inclusiv
-   pe click, fiindcă browserul știe că urmează tastare. Rezultatul e un dreptunghi
-   navy de 3px apărut la simplul click în composer: navy pe lavandă e cel mai tare
-   contrast din widget, pus fix pe controlul unde utilizatorul se uită oricum.
-   Aici indicatorul nu trebuie să strige — cine dă click ȘTIE unde a dat click.
-   Deci: inelul se mută de pe input pe containerul VIZUAL (pilula la v2, cardul la
-   v1, ambele rotunjite — `outline` respectă `border-radius`), și devine violetul
-   de accent, aceeași culoare cu borderul care se aprinde deja pe `focus-within`.
-   NU dispare: 1px violet solid (5.7:1 pe alb) plus haloul, adică un indicator care
-   trece 2.4.7 fără să arate a artefact de browser. Navy rămâne pe butoane și pe
-   launcher, unde e nevoie de el.
-   `@supports` fiindcă pe un browser fără `:has()` alternativa ar fi un input FĂRĂ
-   niciun indicator de focus, iar dreptunghiul urât e strict mai bun decât nimic. */
-@supports selector(:has(*)) {
-  .aria-widget form input:focus-visible {
-    outline: none;
-  }
-  .aria-widget form:has(> input:focus-visible),
-  .aria-widget form > div:has(> input:focus-visible) {
-    outline: 3px solid rgb(124 58 237 / 0.25);
-    outline-offset: 0;
-  }
+/* Excepția: inputul composerului. Regula de sus îl lovea la FIECARE focus, nu doar
+   la cel de tastatură — un câmp de text primește `:focus-visible` INCLUSIV pe click,
+   fiindcă browserul știe că urmează tastare. Ieșea un dreptunghi navy de 3px la
+   simplul click în composer, desenat pe un input transparent și mai scund decât
+   pilula din jur: un chenar ascuțit plutind într-o formă rotunjită.
+   Ce vrem, și ce CSS-ul singur NU poate exprima pe un input:
+     • click cu mouse-ul ⇒ zero schimbare vizuală. Cine dă click știe unde a dat.
+     • Tab ⇒ indicator clar, altfel focusul se pierde în composer și navigarea de
+       la tastatură devine ghicit — exact ce a reparat NX-245.
+   Modalitatea vine deci din JS (`data-nav` pe <html>, vezi src/main.jsx), iar sub
+   ea `:focus-within` e suficient: dacă flagul spune „tastatură", focusul din pilulă
+   E de tastatură. Fără `:has()`, deci merge și pe Firefox ESR.
+   Inelul stă pe `.nx-composer-pill`, containerul VIZUAL rotunjit (forma-pilulă la v1,
+   divul interior la v2) — `outline` respectă `border-radius`, deci îi urmează conturul
+   în loc să taie colțurile. */
+.aria-widget form input:focus-visible {
+  outline: none;
+}
+:root[data-nav="kbd"] .aria-widget .nx-composer-pill:focus-within {
+  outline: 3px solid #16213e;
+  outline-offset: 2px;
 }
 
 /* Transcriptul primește focus PROGRAMATIC când composerul se dezactivează sub

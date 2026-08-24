@@ -69,7 +69,9 @@ export default function ChatComposer({ composer, disabled, inputRef, onSubmitTex
       onSubmit={submit}
       className="px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-[var(--aria-border-2)] bg-white flex-shrink-0"
     >
-      <div className="flex items-center gap-2 pl-4 pr-1.5 py-1 bg-[var(--aria-surface-2)] border border-[var(--aria-border)] rounded-full focus-within:border-[var(--aria-purple)] transition-colors">
+      {/* `nx-composer-pill` = ancora inelului de focus de tastatură (index.css). Fără
+          `focus-within:border`: la click composerul nu-și schimbă conturul, ca în v1. */}
+      <div className="nx-composer-pill flex items-center gap-2 pl-4 pr-1.5 py-1 bg-[var(--aria-surface-2)] border border-[var(--aria-border)] rounded-full">
         <input
           ref={inputRef}
           value={text}

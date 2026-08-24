@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   MessageCircle, X, Plus, Minus, Check, ShoppingCart, Trash2,
-  ChevronDown, Bookmark, ArrowRight, ArrowUp, Camera, Sparkle,
+  ChevronDown, Bookmark, ArrowRight, ArrowUp, Camera, Sparkle, Mic,
   SquarePen, MoreHorizontal,
 } from "lucide-react";
 import {
@@ -372,7 +372,7 @@ function CameraButton({ onPick, disabled }) {
         disabled={disabled}
         onClick={() => fileRef.current?.click()}
         title="Caută după imagine"
-        className="shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center text-[var(--aria-accent-line)] hover:bg-[var(--aria-surface-2)] disabled:opacity-40 transition-colors"
+        className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-[var(--aria-accent-line)] hover:bg-[var(--aria-border-2)] disabled:opacity-40 transition-colors"
       >
         <span className="relative inline-flex">
           <Camera className="w-[21px] h-[21px]" strokeWidth={1.7} />
@@ -380,6 +380,58 @@ function CameraButton({ onPick, disabled }) {
         </span>
       </button>
     </>
+  );
+}
+
+// Microfonul din composer, alături de cameră și de butonul de trimitere.
+// Feature-detectat: se randează DOAR unde dictarea chiar funcționează (Web Speech
+// API), ca să nu existe un control mort pe Firefox. Textul dictat se adaugă în
+// input, nu se trimite singur — utilizatorul îl vede înainte să apese trimite.
+function MicButton({ onTranscript, disabled }) {
+  const [listening, setListening] = useState(false);
+  const recRef = useRef(/** @type {any} */ (null));
+  const w = /** @type {any} */ (typeof window !== "undefined" ? window : {});
+  const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+  if (!SR) return null;
+
+  const toggle = () => {
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "ro-RO";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const t = e.results?.[0]?.[0]?.transcript;
+      if (t) onTranscript(t.trim());
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    setListening(true);
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={disabled}
+      title={listening ? "Ascult… apasă pentru stop" : "Dictează"}
+      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-40 transition-colors ${
+        listening
+          ? "text-[var(--aria-purple)] bg-[rgba(124,58,237,0.1)]"
+          : "text-[var(--aria-text-3)] hover:bg-[var(--aria-border-2)]"
+      }`}
+    >
+      <Mic className="w-[18px] h-[18px]" strokeWidth={1.9} />
+    </button>
   );
 }
 
@@ -746,35 +798,40 @@ export default function ChatWidget() {
                 </button>
               )}
 
-              {/* Composer — the reference's two-row card: the field on top, the visual
-                  search and send controls on the row beneath it. */}
+              {/* Composer — pilula din referință: câmpul și TOATE controalele pe același
+                  rând. Camera pe rândul de dedesubt împingea composerul la două etaje
+                  degeaba și rupea forma rotundă din design.
+                  Fără `focus-within:border` aici: la click nu se schimbă nimic vizual
+                  (indicatorul de tastatură e în index.css, pe `[data-nav="kbd"]`). */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   send();
                 }}
-                className="px-3 pt-2 pb-2 bg-white border border-[var(--aria-border)] rounded-[16px] shadow-[0_1px_4px_rgba(22,33,62,0.06)] focus-within:border-[var(--aria-purple)] transition-colors"
+                className="nx-composer-pill flex items-center gap-0.5 pl-4 pr-1.5 py-1 bg-[var(--aria-surface-2)] border border-[var(--aria-border)] rounded-full"
               >
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Caută produse sau inspirație"
-                  className="w-full bg-transparent border-none outline-none text-[15px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-1.5 disabled:opacity-60"
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[15px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60"
                 />
-                <div className="mt-0.5 flex items-center justify-between">
-                  <CameraButton
-                    disabled={busy}
-                    onPick={() => showToast("Căutarea după imagine ajunge în curând.")}
-                  />
-                  <button
-                    type="submit"
-                    disabled={sending || !input.trim()}
-                    title="Trimite"
-                    className="w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-50 text-white flex items-center justify-center shrink-0 transition-opacity hover:opacity-90"
-                  >
-                    <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
-                  </button>
-                </div>
+                <CameraButton
+                  disabled={busy}
+                  onPick={() => showToast("Căutarea după imagine ajunge în curând.")}
+                />
+                <MicButton
+                  disabled={busy}
+                  onTranscript={(t) => setInput((v) => (v.trim() ? `${v.trim()} ${t}` : t))}
+                />
+                <button
+                  type="submit"
+                  disabled={sending || !input.trim()}
+                  title="Trimite"
+                  className="ml-1 w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-50 text-white flex items-center justify-center shrink-0 transition-opacity hover:opacity-90"
+                >
+                  <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                </button>
               </form>
             </div>
           )}
