@@ -10,6 +10,7 @@ import validViews from './fixtures/web-v2/valid_views.json'
 import { useWebChatController } from '@/chat/state/useWebChatController.js'
 import { WEB_TURN_ERROR_CODES, WebTurnTransportError } from '@/chat/transport/webTurnErrors.js'
 import { createChatSessionStorage } from '@/chat/session/chatSessionStorage.js'
+import { COMPOSER_MAX_LENGTH } from '@/chat/composerLimits.js'
 
 const SESSION = { token: 'pub_tok', visitor_id: 'web_abc', sig: 'v2.a.b' }
 /** NX-244 — copy-ul ramei, derivat dintr-o fixtură de view sincronizată din backend. */
@@ -182,6 +183,47 @@ describe('happy path', () => {
       expect(ctx.result.current.sendText('   ')).toBe(false)
     })
     expect(transport.calls.createTurn).toHaveLength(0)
+  })
+
+  it('textul peste plafon e REFUZAT aici, nu doar în composer', async () => {
+    // Guardul dublu, aceeași logică ca la single-flight: `disabled` pe buton oprește omul, nu un
+    // apelant care sare peste composer (extensie, automatizare, cod nou care cheamă direct
+    // `sendText`). Se refuză, nu se trunchiază — un mesaj tăiat în tăcere e mai rău decât unul
+    // netrimis, fiindcă omul nu află niciodată ce a plecat de fapt spre model.
+    const transport = makeTransport()
+    const ctx = await readyHook(transport)
+    await act(async () => {
+      expect(ctx.result.current.sendText('a'.repeat(COMPOSER_MAX_LENGTH + 1))).toBe(false)
+    })
+    expect(transport.calls.createTurn).toHaveLength(0)
+    // Metrica e cea care ne va spune dacă plafonul e prea strâmt. Fără ea, „2.000" ar rămâne o
+    // cifră pe care n-o putem nici confirma, nici corecta.
+    expect(ctx.metrics).toContainEqual({
+      name: 'web_turn_submit_total',
+      labels: { outcome: 'too_long' },
+    })
+  })
+
+  it('la FIX pe plafon turnul pornește normal', async () => {
+    const transport = makeTransport()
+    const ctx = await readyHook(transport)
+    const message = 'a'.repeat(COMPOSER_MAX_LENGTH)
+    await act(async () => {
+      expect(ctx.result.current.sendText(message)).toBe(true)
+    })
+    await waitFor(() => expect(transport.calls.createTurn).toHaveLength(1))
+    expect(transport.calls.createTurn[0].input).toEqual({ type: 'text', text: message })
+  })
+
+  it('plafonul se măsoară în coduri punct: 2.000 de emoji trec', async () => {
+    // 4.000 de unități UTF-16. Dacă guardul ar folosi `String.length`, mesajul ăsta ar fi respins
+    // deși contorul din composer tocmai i-a arătat omului că e exact la limită.
+    const transport = makeTransport()
+    const ctx = await readyHook(transport)
+    await act(async () => {
+      expect(ctx.result.current.sendText('😀'.repeat(COMPOSER_MAX_LENGTH))).toBe(true)
+    })
+    await waitFor(() => expect(transport.calls.createTurn).toHaveLength(1))
   })
 })
 
