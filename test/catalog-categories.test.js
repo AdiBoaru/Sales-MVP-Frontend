@@ -27,11 +27,28 @@ function makeBuilder(name, resolve) {
   return builder;
 }
 
+// The business the storefront is scoped to — must match STORE_BUSINESS_ID in
+// src/api/catalog.js.
+const OWN_BUSINESS = "6098812a-50fc-44bd-a1ba-bc77e6399158";
+
+// `store_categories` exposes no `business_id`, so it hands back every tenant's
+// categories — including the ones the backend's E2E suite abandons. Rows 5-6 are
+// that leak in miniature.
 const CATEGORY_ROWS = [
   { id: "c-machiaj", parent_id: null, name: "Machiaj", slug: "machiaj", product_count: 13 },
   { id: "c-rujuri", parent_id: "c-machiaj", name: "Rujuri", slug: "rujuri", product_count: 6 },
   { id: "c-pudre", parent_id: "c-machiaj", name: "Pudre", slug: "pudre", product_count: 7 },
   { id: "c-solar", parent_id: null, name: "Protecție solară", slug: "protectie-solara", product_count: 6 },
+  { id: "c-e2e-ser", parent_id: null, name: "Ser", slug: "ser", product_count: 4 },
+  { id: "c-e2e-cream", parent_id: null, name: "Cream", slug: "cream", product_count: 1 },
+];
+
+// What `categories` returns for OUR business: the four real rows, never the E2E ones.
+const OWNED_CATEGORY_ROWS = [
+  { id: "c-machiaj" },
+  { id: "c-rujuri" },
+  { id: "c-pudre" },
+  { id: "c-solar" },
 ];
 
 const PRODUCT_ROWS = [
@@ -40,16 +57,20 @@ const PRODUCT_ROWS = [
 
 let builders;
 
-function installSupabase() {
+/** @param {{ ownedError?: string }} [opts] */
+function installSupabase({ ownedError } = {}) {
   builders = {};
   vi.doMock("@/api/supabaseClient", () => ({
     supabase: {
       from(table) {
-        const b = makeBuilder(table, () =>
-          table === "store_categories"
-            ? { data: CATEGORY_ROWS, error: null }
-            : { data: PRODUCT_ROWS, error: null, count: PRODUCT_ROWS.length }
-        );
+        const b = makeBuilder(table, () => {
+          if (table === "store_categories") return { data: CATEGORY_ROWS, error: null };
+          if (table === "categories")
+            return ownedError
+              ? { data: null, error: { message: ownedError } }
+              : { data: OWNED_CATEGORY_ROWS, error: null };
+          return { data: PRODUCT_ROWS, error: null, count: PRODUCT_ROWS.length };
+        });
         (builders[table] ||= []).push(b);
         return b;
       },
@@ -57,9 +78,9 @@ function installSupabase() {
   }));
 }
 
-async function freshCatalog() {
+async function freshCatalog(opts) {
   vi.resetModules();
-  installSupabase();
+  installSupabase(opts);
   return import("@/api/catalog");
 }
 
@@ -141,5 +162,59 @@ describe("category tree", () => {
     expect(counts.machiaj).toBe(13);
     expect(counts.rujuri).toBe(6);
     expect(counts.all).toBe(PRODUCT_ROWS.length);
+  });
+});
+
+// The storefront reads a SHARED Supabase project. Without an explicit tenant
+// filter it renders every other business's catalog: the backend's E2E suite left
+// 58 throwaway businesses behind, which showed up on /store as phantom products
+// and as a sidebar full of duplicate "Ser" / "Serum" / "Crema" / "Cream" /
+// "Sampon" roots. The same gap would leak one real client's catalog into another's.
+describe("tenant scope", () => {
+  const eqPairs = (builder) => builder.calls.filter((c) => c[0] === "eq").map((c) => c.slice(1));
+
+  it("scopes the product listing to our business", async () => {
+    const { listProducts } = await freshCatalog();
+    await listProducts({});
+    expect(eqPairs(builders.products[0])).toContainEqual(["business_id", OWN_BUSINESS]);
+  });
+
+  it("scopes the count too, so the total matches the grid", async () => {
+    const { countProducts } = await freshCatalog();
+    await countProducts({});
+    expect(eqPairs(builders.products[0])).toContainEqual(["business_id", OWN_BUSINESS]);
+  });
+
+  it("scopes the detail page, so a foreign product id resolves to nothing", async () => {
+    const { getProduct } = await freshCatalog();
+    await getProduct("p1");
+    expect(eqPairs(builders.products[0])).toContainEqual(["business_id", OWN_BUSINESS]);
+  });
+
+  it("drops categories belonging to other tenants from the menu", async () => {
+    const { listCategories } = await freshCatalog();
+    const tree = await listCategories();
+
+    expect(tree.map((c) => c.slug)).toEqual(["machiaj", "protectie-solara"]);
+    expect(builders.categories[0].argsOf("eq")).toEqual(["business_id", OWN_BUSINESS]);
+  });
+
+  it("keeps foreign slugs unresolvable, so a hand-typed one filters nothing", async () => {
+    const { listProducts } = await freshCatalog();
+    await listProducts({ category: "ser" });
+    expect(builders.products[0].argsOf("in")).toBeNull();
+  });
+
+  it("degrades to the unscoped menu — not an empty one — if ownership can't be read", async () => {
+    const { listCategories } = await freshCatalog({ ownedError: "permission denied" });
+    const tree = await listCategories();
+    expect(tree.map((c) => c.slug)).toContain("machiaj");
+    expect(tree.map((c) => c.slug)).toContain("ser");
+  });
+
+  it("still scopes products when the category ownership read fails", async () => {
+    const { listProducts } = await freshCatalog({ ownedError: "permission denied" });
+    await listProducts({});
+    expect(eqPairs(builders.products[0])).toContainEqual(["business_id", OWN_BUSINESS]);
   });
 });

@@ -1,5 +1,22 @@
 import { supabase } from "@/api/supabaseClient";
 
+// ── Tenant scope ──────────────────────────────────────────────────────────────
+// The storefront is single-tenant: it renders ONE business's catalog out of a
+// SHARED Supabase project. Every read below is scoped to this id.
+//
+// Without the scope the store shows whatever any other tenant happens to hold.
+// That is not hypothetical: the backend's E2E suite leaves throwaway businesses
+// behind (`*.e2e.invalid`), and they surfaced on /store as image-less phantom
+// products in the grid and as duplicate root categories — "Ser", "Serum",
+// "Crema", "Cream", "Sampon", one set per fake tenant — in the sidebar. The same
+// missing filter would leak a real client's catalog into another client's shop.
+//
+// Hardcoded with an env override rather than a build-time secret on purpose: this
+// is a row id, not a credential, and a secret that failed to reach the build would
+// silently un-scope the store and bring the leak back with no visible failure.
+const STORE_BUSINESS_ID =
+  import.meta.env?.VITE_STORE_BUSINESS_ID || "6098812a-50fc-44bd-a1ba-bc77e6399158";
+
 // ── Categories ────────────────────────────────────────────────────────────────
 // Read from the DB, not guessed. Source is the `store_categories` view (migration
 // 039): it exposes only categories that actually carry active products — 6 roots
@@ -8,6 +25,9 @@ import { supabase } from "@/api/supabaseClient";
 //
 // The view deliberately omits `categories.path`: 19 of 102 rows have a `path`
 // that contradicts `parent_id`, so the hierarchy comes from `parent_id` alone.
+//
+// It also omits `business_id`, so the view alone cannot answer "whose category is
+// this?" — hence the second read below against the base table.
 const CATEGORY_SELECT = "id,parent_id,name,slug,product_count";
 
 // { tree, bySlug, subtreeIds } — resolved once per session. We cache the PROMISE
@@ -64,17 +84,29 @@ function buildCategoryIndex(rows) {
 function loadCategories() {
   if (!supabase) return Promise.resolve(buildCategoryIndex([]));
   if (!categoriesPromise) {
-    categoriesPromise = supabase
-      .from("store_categories")
-      .select(CATEGORY_SELECT)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("[catalog] loadCategories:", error.message);
-          categoriesPromise = null; // let the next caller retry
-          return buildCategoryIndex([]);
-        }
-        return buildCategoryIndex(data || []);
-      });
+    // Two reads, one round trip: the view carries the subtree counts, the base
+    // table carries the ownership the view drops.
+    categoriesPromise = Promise.all([
+      supabase.from("store_categories").select(CATEGORY_SELECT),
+      supabase.from("categories").select("id").eq("business_id", STORE_BUSINESS_ID),
+    ]).then(([view, owned]) => {
+      if (view.error) {
+        console.error("[catalog] loadCategories:", view.error.message);
+        categoriesPromise = null; // let the next caller retry
+        return buildCategoryIndex([]);
+      }
+      const rows = view.data || [];
+      // Losing the ownership read degrades to the unscoped tree rather than an
+      // empty sidebar — a noisy menu still navigates, a blank one does not — but
+      // it is logged loudly, because foreign categories WILL be visible until it
+      // recovers. Products stay scoped either way: their filter is server-side.
+      if (owned.error) {
+        console.error("[catalog] category tenant scope unavailable:", owned.error.message);
+        return buildCategoryIndex(rows);
+      }
+      const ownedIds = new Set((owned.data || []).map((c) => c.id));
+      return buildCategoryIndex(rows.filter((r) => ownedIds.has(r.id)));
+    });
   }
   return categoriesPromise;
 }
@@ -199,7 +231,11 @@ export async function listProducts({ search, category, sort, limit = 24, offset 
   if (!supabase) return [];
   const categoryIds = await categorySubtreeIds(category);
 
-  let query = supabase.from("products").select(LIST_SELECT).eq("status", "active");
+  let query = supabase
+    .from("products")
+    .select(LIST_SELECT)
+    .eq("business_id", STORE_BUSINESS_ID)
+    .eq("status", "active");
   query = applySearchFilter(query, search);
   if (categoryIds) query = query.in("primary_category_id", categoryIds);
   query = applySort(query, sort);
@@ -219,6 +255,7 @@ export async function getProduct(id) {
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("id", id)
+    .eq("business_id", STORE_BUSINESS_ID)
     .eq("status", "active")
     .single();
   if (error) {
@@ -236,6 +273,7 @@ export async function countProducts({ search, category } = {}) {
   let query = supabase
     .from("products")
     .select("id", { count: "exact", head: true })
+    .eq("business_id", STORE_BUSINESS_ID)
     .eq("status", "active");
   query = applySearchFilter(query, search);
   if (categoryIds) query = query.in("primary_category_id", categoryIds);
