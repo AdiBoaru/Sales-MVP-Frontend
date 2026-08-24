@@ -23,6 +23,11 @@
 import { useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import { TECHNICAL_COPY } from '../v2/technicalCopy.js'
+import {
+  COMPOSER_COUNTER_VISIBLE_AT,
+  COMPOSER_MAX_LENGTH,
+  messageLength,
+} from '../composerLimits.js'
 
 /**
  * @param {{composer: object|null, disabled: boolean, inputRef?: {current: any},
@@ -33,7 +38,15 @@ import { TECHNICAL_COPY } from '../v2/technicalCopy.js'
 export default function ChatComposer({ composer, disabled, inputRef, onSubmitText, onBlocked }) {
   const [text, setText] = useState('')
   const composingRef = useRef(false)
-  const empty = text.trim().length === 0
+  // O SINGURĂ valoare stă la baza contorului, a butonului și a submitului. Dacă contorul ar număra
+  // textul brut iar guardul pe cel trimis, ar exista o fâșie în care contorul arată roșu pentru
+  // niște spații de la coadă pe care submitul oricum le-ar fi tăiat — adică un buton blocat fără
+  // motiv vizibil, exact ce evită fișierul ăsta.
+  const value = text.trim()
+  const empty = value.length === 0
+  const length = messageLength(value)
+  const overLimit = length > COMPOSER_MAX_LENGTH
+  const showCounter = length > COMPOSER_COUNTER_VISIBLE_AT
 
   const submit = (event) => {
     event.preventDefault()
@@ -44,8 +57,10 @@ export default function ChatComposer({ composer, disabled, inputRef, onSubmitTex
       return
     }
     if (composingRef.current) return
-    const value = text.trim()
     if (value.length === 0) return
+    // Enter e a doua ușă către submit, iar un buton `disabled` n-o închide singur în toate
+    // motoarele. Guardul de lungime stă aici, nu doar pe atributul butonului.
+    if (overLimit) return
     // Inputul se golește DOAR dacă turul chiar a pornit: guardul sincron e în controller, iar
     // ștergerea textului unui client care n-a trimis nimic e o pierdere reală.
     if (onSubmitText(value)) setText('')
@@ -84,6 +99,13 @@ export default function ChatComposer({ composer, disabled, inputRef, onSubmitTex
             composingRef.current = false
           }}
           disabled={disabled}
+          // DELIBERAT fără `maxLength`: atributul ar tăia paste-ul tăcut, iar omul ar trimite
+          // jumătate de întrebare convins că a trimis-o pe toată (vezi `composerLimits.js`).
+          //
+          // `aria-invalid` e singurul mod de a anunța „prea lung" fără să inventăm copy: e o stare
+          // ARIA standard, pe care cititorul de ecran o rostește în limba UTILIZATORULUI. Un text
+          // de eroare scris de noi ar fi încălcat NX-244 și ar fi rămas oricum `ro` fix.
+          aria-invalid={overLimit}
           // Numele accesibil are fallback tehnic; PLACEHOLDERUL nu. Un placeholder inventat ar fi
           // copy vizibil („Întreabă orice despre produse…" din v1 e exact ce a scos NX-244), pe
           // când un nume accesibil e infrastructură: fără el, controlul nu se poate nici măcar numi.
@@ -91,11 +113,26 @@ export default function ChatComposer({ composer, disabled, inputRef, onSubmitTex
           placeholder={composer?.placeholder ?? undefined}
           className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60 disabled:cursor-not-allowed"
         />
+        {/* Contorul apare abia de la 80% din plafon și e NUMERIC deliberat: „1847/2000" n-are
+            limbă, n-are promisiune comercială și nu trebuie tradus, deci nu e copy inventat în
+            frontend — regula NX-244 rămâne întreagă. `aria-hidden` fiindcă e dublura vizuală a
+            unei stări deja anunțate de `aria-invalid` pe input; un contor citit la fiecare tastă
+            ar fi transformat cititorul de ecran într-un metronom. */}
+        {showCounter ? (
+          <span
+            aria-hidden="true"
+            className={`text-[11px] tabular-nums flex-shrink-0 ${
+              overLimit ? 'text-red-600 font-semibold' : 'text-[var(--aria-text-5)]'
+            }`}
+          >
+            {length}/{COMPOSER_MAX_LENGTH}
+          </span>
+        ) : null}
         <button
           type="submit"
           aria-label={composer?.send_label ?? TECHNICAL_COPY.sendFallback}
           title={composer?.send_label ?? TECHNICAL_COPY.sendFallback}
-          disabled={disabled || empty}
+          disabled={disabled || empty || overLimit}
           // `after:-inset-1` extinde ținta de atingere la 44×44 fără să crească butonul vizual:
           // pilula composerului își păstrează înălțimea, degetul primește suprafața cerută.
           className="relative w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-40 text-white flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-90 after:absolute after:content-[''] after:-inset-1 after:rounded-full"

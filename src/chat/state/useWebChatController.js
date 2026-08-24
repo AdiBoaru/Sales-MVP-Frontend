@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { createWebTurnTransport, isTerminalStatus } from '../transport/webTurnTransport.js'
 import { WEB_TURN_ERROR_CODES as E } from '../transport/webTurnErrors.js'
 import { createChatSessionStorage, storageNamespace } from '../session/chatSessionStorage.js'
+import { exceedsComposerLimit } from '../composerLimits.js'
 import {
   RECOVERY_REASONS,
   WEB_CHAT_EVENTS as A,
@@ -714,8 +715,16 @@ export function useWebChatController({
   const sendText = useCallback((text, options) => {
     const value = typeof text === 'string' ? text.trim() : ''
     if (value.length === 0) return false
+    // Guardul dublu, aceeași logică ca la single-flight: `disabled` pe buton oprește omul, nu un
+    // `dispatchEvent` programatic sau un apelant care sare peste composer. Se REFUZĂ, nu se taie —
+    // un mesaj trunchiat în tăcere e mai rău decât unul netrimis. Metrica e cea care ne va spune
+    // dacă 2.000 e prea strâmt: dacă `too_long` crește, plafonul se ridică, nu presupunem acum.
+    if (exceedsComposerLimit(value)) {
+      metric('web_turn_submit_total', { outcome: 'too_long' })
+      return false
+    }
     return submit({ type: 'text', text: value }, options)
-  }, [submit])
+  }, [submit, metric])
 
   /** Acțiune opacă: tokenul se retrimite NESCHIMBAT, fără să fie citit sau interpretat. */
   const sendAction = useCallback((token, options) => {

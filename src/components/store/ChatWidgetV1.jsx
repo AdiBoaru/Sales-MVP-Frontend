@@ -26,6 +26,12 @@ import ChatMessage from "@/components/store/ChatMessage";
 import AriaMark from "@/components/store/AriaMark";
 import { demoMessages } from "@/components/store/chatDemo";
 import { ARIA_OPEN_EVENT } from "@/components/store/ariaOpenEvent";
+import {
+  COMPOSER_COUNTER_VISIBLE_AT,
+  COMPOSER_MAX_LENGTH,
+  exceedsComposerLimit,
+  messageLength,
+} from "@/chat/composerLimits";
 
 
 const INITIAL_SUGGESTIONS = [
@@ -499,6 +505,11 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Plafonul de lungime al mesajului, aceeași sursă ca pe calea v2. Se măsoară pe textul trimis
+  // (deci trimmed), ca butonul să nu se închidă pentru spații de la coadă.
+  const inputLength = messageLength(input.trim());
+  const inputOverLimit = inputLength > COMPOSER_MAX_LENGTH;
+
   const busy = sending;
   const [toast, setToast] = useState(/** @type {string | null} */ (null));
   // Drives the floating "jump to the end" chevron above the composer. It appears
@@ -602,6 +613,9 @@ export default function ChatWidget() {
   const send = async (text) => {
     const message = (text ?? input).trim();
     if (!message) return;
+    // Același plafon ca pe calea v2 — altfel flagul `VITE_CHAT_PROTOCOL_V2` ar schimba nu doar
+    // protocolul, ci și ce are voie clientul să scrie. Se refuză, nu se trunchiază.
+    if (exceedsComposerLimit(message)) return;
 
     if (sending) return;
     setInput("");
@@ -814,8 +828,19 @@ export default function ChatWidget() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Caută produse sau inspirație"
+                  aria-invalid={inputOverLimit}
                   className="flex-1 min-w-0 bg-transparent border-none outline-none text-[15px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60"
                 />
+                {inputLength > COMPOSER_COUNTER_VISIBLE_AT ? (
+                  <span
+                    aria-hidden="true"
+                    className={`text-[11px] tabular-nums shrink-0 ${
+                      inputOverLimit ? "text-red-600 font-semibold" : "text-[var(--aria-text-5)]"
+                    }`}
+                  >
+                    {inputLength}/{COMPOSER_MAX_LENGTH}
+                  </span>
+                ) : null}
                 <CameraButton
                   disabled={busy}
                   onPick={() => showToast("Căutarea după imagine ajunge în curând.")}
@@ -826,7 +851,7 @@ export default function ChatWidget() {
                 />
                 <button
                   type="submit"
-                  disabled={sending || !input.trim()}
+                  disabled={sending || !input.trim() || inputOverLimit}
                   title="Trimite"
                   className="ml-1 w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-50 text-white flex items-center justify-center shrink-0 transition-opacity hover:opacity-90"
                 >
