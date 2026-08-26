@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ThumbsUp, ThumbsDown, AlertTriangle, Heart, Package, User } from "lucide-react";
 import { useWished, toggleWish, keyOfProduct } from "@/lib/wishlist";
-import RichText, { replySplit } from "@/components/store/RichText";
+import RichText, { ReplyBody, ReplySummary, replySplit } from "@/components/store/RichText";
 import ChatProductCard from "@/components/store/ChatProductCard";
 import ChatOffer from "@/components/store/ChatOffer";
 
@@ -49,6 +49,12 @@ function money(value, currency) {
 // squeezed into a narrow cell. Three or more products scroll horizontally.
 // A row's `winner` (column index) and the table's `verdict`/`confidence` are
 // optional — added by the bot when it has an actual opinion, never fabricated here.
+//
+// `rows` are no longer catalog columns ("Finisaj: mat", "Brand: Velora") but decision axes the
+// bot picked for THIS pair ("Senzația pe buze", "Cât rezistă"), with sentences for values. Two
+// consequences here: `label` is free text, so nothing may switch on its value or map it to an
+// icon; and the row count can legitimately be small — two near-identical products produce a
+// short table, which is the answer, not missing data. Nothing gets padded to a fixed height.
 function ComparisonTable({ comparison }) {
   const columns = comparison?.columns ?? [];
   const rows = comparison?.rows ?? [];
@@ -84,7 +90,13 @@ function ComparisonTable({ comparison }) {
   };
 
   return (
-    <div className="bg-white border border-[var(--aria-border)] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
+    <div className="flex flex-col gap-3">
+      {/* The heading that names the table. Server-owned copy, localised there: a hardcoded
+          "Diferențe principale" here would stay Romanian for a Hungarian tenant. */}
+      {comparison.heading && (
+        <h4 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{comparison.heading}</h4>
+      )}
+      <div className="bg-white border border-[var(--aria-border)] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse" style={n > 2 ? { minWidth: `${n * 155}px` } : undefined}>
           <thead>
@@ -147,6 +159,7 @@ function ComparisonTable({ comparison }) {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -421,6 +434,14 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
     : { index: 0, total: 0 };
   const hasTail = wrapsProducts && split.index < split.total;
 
+  // A comparison sends its framing as STRUCTURED fields rather than as paragraph positions
+  // inside `content`: `subtitle` is the accent line under the lead, `closing[]` the advice that
+  // belongs under the table. Inferring them from position worked only while the bot happened to
+  // write exactly two opening paragraphs — a three-paragraph lead silently pushed the advice
+  // above the table. Both are optional: the bot omits them when it lacks the facts to be useful.
+  const comparisonSubtitle = m.comparison?.subtitle;
+  const comparisonClosing = m.comparison?.closing ?? [];
+
   return (
     <div className="flex flex-col gap-4">
       {hasTitle && <h3 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{m.title}</h3>}
@@ -429,6 +450,9 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       {hasContent && (
         <RichText text={m.content} variant="reply" part={wrapsProducts ? "intro" : "all"} split={split.index} />
       )}
+
+      {/* The comparison's accent summary line, in the same type scale as a parsed one. */}
+      {comparisonSubtitle && <ReplySummary text={comparisonSubtitle} />}
 
       {hasStatus && <StatusRows status={m.status} />}
       {hasConfidence && <ConfidenceBar value={m.confidence} />}
@@ -452,6 +476,11 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
 
       {/* The detail sections of the answer, below the products they describe. */}
       {hasTail && <RichText text={m.content} variant="reply" part="rest" split={split.index} />}
+
+      {/* The guidance under a comparison table — "look first at X", then what to pick for the
+          situation. This is the part that turns a table into a recommendation, so it sits right
+          under the table and above the follow-up chips. */}
+      <ReplyBody paragraphs={comparisonClosing} />
 
       {/* Step-by-step routine timeline. */}
       {m.routine && <RoutineTimeline routine={m.routine} />}

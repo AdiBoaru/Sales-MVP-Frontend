@@ -256,6 +256,16 @@ export function mapComparison(c) {
   return {
     columns,
     rows,
+    // Framing the backend owns. `heading` names the table and is localized server-side (a
+    // hardcoded Romanian string here would stay Romanian for a Hungarian tenant); `subtitle` is
+    // the accent line under the lead; `closing` the advice under the table. All three arrive as
+    // ready-to-display text and are passed through verbatim — normalizing them here would mean
+    // deciding copy in the browser, which is the boundary this widget is moving away from.
+    heading: typeof c.heading === "string" ? c.heading.trim() : "",
+    subtitle: typeof c.subtitle === "string" ? c.subtitle.trim() : "",
+    closing: Array.isArray(c.closing)
+      ? c.closing.filter((p) => typeof p === "string" && p.trim()).map((p) => p.trim())
+      : [],
     verdict: typeof c.verdict === "string" ? c.verdict : "", // "Verdictul Ariei" reasoning block
     confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(100, confidence)) : null,
   };
