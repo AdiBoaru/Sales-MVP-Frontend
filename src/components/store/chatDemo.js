@@ -125,8 +125,12 @@ export function demoMessages() {
     { role: "user", content: "Compară-le, te rog" },
     {
       role: "assistant",
-      content: "Sigur — iată diferențele principale între cele două:",
+      content: "Le-am pus față în față. Alegerea se joacă la ce tratezi mai întâi, acneea sau porii.",
       comparison: {
+        // Forma NARATIVĂ pe care o emite backendul: titlu localizat de server, linie de accent,
+        // rânduri = axe de decizie (nu coloane de catalog) și îndrumarea sub tabel.
+        heading: "Diferențe principale",
+        subtitle: "Una lucrează pe acnee și matifiere, cealaltă pe pori și hidratare susținută.",
         columns: [
           {
             name: "Bioderma Sebium Mat Control",
@@ -145,17 +149,18 @@ export function demoMessages() {
           },
         ],
         rows: [
+          { label: "Textura și senzația", values: ["Fluid matifiant, se usucă repede.", "Gel-cremă, rămâne mai catifelat."] },
+          { label: "Pe ce lucrează", values: ["Acid salicilic și zinc, pentru acnee.", "Niacinamidă, pentru aspectul porilor."] },
+          { label: "Ce se ia în calcul", values: ["Poate usca pielea sensibilă.", null] },
+          { label: "Pentru cine", values: ["Ten mixt spre gras.", "Ten gras cu pori vizibili."], winner: 1 },
           { label: "Preț", values: ["82,50 Lei", "113,88 Lei"], winner: 0 },
-          { label: "Tip", values: ["Fluid matifiant", "Gel-cremă 72h"] },
-          { label: "Ingredient cheie", values: ["Acid salicilic + zinc", "Niacinamidă 4%"], winner: 0 },
-          { label: "Finish", values: ["Mat", "Mat-natural"] },
-          { label: "Pentru cine", values: ["Ten mixt/gras", "Ten gras cu pori"], winner: 1 },
         ],
-        verdict:
-          "Pentru ten gras cu tendință acneică, Sebium Mat Control câștigă prin combinația " +
-          "acid salicilic + zinc — mai eficientă pe termen scurt și mai ieftină. Normaderm rămâne " +
-          "alegerea bună dacă principala problemă e doar aspectul porilor, nu acneea.",
-        confidence: 84,
+        closing: [
+          "Când alegi, uită-te întâi la ce te deranjează mai mult: coșurile sau porii. Textura " +
+            "vine pe locul doi, dar contează dacă ai pielea sensibilă.",
+          "Dacă problema principală e acneea, ia-o pe prima. Dacă vrei mai degrabă porii uniformi " +
+            "și o senzație mai confortabilă, a doua e mai potrivită.",
+        ],
       },
       suggestions: ["Vreau opțiuni doar până în 90 lei"],
       offer: { kind: "quick_reply", label: "Adaugă-le pe ambele în coș", payload: "Adaugă ambele produse în coș" },

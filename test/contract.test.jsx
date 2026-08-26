@@ -104,4 +104,35 @@ describe("contract conformance — interactions & invariants", () => {
     fireEvent.click(screen.getByTitle("Adaugă în coș"));
     expect(onToast).toHaveBeenCalled();
   });
+
+  // The narrative comparison is only useful if each part lands in its own place. Asserting mere
+  // presence would pass with everything stacked above the table — which is exactly the layout the
+  // change exists to fix, so the invariant has to be ORDER, not text.
+  it("a narrative comparison lands lead -> subtitle -> heading -> table -> guidance", () => {
+    const { container } = renderReply(byCase("comparison_narrative_axes").payload);
+    const order = (needle) => {
+      const el = [...container.querySelectorAll("*")].find(
+        (n) => n.children.length === 0 && n.textContent.includes(needle)
+      );
+      expect(el, `nu am găsit „${needle}" în DOM`).toBeTruthy();
+      // Position in document order — comparable across unrelated subtrees.
+      return [...container.querySelectorAll("*")].indexOf(el);
+    };
+    const table = [...container.querySelectorAll("*")].indexOf(container.querySelector("table"));
+    expect(order("Le-am pus fata in fata")).toBeLessThan(order("Unul mizeaza pe culoare intensa"));
+    expect(order("Unul mizeaza pe culoare intensa")).toBeLessThan(order("Diferente principale"));
+    expect(order("Diferente principale")).toBeLessThan(table);
+    expect(table).toBeLessThan(order("Cand alegi, gandeste-te"));
+    expect(order("Cand alegi, gandeste-te")).toBeLessThan(order("Pentru un cadou as lua"));
+    // …and the guidance still sits above the follow-up chips.
+    expect(order("Pentru un cadou as lua")).toBeLessThan(order("Adauga Velora"));
+  });
+
+  it("a comparison without the new fields renders exactly as before", () => {
+    // The backend omits `heading`/`subtitle`/`closing` when it has no facts to fill them, and an
+    // older backend never sends them at all. Neither may leave a stray empty heading behind.
+    const { container } = renderReply(byCase("comparison_2col_nulls").payload);
+    expect(within(container).queryByRole("table")).toBeInTheDocument();
+    expect(container.querySelector("h4")).toBeNull();
+  });
 });

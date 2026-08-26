@@ -160,6 +160,32 @@ function Reply({ text, part, split }) {
   );
 }
 
+// A comparison sends its framing as STRUCTURED fields (`subtitle`, `closing[]`) instead of
+// leaving the renderer to infer them from paragraph position in `content`. These two wrappers
+// exist so that structured copy lands in exactly the same type scale as the copy parsed out of
+// `content` — a second set of hardcoded classes in ChatMessage would drift the moment either
+// side is touched.
+export function ReplySummary({ text }) {
+  return (
+    <p className={SUMMARY_CLASS}>
+      <Inline text={text} />
+    </p>
+  );
+}
+
+export function ReplyBody({ paragraphs }) {
+  if (!paragraphs?.length) return null;
+  return (
+    <div className="aria-reply flex flex-col gap-3">
+      {paragraphs.map((p, i) => (
+        <p key={i} className={BODY_CLASS}>
+          <Inline text={p} />
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function RichText({ text, variant = "inline", part = "all", split = 0 }) {
   return variant === "reply" ? <Reply text={text} part={part} split={split} /> : <Inline text={text} />;
 }
