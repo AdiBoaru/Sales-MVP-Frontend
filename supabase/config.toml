@@ -1,4 +1,5 @@
-project_id = "xfczucwqntefethxxien"
+# NativexSales — eu-west-2 (Londra), Postgres 17.6.
+project_id = "pidqzxymjhzlmoesfsba"
 
 [functions.redeem-code]
 # The caller has no session yet — that is the whole point of the endpoint.

@@ -29,7 +29,7 @@ function makeBuilder(name, resolve) {
 
 // The business the storefront is scoped to — must match STORE_BUSINESS_ID in
 // src/api/catalog.js.
-const OWN_BUSINESS = "6098812a-50fc-44bd-a1ba-bc77e6399158";
+const OWN_BUSINESS = "99fe1292-f9ed-469e-8183-f994ea5b59c0";
 
 // `store_categories` exposes no `business_id`, so it hands back every tenant's
 // categories — including the ones the backend's E2E suite abandons. Rows 5-6 are
