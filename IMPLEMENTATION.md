@@ -74,7 +74,7 @@
 |---|---|
 | Magazin (frontend) | `https://demo.nativextech.com` |
 | Bot de chat | `https://bot.nativextech.com` |
-| Supabase | `https://xfczucwqntefethxxien.supabase.co` |
+| Supabase | `https://pidqzxymjhzlmoesfsba.supabase.co` |
 
 ---
 
@@ -369,7 +369,7 @@ export const BRAND = {
 ### Variabile de mediu (toate `VITE_*`, injectate la **build time**)
 | Variabilă | Folosită de | Valoare/exemplu | Note |
 |---|---|---|---|
-| `VITE_SUPABASE_URL` | `supabaseClient.js` | `https://xfczucwqntefethxxien.supabase.co` | publică |
+| `VITE_SUPABASE_URL` | `supabaseClient.js` | `https://pidqzxymjhzlmoesfsba.supabase.co` | publică |
 | `VITE_SUPABASE_ANON_KEY` | `supabaseClient.js` | *(anon public key)* | publică, gate-uită de RLS |
 | `VITE_CHAT_API_BASE` | `chatClient.js` | `https://bot.nativextech.com` | gol în dev (proxy) |
 | `VITE_CHAT_PUBLIC_TOKEN` | `chatClient.js` | `pub_…` | browser-safe |

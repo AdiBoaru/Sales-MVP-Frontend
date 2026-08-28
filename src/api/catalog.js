@@ -14,8 +14,11 @@ import { supabase } from "@/api/supabaseClient";
 // Hardcoded with an env override rather than a build-time secret on purpose: this
 // is a row id, not a credential, and a secret that failed to reach the build would
 // silently un-scope the store and bring the leak back with no visible failure.
+// NativexSales (ref pidqzxymjhzlmoesfsba) holds exactly one business today: SOLE.
+// The previous default, 6098812a-…, was a row in the OLD project and matches
+// nothing here — which fails silently, because zero rows is a valid answer.
 const STORE_BUSINESS_ID =
-  import.meta.env?.VITE_STORE_BUSINESS_ID || "6098812a-50fc-44bd-a1ba-bc77e6399158";
+  import.meta.env?.VITE_STORE_BUSINESS_ID || "99fe1292-f9ed-469e-8183-f994ea5b59c0";
 
 // ── Categories ────────────────────────────────────────────────────────────────
 // Read from the DB, not guessed. Source is the `store_categories` view (migration
@@ -147,20 +150,29 @@ function applySearchFilter(query, search) {
   return query.or(`name.ilike.%${q}%,short_description.ilike.%${q}%`);
 }
 
+// Every sort ends on `id`, and that tiebreaker is not cosmetic. The sort columns
+// are massively tied — 2758 products share a handful of ratings and round prices —
+// and Postgres gives no order at all within a tie group. Paging is OFFSET/LIMIT, so
+// two requests re-sort independently: page 2 came back holding products already
+// shown on page 1, while others were unreachable at any offset. `id` is unique and
+// NOT NULL, so appending it makes the total order deterministic across requests.
 function applySort(query, sort) {
+  const stable = (q) => q.order("id", { ascending: true });
   switch (sort) {
     case "price_asc":
-      return query.order("price", { ascending: true });
+      return stable(query.order("price", { ascending: true }));
     case "price_desc":
-      return query.order("price", { ascending: false });
+      return stable(query.order("price", { ascending: false }));
     case "rating":
-      return query.order("rating", { ascending: false, nullsFirst: false });
+      return stable(query.order("rating", { ascending: false, nullsFirst: false }));
     case "newest":
-      // No reliable created-at column exposed; fall back to id desc.
-      return query.order("id", { ascending: false });
+      // `created_at` exists on NativexSales, so "newest" finally means newest. The
+      // old fallback ordered by id desc, which on random uuids is an arbitrary
+      // shuffle presented to the user as recency.
+      return stable(query.order("created_at", { ascending: false, nullsFirst: false }));
     case "featured":
     default:
-      return query.order("rating", { ascending: false, nullsFirst: false });
+      return stable(query.order("rating", { ascending: false, nullsFirst: false }));
   }
 }
 
@@ -218,12 +230,25 @@ export function mapProduct(row) {
   };
 }
 
-const PRODUCT_SELECT = "*, product_images(url,alt,position)";
+// The embed MUST name its foreign key. NativexSales carries two FKs from
+// product_images to products — `product_images_product_id_fkey` (product_id) and
+// `product_images_tenant_fk` (business_id, product_id) — and PostgREST refuses an
+// ambiguous embed with PGRST201 rather than picking one. Unnamed, every listing
+// came back empty: the error is per-request, so the grid rendered "no products"
+// while the category counts, which use no embed, looked perfectly healthy.
+//
+// The tenant FK is the deliberate choice over the simpler one: it joins on
+// business_id too, so an image row physically cannot attach to another tenant's
+// product. Same rows today, one less way to leak tomorrow.
+const IMAGES_EMBED = "product_images!product_images_tenant_fk(url,alt,position)";
+
+const PRODUCT_SELECT = `*, ${IMAGES_EMBED}`;
 
 // Lighter column set for grid/list views — omits the heavy `description` body
 // (only the detail page needs it), which noticeably shrinks the list payload.
 const LIST_SELECT =
-  "id,name,slug,short_description,currency,price,sale_price,availability,status,stock_total,rating,review_count,product_url, product_images(url,alt,position)";
+  "id,name,slug,short_description,currency,price,sale_price,availability,status,stock_total,rating,review_count,product_url, " +
+  IMAGES_EMBED;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 /** @param {{ search?: string, category?: string, sort?: string, limit?: number, offset?: number }} [opts] */
