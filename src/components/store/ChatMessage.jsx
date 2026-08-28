@@ -64,11 +64,19 @@ function ComparisonTable({ comparison }) {
   const cell = (v) => (v == null || v === "" ? "—" : v);
 
   const ProductHead = ({ col }) => {
-    // The image alone identifies the column, exactly as in the reference: no name,
-    // no price, no badge. Everything comparable belongs to the table's own rows —
-    // repeating the price in the header would state it twice, differently.
+    // Coloana se NUMEȘTE, nu se ghicește din packshot.
+    //
+    // Până acum, capul de coloană era o poză de 46px, iar numele stătea în `sr-only`:
+    // vizibil pentru cititorul de ecran, invizibil pentru toți ceilalți. Într-o
+    // comparație de cosmetice — două tuburi albe fotografiate pe fundal alb — asta
+    // înseamnă un tabel în care nu poți spune care coloană e care, adică exact
+    // informația fără de care restul rândurilor nu înseamnă nimic. Nu e o duplicare:
+    // numele NU e un rând al tabelului. Prețul rămâne afară, fiindcă el CHIAR e rând,
+    // și l-ar spune de două ori, în două formate.
     const head = (
       <>
+        {/* Aliniat la stânga, ca valorile de sub el: un packshot centrat peste o coloană
+            de text aliniat la stânga face capul să pară al altui tabel. */}
         <div className="w-[46px] h-[46px] rounded-[10px] bg-[var(--aria-surface-2)] border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center p-1">
           {col.image_url ? (
             <img src={col.image_url} alt="" className="w-full h-full object-contain" />
@@ -76,12 +84,18 @@ function ComparisonTable({ comparison }) {
             <Package className="w-5 h-5 text-[var(--aria-text-5)]" />
           )}
         </div>
-        {/* The name stays in the DOM for screen readers, so the column is never anonymous. */}
-        <span className="sr-only">{col.name}</span>
+        <span className="mt-2 block text-[11.5px] font-semibold leading-[1.3] text-left line-clamp-2 text-[var(--aria-text)]">
+          {col.name}
+        </span>
       </>
     );
     return col.url ? (
-      <a href={col.url} target="_blank" rel="noopener noreferrer" className="block hover:opacity-90 transition-opacity">
+      <a
+        href={col.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block hover:opacity-90 transition-opacity"
+      >
         {head}
       </a>
     ) : (
@@ -100,7 +114,16 @@ function ComparisonTable({ comparison }) {
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i} scope="col" className="px-3 pt-3.5 pb-3 align-top font-normal" style={{ width: `${100 / n}%` }}>
+                <th
+                  key={i}
+                  scope="col"
+                  // Linia verticală dintre coloane: fără ea, două propoziții alăturate
+                  // curg una într-alta și ochiul nu mai știe unde se termină prima.
+                  className={`px-3 pt-3.5 pb-3.5 align-top font-normal ${
+                    i > 0 ? "border-l border-[var(--aria-border-2)]" : ""
+                  }`}
+                  style={{ width: `${100 / n}%` }}
+                >
                   <ProductHead col={col} />
                 </th>
               ))}
@@ -125,18 +148,27 @@ function ComparisonTable({ comparison }) {
                   </td>
                 </tr>
                 <tr>
-                  {columns.map((_, i) => (
-                    <td
-                      key={i}
-                      className={`px-3 pt-2.5 pb-3 align-top text-[13.5px] leading-[1.45] ${
-                        row.winner === i
-                          ? "font-bold text-[var(--aria-purple)]"
-                          : "font-semibold text-[var(--aria-text-2)]"
-                      }`}
-                    >
-                      {cell(row.values?.[i])}
-                    </td>
-                  ))}
+                  {columns.map((_, i) => {
+                    const won = row.winner === i;
+                    return (
+                      <td
+                        key={i}
+                        // Câștigătorul unui rând era marcat DOAR prin violet aldin, ceea ce
+                        // într-un tabel unde toate valorile sunt aldine nu se vede. Acum
+                        // primește și suprafața, deci se citește dintr-o privire care
+                        // coloană a luat axa asta — care e tot scopul unei comparații.
+                        className={`px-3 pt-2.5 pb-3 align-top text-[13.5px] leading-[1.45] ${
+                          i > 0 ? "border-l border-[var(--aria-border-2)]" : ""
+                        } ${
+                          won
+                            ? "font-bold text-[var(--aria-purple)] bg-[var(--aria-tint)]"
+                            : "font-medium text-[var(--aria-text-2)]"
+                        }`}
+                      >
+                        {cell(row.values?.[i])}
+                      </td>
+                    );
+                  })}
                 </tr>
               </React.Fragment>
             ))}
