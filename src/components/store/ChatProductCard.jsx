@@ -36,25 +36,31 @@ import RichText from "@/components/store/RichText";
 
 // Solid badge tones, decoupled from meaning. The bot picks a tone per label; the
 // frontend maps it to colors here. Add a tone in ONE place to roll it everywhere.
+//
+// Deepened one step from the original set (#1c7ed6 / #0ca678 / #f76707 / #e03131):
+// those are display colours, sized for a 4px square badge on a white marketplace
+// grid. At 10px on a card that already carries a rating, a price and a CTA they
+// fluoresce, and four of them on one line is the single thing that made the card
+// read as a discount flyer. Same hues, lower value — legible, not loud.
 const TONES = {
-  neutral: "bg-[#6c7180]",
-  info: "bg-[#1c7ed6]",
-  success: "bg-[#0ca678]",
-  warning: "bg-[#f76707]",
-  danger: "bg-[#e03131]",
-  promo: "bg-[#7048e8]",
+  neutral: "bg-[#4f4867]",
+  info: "bg-[#1e5fbf]",
+  success: "bg-[#0f7a56]",
+  warning: "bg-[#b45309]",
+  danger: "bg-[#b81f3b]",
+  promo: "bg-[#6d28d9]",
 };
 const toneClass = (tone) => TONES[tone] || TONES.neutral;
 
 // Soft variants for the highlight rows (delivery / voucher / urgency) — the same
 // tone vocabulary, but tinted instead of solid so they don't fight the badges.
 const SOFT_TONES = {
-  neutral: "bg-gray-100 text-gray-700",
-  info: "bg-sky-50 text-sky-700",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-800",
-  danger: "bg-rose-50 text-rose-700",
-  promo: "bg-violet-50 text-violet-700",
+  neutral: "bg-[var(--aria-surface-2)] text-[var(--aria-text-3)]",
+  info: "bg-sky-50 text-sky-800",
+  success: "bg-emerald-50 text-emerald-800",
+  warning: "bg-amber-50 text-amber-900",
+  danger: "bg-rose-50 text-rose-800",
+  promo: "bg-[var(--aria-tint)] text-[var(--aria-purple)]",
 };
 const softToneClass = (tone) => SOFT_TONES[tone] || SOFT_TONES.neutral;
 
@@ -137,16 +143,20 @@ function ListPrice({ value, currency }) {
       weight="font-semibold"
       // `self-start` matters: as a flex item this would otherwise stretch to the
       // price column's width and the rule would run out past "Lei".
-      className="self-start text-[13.5px] text-[var(--aria-text-5)]"
+      className="self-start text-[12.5px] text-[var(--aria-text-5)]"
     />
   );
 }
 
+// Uppercase + tracking + a pill radius: a badge is a TAG, and a tag that keeps the
+// label's own casing ("Super Preț") reads as a stray bold word sitting on a colour.
+// The transform is cosmetic only — `textContent` is untouched, so the label the bot
+// sent is still exactly what a screen reader and the contract suite read.
 function Badge({ label, tone }) {
   if (!label) return null;
   return (
     <span
-      className={`text-[10px] font-bold leading-none text-white px-[7px] py-[4px] rounded-[4px] ${badgeToneClass(tone, label)}`}
+      className={`text-[9.5px] font-bold uppercase leading-none tracking-[0.07em] text-white px-2 py-[5px] rounded-full ${badgeToneClass(tone, label)}`}
     >
       {label}
     </span>
@@ -157,7 +167,9 @@ function Highlight({ text, tone, icon }) {
   if (!text) return null;
   const Icon = icon ? ICONS[icon] : null;
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${softToneClass(tone)}`}>
+    <span
+      className={`inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-[3px] rounded-full ${softToneClass(tone)}`}
+    >
       {Icon && <Icon className="w-3 h-3 shrink-0" />}
       <span>{text}</span>
     </span>
@@ -167,10 +179,10 @@ function Highlight({ text, tone, icon }) {
 function MetaList({ items }) {
   if (!items?.length) return null;
   return (
-    <dl className="space-y-0.5">
+    <dl className="flex flex-col gap-0.5 pt-0.5">
       {items.map((m, i) => (
-        <div key={i} className="flex gap-1 text-[10.5px] text-[var(--aria-text-4)]">
-          {m.label ? <dt className="font-medium">{m.label}:</dt> : null}
+        <div key={i} className="flex gap-1 aria-meta text-[var(--aria-text-4)]">
+          {m.label ? <dt className="font-semibold text-[var(--aria-text-5)]">{m.label}:</dt> : null}
           <dd className="truncate">{m.value}</dd>
         </div>
       ))}
@@ -183,14 +195,14 @@ function MetaList({ items }) {
 function Stars({ rating }) {
   const pct = Math.max(0, Math.min(100, (Number(rating) / 5) * 100));
   const row = (color) => (
-    <span className={`absolute inset-y-0 left-0 flex gap-px w-16 ${color}`}>
+    <span className={`absolute inset-y-0 left-0 flex gap-[2px] w-[74px] ${color}`}>
       {[0, 1, 2, 3, 4].map((i) => (
-        <Star key={i} className="w-3 h-3 shrink-0 fill-current" strokeWidth={0} />
+        <Star key={i} className="w-[13px] h-[13px] shrink-0 fill-current" strokeWidth={0} />
       ))}
     </span>
   );
   return (
-    <span className="relative inline-block w-16 h-3 shrink-0" aria-hidden="true">
+    <span className="relative inline-block w-[74px] h-[13px] shrink-0" aria-hidden="true">
       {row("text-[var(--aria-star-empty)]")}
       <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
         {row("text-[var(--aria-star)]")}
@@ -200,21 +212,26 @@ function Stars({ rating }) {
 }
 
 // "POTRIVIRE 9.2" pill — only when the bot sends a score. Never computed client-side.
+// This is the one place the card is allowed to look like an assistant rather than a
+// shelf, so it gets the accent hairline and the label at eyebrow tracking; the old
+// version was 8.5px of grey on a 8%-alpha wash, which at that size is a blur.
 function ScorePill({ score }) {
   if (score == null) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[rgba(124,58,237,0.08)] shrink-0">
-      <span className="text-[8.5px] font-bold tracking-wide text-[var(--aria-text-3)]">POTRIVIRE</span>
-      <span className="text-[11px] font-extrabold text-[var(--aria-purple)]">{score}</span>
+    <span className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-[3px] rounded-full bg-[var(--aria-tint)] border border-[var(--aria-tint-line)] shrink-0">
+      <span className="aria-eyebrow text-[8.5px] tracking-[0.12em] text-[var(--aria-purple)] opacity-80">
+        Potrivire
+      </span>
+      <span className="aria-num text-[11.5px] font-extrabold leading-none text-[var(--aria-purple)]">{score}</span>
     </span>
   );
 }
 
-// One izi answer section below the card: navy heading + whatever the caller renders.
+// One answer section below the card: heading + whatever the caller renders.
 function Section({ title, children }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h4 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{title}</h4>
+    <section className="flex flex-col gap-2.5">
+      <h4 className="aria-h text-[var(--aria-text)]">{title}</h4>
       {children}
     </section>
   );
@@ -227,13 +244,16 @@ function ChangesBlock({ changes }) {
   if (!changes?.length) return null;
   return (
     <Section title="Ce s-a schimbat față de recomandarea anterioară">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {changes.map((c, i) => (
-          <div key={i} className="flex items-baseline gap-2">
-            <span className="shrink-0 text-[12px] font-bold" style={{ color: CHANGE_TONES[c.tone] || "var(--aria-text-4)" }}>
+          <div key={i} className="flex items-baseline gap-2.5">
+            <span
+              className="aria-num shrink-0 min-w-[46px] text-[12.5px] font-bold"
+              style={{ color: CHANGE_TONES[c.tone] || "var(--aria-text-4)" }}
+            >
               {c.delta}
             </span>
-            <span className="text-[14px] text-[var(--aria-text-2)]">{c.label}</span>
+            <span className="aria-small text-[var(--aria-text-2)]">{c.label}</span>
           </div>
         ))}
       </div>
@@ -245,17 +265,20 @@ function ChangesBlock({ changes }) {
 function IdealAvoidBlock({ best, avoid }) {
   if (!best && !avoid) return null;
   return (
-    <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2">
+    // Rail colorat în stânga, nu cutie tentată: două casete gri una lângă alta arată
+    // ca un tabel, iar diferența dintre „ideală" și „evită" — singurul lucru care
+    // contează aici — se citea doar din eticheta de 9.5px. Acum se vede din formă.
+    <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2.5">
       {best && (
-        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]">
-          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--aria-success)]">Ideală pentru</span>
-          <span className="text-[12px] leading-snug text-[var(--aria-text-2)]">{best}</span>
+        <div className="flex flex-col gap-1 pl-3 pr-3 py-2.5 rounded-r-[10px] bg-[var(--aria-surface-3)] border-l-[3px] border-[var(--aria-success)]">
+          <span className="aria-eyebrow text-[9.5px] text-[var(--aria-success)]">Ideală pentru</span>
+          <span className="text-[12.5px] leading-[1.45] text-[var(--aria-text-2)]">{best}</span>
         </div>
       )}
       {avoid && (
-        <div className="flex flex-col gap-0.5 p-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]">
-          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--aria-warning)]">Evită dacă</span>
-          <span className="text-[12px] leading-snug text-[var(--aria-text-2)]">{avoid}</span>
+        <div className="flex flex-col gap-1 pl-3 pr-3 py-2.5 rounded-r-[10px] bg-[var(--aria-surface-3)] border-l-[3px] border-[var(--aria-warning)]">
+          <span className="aria-eyebrow text-[9.5px] text-[var(--aria-warning)]">Evită dacă</span>
+          <span className="text-[12.5px] leading-[1.45] text-[var(--aria-text-2)]">{avoid}</span>
         </div>
       )}
     </div>
@@ -314,14 +337,20 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
     ? { href: product.url, target: "_blank", rel: "noopener noreferrer", title: `Vezi ${product.name}` }
     : null;
 
+  // 14px/600, două rânduri. Era 12.5px/700 pe trei rânduri, maro: mai mic decât
+  // textul răspunsului de deasupra, deși e singurul lucru din card pe care omul îl
+  // caută cu ochii. Titlul e cel mai important cuvânt din card, deci e cel mai mare
+  // — nu bold-ul cel mai gros dintr-o culoare separată de brand.
+  const NAME_CLASS =
+    "text-[14px] font-semibold leading-[1.35] tracking-[-0.011em] line-clamp-2 text-[var(--aria-title)]";
   const nameEl = linkProps ? (
     <a {...linkProps} className="block">
-      <p className="text-[12.5px] font-bold leading-[1.35] line-clamp-3 text-[var(--aria-title)] hover:underline">
+      <p className={`${NAME_CLASS} underline-offset-2 hover:underline decoration-[var(--aria-border-3)]`}>
         {product.name}
       </p>
     </a>
   ) : (
-    <p className="text-[12.5px] font-bold leading-[1.35] line-clamp-3 text-[var(--aria-title)]">{product.name}</p>
+    <p className={NAME_CLASS}>{product.name}</p>
   );
 
   // The bottom bar either expands the bot's own `details` markdown in place, or —
@@ -339,25 +368,31 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
         else onAsk?.(`Spune-mi mai multe despre ${product.name}`);
       }}
       aria-expanded={canExpand ? showDetails : undefined}
-      className="flex items-center gap-2.5 w-full px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)] hover:brightness-[0.98] transition-[filter]"
+      // Bara era un gradient roz-lila pe toată lățimea — cea mai colorată suprafață din
+      // card, pentru controlul cel mai puțin important de pe el. Acum e albă cu o
+      // linie de păr deasupra, iar culoarea vine doar la hover: accentul e al
+      // acțiunii, nu al fundalului.
+      className="group flex items-center gap-2.5 w-full px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[var(--aria-surface)] hover:bg-[var(--aria-tint)] transition-colors"
     >
-      <Sparkles className="w-[17px] h-[17px] shrink-0 text-[var(--aria-purple)]" />
-      <span className="flex-1 text-left text-[14px] font-semibold text-[var(--aria-purple)]">Spune-mi mai multe</span>
+      <Sparkles className="w-4 h-4 shrink-0 text-[var(--aria-purple)]" />
+      <span className="flex-1 text-left text-[13.5px] font-semibold tracking-[-0.008em] text-[var(--aria-purple)]">
+        Spune-mi mai multe
+      </span>
       {/* Always the reference's "›". When the bar expands in place it rotates a
           quarter turn, so it reads as a disclosure rather than a dead arrow. */}
       <ChevronRight
-        className={`w-4 h-4 shrink-0 text-[var(--aria-text-5)] transition-transform ${
-          canExpand && showDetails ? "rotate-90" : ""
+        className={`w-4 h-4 shrink-0 text-[var(--aria-text-5)] transition-transform group-hover:translate-x-0.5 ${
+          canExpand && showDetails ? "rotate-90 group-hover:translate-x-0" : ""
         }`}
       />
     </button>
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {/* ── The card box ── */}
-      <div className="bg-white border border-[var(--aria-border)] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
-        <div className="flex gap-3 p-3">
+      <div className="aria-card aria-card-interactive overflow-hidden">
+        <div className="flex gap-3.5 p-3.5">
           {linkProps ? (
             <a {...linkProps} className="shrink-0">
               <CardImage product={product} compact={compact} />
@@ -366,13 +401,13 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
             <CardImage product={product} compact={compact} />
           )}
 
-          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
             {/* Badges + save heart share the top line, so a long badge row never
                 pushes the heart off the card. With no badges the whole line is gone
                 and the heart moves to the action row below. */}
             {hasBadgeRow && (
               <div className="flex items-start gap-2">
-                <div className="flex-1 flex flex-wrap items-center gap-1">
+                <div className="flex-1 flex flex-wrap items-center gap-1.5">
                   {badges.map((b, i) => (
                     <Badge key={i} label={b.label} tone={b.tone} />
                   ))}
@@ -381,24 +416,24 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
               </div>
             )}
 
-            {product.brand && (
-              <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--aria-text-5)]">
-                {product.brand}
-              </span>
-            )}
-            {nameEl}
+            <div className="flex flex-col gap-1">
+              {product.brand && (
+                <span className="aria-eyebrow text-[9.5px] text-[var(--aria-text-5)]">{product.brand}</span>
+              )}
+              {nameEl}
+            </div>
 
             {/* Stars + the numeric rating only. The reference never puts the review
                 count on the card — it lives on the product page. */}
             {product.rating != null && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Stars rating={product.rating} />
-                <span className="text-[11.5px] font-bold text-[var(--aria-text)]">{product.rating}</span>
+                <span className="aria-num text-[11.5px] font-bold text-[var(--aria-text-2)]">{product.rating}</span>
               </div>
             )}
 
             {highlights.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {highlights.map((h, i) => (
                   <Highlight key={i} text={h.text} tone={h.tone} icon={h.icon} />
                 ))}
@@ -407,20 +442,28 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
 
             {/* Price block and the cart button sit on the card's baseline. On a card
                 with no badge row the heart joins them here, outlined, to the cart's left. */}
-            <div className="mt-auto pt-1 flex items-end justify-between gap-2">
-              <div className="min-w-0 flex flex-col gap-0.5">
+            <div className="mt-auto pt-1.5 flex items-end justify-between gap-2">
+              <div className="min-w-0 flex flex-col gap-1">
                 {hasDiscount && <ListPrice value={product.list_price} currency={product.currency} />}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Price value={product.price} currency={product.currency} className="text-[23px] text-[var(--aria-price)]" />
+                  <Price
+                    value={product.price}
+                    currency={product.currency}
+                    className="aria-num text-[24px] tracking-[-0.02em] text-[var(--aria-price)]"
+                  />
                   <ScorePill score={product.score} />
                 </div>
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 {!hasBadgeRow && <WishButton product={product} wished={wished} outlined />}
+                {/* Butonul de coș e ACȚIUNEA cardului, deci poartă accentul. Era
+                    albastru (#1d5fd6) — a patra culoare de pe un card violet, aleasă
+                    ca să semene cu un marketplace. Umbra e colorată cu accentul, ca
+                    să pară ridicat, nu lipit. */}
                 <button
                   onClick={handleAdd}
                   title="Adaugă în coș"
-                  className="shrink-0 w-11 h-9 rounded-[9px] bg-[var(--aria-cart)] hover:bg-[var(--aria-cart-hover)] text-white flex items-center justify-center transition-colors"
+                  className="shrink-0 w-11 h-10 rounded-[11px] aria-gradient-bg text-white flex items-center justify-center shadow-[0_4px_12px_-3px_rgba(109,40,217,0.5)] hover:shadow-[0_6px_16px_-3px_rgba(109,40,217,0.6)] hover:-translate-y-px active:translate-y-0 transition-all"
                 >
                   <ShoppingCart className="w-[18px] h-[18px]" />
                 </button>
@@ -431,9 +474,12 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
           </div>
         </div>
 
-        {/* One-line "why it fits", separated from the product data above it. */}
+        {/* One-line "why it fits", separated from the product data above it. It is the
+            assistant speaking about the product rather than the catalogue describing
+            it, so it sits on a tinted band with the accent rail — the same device the
+            answer uses for its summary line. */}
         {product.reason && (
-          <p className="px-3.5 py-3 border-t border-[var(--aria-border-2)] text-[12.5px] leading-snug text-[var(--aria-text-2)]">
+          <p className="px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[var(--aria-surface-3)] text-[12.5px] leading-[1.5] text-[var(--aria-text-2)]">
             {product.reason}
           </p>
         )}
@@ -450,7 +496,7 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
       {/* ── izi answer sections, below the card box ── */}
       {product.why && (
         <Section title="De ce ți-l recomand">
-          <p className="text-[15px] leading-[1.55] text-[var(--aria-text-2)]">
+          <p className="aria-copy text-[var(--aria-text-2)]">
             <RichText text={product.why} />
           </p>
         </Section>
@@ -464,10 +510,13 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
 
       {cons.length > 0 && (
         <Section title="De luat în calcul">
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-2.5">
             {cons.map((c, i) => (
-              <li key={i} className="flex gap-2 text-[15px] leading-snug text-[var(--aria-text-2)]">
-                <span className="shrink-0 font-bold text-[var(--aria-warning)]">–</span>
+              <li key={i} className="flex gap-2.5 aria-copy text-[var(--aria-text-2)]">
+                {/* Aceeași geometrie ca bifele din listă (RichText), ton diferit: două
+                    liste care spun lucruri opuse trebuie să arate ca surori, nu ca
+                    două componente scrise de oameni diferiți. */}
+                <span className="mt-[6px] shrink-0 w-[17px] h-[2px] rounded-full bg-[var(--aria-warning)] opacity-70" />
                 <span>{c}</span>
               </li>
             ))}
@@ -485,9 +534,14 @@ export default function ChatProductCard({ product, onAdd, onAsk }) {
 // so packshots read the way they do on the shop. Muted icon when there's no image.
 // The compact card uses the reference's smaller slot.
 function CardImage({ product, compact = false }) {
-  const box = compact ? "w-[58px] h-[58px]" : "w-[86px] h-[86px]";
+  const box = compact ? "w-[64px] h-[64px]" : "w-[92px] h-[92px]";
   return (
-    <div className={`${box} rounded-[8px] bg-white overflow-hidden flex items-center justify-center`}>
+    // Fundal tentat + o linie de păr, nu alb pe alb: packshot-urile din catalog vin
+    // decupate pe alb, așa că pe un card alb rămâneau suspendate în aer, fără margine.
+    // Padding-ul le ține în interiorul ramei în loc să le lipească de ea.
+    <div
+      className={`${box} rounded-[11px] bg-[var(--aria-surface-2)] border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center p-1.5`}
+    >
       {product.image_url ? (
         <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
       ) : (
@@ -513,9 +567,9 @@ function WishButton({ product, wished, outlined = false }) {
       <button
         onClick={onClick}
         title={title}
-        className="shrink-0 w-11 h-9 rounded-[9px] border border-[var(--aria-cart)] text-[var(--aria-cart)] flex items-center justify-center hover:bg-[rgba(29,95,214,0.06)] transition-colors"
+        className="shrink-0 w-11 h-10 rounded-[11px] border border-[var(--aria-border-3)] text-[var(--aria-text-4)] flex items-center justify-center hover:border-[var(--aria-tint-line)] hover:text-[var(--aria-purple)] hover:bg-[var(--aria-tint)] transition-colors"
       >
-        <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current" : ""}`} />
+        <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
       </button>
     );
   }
@@ -524,9 +578,9 @@ function WishButton({ product, wished, outlined = false }) {
     <button
       onClick={onClick}
       title={title}
-      className="shrink-0 -mt-0.5 -mr-0.5 p-0.5 text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] transition-colors"
+      className="shrink-0 -mt-0.5 -mr-0.5 p-1 rounded-full text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] hover:bg-[var(--aria-tint)] transition-colors"
     >
-      <Heart className={`w-[18px] h-[18px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
+      <Heart className={`w-[17px] h-[17px] ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
     </button>
   );
 }

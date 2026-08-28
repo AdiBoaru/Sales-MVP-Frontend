@@ -117,14 +117,17 @@ function ThinkingIndicator() {
 
   return (
     <div className="flex justify-start">
-      <div className="w-full max-w-[85%] min-[380px]:w-[248px] bg-white border border-[var(--aria-border)] rounded-2xl rounded-bl-md shadow-sm overflow-hidden aria-msg-in">
+      {/* Inelul spinnerului era `rgba(47,102,76,0.2)` — VERDELE magazinului — cu capul
+          violet deasupra: două branduri într-un cerc de 13px. Ambele culori vin acum
+          din accent. */}
+      <div className="w-full max-w-[85%] min-[380px]:w-[256px] aria-card rounded-2xl rounded-bl-md overflow-hidden aria-msg-in">
         <button
           onClick={() => setExpanded((e) => !e)}
           aria-expanded={expanded}
-          className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left"
+          className="flex items-center gap-2.5 w-full px-3.5 py-3 text-left"
         >
-          <span className="w-[13px] h-[13px] rounded-full border-2 border-[rgba(47,102,76,0.2)] border-t-[#7C3AED] aria-think-spinner shrink-0" />
-          <span className="flex-1 text-xs font-medium truncate text-[var(--aria-purple)]">
+          <span className="w-[14px] h-[14px] rounded-full border-2 border-[var(--aria-tint-2)] border-t-[var(--aria-purple)] aria-think-spinner shrink-0" />
+          <span className="flex-1 text-[12.5px] font-semibold truncate text-[var(--aria-purple)]">
             {THINKING_STEPS[stage]}…
           </span>
           <ChevronDown
@@ -132,20 +135,20 @@ function ThinkingIndicator() {
           />
         </button>
         {expanded && (
-          <div className="px-3.5 pb-3 flex flex-col gap-1.5">
+          <div className="px-3.5 pb-3.5 flex flex-col gap-2">
             {THINKING_STEPS.map((label, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-2.5">
                 {i < stage ? (
                   <Check className="w-3 h-3 text-[var(--aria-purple)] shrink-0" strokeWidth={3} />
                 ) : i === stage ? (
                   <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg aria-think-dot shrink-0" />
                 ) : (
-                  <span className="w-1.5 h-1.5 rounded-full border border-[#C9C4D8] shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full border border-[var(--aria-border-3)] shrink-0" />
                 )}
                 <span
-                  className={`text-[11px] ${
+                  className={`text-[11.5px] ${
                     i === stage
-                      ? "text-[var(--aria-text)] font-medium"
+                      ? "text-[var(--aria-text)] font-semibold"
                       : i < stage
                         ? "text-[var(--aria-text-4)]"
                         : "text-[var(--aria-text-5)]"
@@ -173,16 +176,17 @@ function CartView({ onBack }) {
   if (items.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6 bg-[var(--aria-bg)]">
-        <div className="w-16 h-16 rounded-2xl bg-[rgba(47,102,76,0.1)] flex items-center justify-center mb-4">
-          <ShoppingCart className="w-8 h-8 text-[var(--aria-purple)]" />
+        {/* Tenta era `rgba(47,102,76,0.1)` — verde de magazin sub o iconiță violet. */}
+        <div className="w-16 h-16 rounded-2xl bg-[var(--aria-tint)] border border-[var(--aria-tint-line)] flex items-center justify-center mb-4">
+          <ShoppingCart className="w-7 h-7 text-[var(--aria-purple)]" strokeWidth={1.8} />
         </div>
-        <h3 className="aria-heading text-lg text-[var(--aria-text)]">Coșul tău e gol</h3>
-        <p className="text-sm text-[var(--aria-text-4)] max-w-[260px] mt-1 mb-5">
+        <h3 className="aria-h text-[var(--aria-text)]">Coșul tău e gol</h3>
+        <p className="aria-small text-[var(--aria-text-4)] max-w-[260px] mt-1.5 mb-5">
           Adaugă produse din recomandările lui {BRAND.assistant} și le vei vedea aici.
         </p>
         <button
           onClick={onBack}
-          className="text-sm font-semibold text-[var(--aria-purple)] bg-[rgba(47,102,76,0.07)] hover:bg-[rgba(47,102,76,0.12)] px-4 py-2 rounded-full transition-colors"
+          className="text-[13px] font-semibold text-[var(--aria-purple)] bg-[var(--aria-tint)] hover:bg-[var(--aria-tint-2)] border border-[var(--aria-tint-line)] px-4 py-2 rounded-full transition-colors"
         >
           Înapoi la chat
         </button>
@@ -192,32 +196,38 @@ function CartView({ onBack }) {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-[var(--aria-bg)]">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 bg-[var(--aria-bg)]">
         {items.map((it) => (
-          <div key={it.key} className="flex gap-3 bg-white border border-[var(--aria-border)] rounded-xl p-2.5 shadow-sm">
-            <div className="w-14 h-14 rounded-lg bg-[var(--aria-surface-2)] overflow-hidden flex-shrink-0">
+          <div key={it.key} className="aria-card flex gap-3 p-2.5">
+            <div className="w-14 h-14 rounded-[10px] bg-[var(--aria-surface-2)] border border-[var(--aria-border-2)] overflow-hidden flex-shrink-0 p-1">
               {it.image_url ? (
-                <img src={it.image_url} alt={it.product_name} className="w-full h-full object-cover" />
+                <img src={it.image_url} alt={it.product_name} className="w-full h-full object-contain" />
               ) : null}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold leading-snug line-clamp-2">{it.product_name}</p>
-              <p className="text-xs font-bold mt-0.5">{formatCurrency(it.price, it.currency)}</p>
-              <div className="flex items-center justify-between mt-1.5">
-                <div className="flex items-center gap-1.5">
+              <p className="text-[12.5px] font-semibold leading-[1.35] line-clamp-2 text-[var(--aria-text)]">
+                {it.product_name}
+              </p>
+              <p className="aria-num text-[13px] font-bold mt-1 text-[var(--aria-price)]">
+                {formatCurrency(it.price, it.currency)}
+              </p>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-1 p-0.5 rounded-full border border-[var(--aria-border)] bg-[var(--aria-surface-2)]">
                   <button
                     onClick={() => setQuantity(it.key, it.quantity - 1)}
                     disabled={it.quantity <= 1}
                     title="Scade cantitatea"
-                    className="w-6 h-6 rounded-md border border-[var(--aria-border)] flex items-center justify-center hover:bg-[var(--aria-surface-2)] disabled:opacity-40 transition-colors"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface)] hover:text-[var(--aria-text)] disabled:opacity-35 disabled:hover:bg-transparent transition-colors"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="text-xs font-semibold w-5 text-center">{it.quantity}</span>
+                  <span className="aria-num text-[12px] font-bold w-5 text-center text-[var(--aria-text)]">
+                    {it.quantity}
+                  </span>
                   <button
                     onClick={() => setQuantity(it.key, it.quantity + 1)}
                     title="Crește cantitatea"
-                    className="w-6 h-6 rounded-md border border-[var(--aria-border)] flex items-center justify-center hover:bg-[var(--aria-surface-2)] transition-colors"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface)] hover:text-[var(--aria-text)] transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -225,9 +235,9 @@ function CartView({ onBack }) {
                 <button
                   onClick={() => removeItem(it.key)}
                   title="Elimină din coș"
-                  className="text-muted-foreground hover:text-red-600 transition-colors"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--aria-text-5)] hover:text-[var(--aria-danger)] hover:bg-rose-50 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-[15px] h-[15px]" />
                 </button>
               </div>
             </div>
@@ -236,14 +246,16 @@ function CartView({ onBack }) {
       </div>
 
       {/* Total + checkout — checkout lives on the full /Cart page (delivery form, payment). */}
-      <div className="border-t border-[var(--aria-border-2)] bg-white p-3 flex-shrink-0 space-y-2.5">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--aria-text-4)]">Total</span>
-          <span className="aria-heading text-[var(--aria-text)]">{formatCurrency(total, currency)}</span>
+      <div className="border-t border-[var(--aria-border-2)] bg-[var(--aria-surface)] p-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] flex-shrink-0 space-y-3">
+        <div className="flex items-baseline justify-between">
+          <span className="aria-eyebrow text-[var(--aria-text-4)]">Total</span>
+          <span className="aria-num text-[19px] font-extrabold tracking-[-0.02em] text-[var(--aria-price)]">
+            {formatCurrency(total, currency)}
+          </span>
         </div>
         <Link
           to="/Cart"
-          className="block w-full text-center aria-gradient-bg hover:opacity-90 text-white text-sm font-semibold py-2.5 rounded-xl transition-opacity"
+          className="block w-full text-center aria-gradient-bg text-white text-[14px] font-semibold py-3 rounded-[var(--aria-r-md)] shadow-[0_6px_18px_-6px_rgba(109,40,217,0.65)] hover:shadow-[0_10px_24px_-6px_rgba(109,40,217,0.75)] transition-shadow"
         >
           Finalizează comanda
         </Link>
@@ -279,10 +291,10 @@ function SavedDrawer({ onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-2xl shadow-2xl border-t border-[var(--aria-border)] max-h-[75%] flex flex-col"
+        className="bg-[var(--aria-surface)] rounded-t-[20px] shadow-[0_-16px_50px_-12px_rgba(23,18,46,0.35)] border-t border-[var(--aria-border)] max-h-[75%] flex flex-col"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--aria-border-2)] flex-shrink-0">
-          <span className="aria-heading text-sm text-[var(--aria-text)]">Lista ta salvată</span>
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--aria-border-2)] flex-shrink-0">
+          <span className="aria-h text-[15px] text-[var(--aria-text)]">Lista ta salvată</span>
           <button
             onClick={onClose}
             title="Închide"
@@ -300,15 +312,17 @@ function SavedDrawer({ onClose }) {
           <>
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
               {items.map((it) => (
-                <div key={it.key} className="flex items-center gap-3 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-xl p-2">
-                  <div className="w-11 h-11 rounded-lg bg-white overflow-hidden flex-shrink-0 border border-[var(--aria-border-2)]">
+                <div key={it.key} className="flex items-center gap-3 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[12px] p-2">
+                  <div className="w-11 h-11 rounded-[9px] bg-[var(--aria-surface)] overflow-hidden flex-shrink-0 border border-[var(--aria-border-2)] p-1">
                     {it.image_url ? (
-                      <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
+                      <img src={it.image_url} alt={it.name} className="w-full h-full object-contain" />
                     ) : null}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold leading-snug line-clamp-2 text-[var(--aria-text)]">{it.name}</p>
-                    <p className="aria-heading text-xs mt-0.5 text-[var(--aria-text)]">{formatCurrency(it.price, it.currency)}</p>
+                    <p className="text-[12px] font-semibold leading-[1.35] line-clamp-2 text-[var(--aria-text)]">{it.name}</p>
+                    <p className="aria-num text-[12.5px] font-bold mt-0.5 text-[var(--aria-price)]">
+                      {formatCurrency(it.price, it.currency)}
+                    </p>
                   </div>
                   <button
                     onClick={() => removeWish(it.key)}
@@ -321,14 +335,17 @@ function SavedDrawer({ onClose }) {
               ))}
             </div>
             <div className="border-t border-[var(--aria-border-2)] p-3 flex-shrink-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--aria-text-4)]">Total estimat</span>
-                <span className="aria-heading text-sm text-[var(--aria-text)]">{formatCurrency(total, currency)}</span>
+              <div className="flex items-baseline justify-between">
+                <span className="aria-eyebrow text-[var(--aria-text-4)]">Total estimat</span>
+                <span className="aria-num text-[16px] font-extrabold tracking-[-0.02em] text-[var(--aria-price)]">
+                  {formatCurrency(total, currency)}
+                </span>
               </div>
+              {/* Umbra era `rgba(47,102,76,0.3)` — verde — sub un buton violet. */}
               <button
                 type="button"
                 onClick={addAllToCart}
-                className="w-full py-3 rounded-xl aria-gradient-bg text-white text-[13px] font-semibold shadow-[0_6px_20px_rgba(47,102,76,0.3)] hover:opacity-90 transition-opacity"
+                className="w-full py-3 rounded-[var(--aria-r-md)] aria-gradient-bg text-white text-[13.5px] font-semibold shadow-[0_6px_18px_-6px_rgba(109,40,217,0.65)] hover:shadow-[0_10px_24px_-6px_rgba(109,40,217,0.75)] transition-shadow"
               >
                 Adaugă tot în coș
               </button>
@@ -432,8 +449,8 @@ function MicButton({ onTranscript, disabled }) {
       title={listening ? "Ascult… apasă pentru stop" : "Dictează"}
       className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-40 transition-colors ${
         listening
-          ? "text-[var(--aria-purple)] bg-[rgba(124,58,237,0.1)]"
-          : "text-[var(--aria-text-3)] hover:bg-[var(--aria-border-2)]"
+          ? "text-[var(--aria-purple)] bg-[var(--aria-tint-2)]"
+          : "text-[var(--aria-text-4)] hover:bg-[var(--aria-border-2)] hover:text-[var(--aria-text-2)]"
       }`}
     >
       <Mic className="w-[18px] h-[18px]" strokeWidth={1.9} />
@@ -454,12 +471,12 @@ function HeaderMenu({ savedCount, cartCount, showCart, onSaved, onCart }) {
         setOpen(false);
         onClick();
       }}
-      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-[var(--aria-text)] hover:bg-[var(--aria-surface-2)] transition-colors"
+      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] font-medium text-[var(--aria-text)] hover:bg-[var(--aria-surface-2)] transition-colors"
     >
-      <Icon className="w-4 h-4 shrink-0 text-[var(--aria-text-3)]" />
+      <Icon className="w-4 h-4 shrink-0 text-[var(--aria-text-4)]" />
       <span className="flex-1">{label}</span>
       {count > 0 && (
-        <span className="shrink-0 min-w-[18px] px-1 py-px rounded-full bg-[rgba(124,58,237,0.1)] text-[10px] font-bold text-center text-[var(--aria-purple)]">
+        <span className="aria-num shrink-0 min-w-[19px] px-1.5 py-px rounded-full bg-[var(--aria-tint)] text-[10.5px] font-bold text-center text-[var(--aria-purple)]">
           {count}
         </span>
       )}
@@ -480,7 +497,7 @@ function HeaderMenu({ savedCount, cartCount, showCart, onSaved, onCart }) {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-9 z-40 w-52 py-1 rounded-xl border border-[var(--aria-border)] bg-white shadow-[0_10px_30px_rgba(22,33,62,0.16)]">
+          <div className="absolute right-0 top-9 z-40 w-52 py-1 rounded-[var(--aria-r-md)] border border-[var(--aria-border)] bg-[var(--aria-surface)] shadow-[var(--aria-shadow-2)] overflow-hidden">
             <Item icon={Bookmark} label="Lista salvată" count={savedCount} onClick={onSaved} />
             <Item
               icon={ShoppingCart}
@@ -667,38 +684,48 @@ export default function ChatWidget() {
     <>
       {/* Floating button */}
       {!open && (
+        // `nx-chat-launcher` NU e decorativ: launcherul stă în afara lui `.aria-widget`,
+        // deci fără clasa asta `aria-gradient-bg` se rezolva la gradientul VERDE al
+        // magazinului — butonul verde deschidea un panel violet. Vezi index.css.
+        // `shadow-brand-300/60` era aceeași greșeală, în umbră.
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 aria-gradient-bg hover:opacity-90 text-white font-semibold pl-4 pr-5 py-3 rounded-full shadow-lg shadow-brand-300/60 transition-opacity"
+          className="nx-chat-launcher fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 aria-gradient-bg text-white text-[14px] font-semibold pl-4 pr-5 py-3 rounded-full min-h-[44px]"
         >
-          <MessageCircle className="w-4 h-4" />
+          <MessageCircle className="w-4 h-4" strokeWidth={2.2} />
           <span className="hidden sm:inline">{BRAND.assistant}</span>
         </button>
       )}
 
       {/* Panel */}
       {open && (
-        <div className="aria-widget fixed inset-y-0 right-0 z-50 w-full max-w-full sm:w-[452px] bg-white border-l border-[var(--aria-border-2)] shadow-2xl flex flex-col">
+        <div className="aria-widget nx-chat-panel fixed inset-y-0 right-0 z-50 w-full max-w-full sm:w-[452px] bg-[var(--aria-surface)] border-l border-[var(--aria-border-2)] flex flex-col">
+          {/* Linia de accent de sus — aceeași semnătură ca pe calea v2. Două pixeli de
+              gradient sunt tot ce trebuie ca panoul să înceapă cu brandul, în locul unei
+              margini gri. */}
+          <div className="h-[2px] aria-gradient-bg flex-shrink-0" />
           {/* Header — the reference's four slots: "new chat" left, the wordmark dead
               centre, then overflow and close. The wordmark is positioned absolutely so
               it stays centred on the panel regardless of how wide the two sides get. */}
-          <div className="relative flex items-center justify-between gap-2 px-3 py-2.5 border-b border-[var(--aria-border-2)] flex-shrink-0 bg-white">
+          <div className="relative flex items-center justify-between gap-2 px-3 py-3 border-b border-[var(--aria-border-2)] flex-shrink-0 bg-[var(--aria-surface)]">
             <button
               onClick={handleReset}
               title="Începe un chat nou"
-              className="relative z-10 inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-[10px] border border-[var(--aria-border-3)] bg-white text-[12px] font-medium text-[var(--aria-text)] hover:border-[var(--aria-purple)] transition-colors"
+              className="relative z-10 inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-full border border-[var(--aria-border-3)] bg-[var(--aria-surface)] text-[12px] font-semibold text-[var(--aria-text-2)] hover:text-[var(--aria-purple)] hover:border-[var(--aria-tint-line)] hover:bg-[var(--aria-tint)] transition-colors"
             >
-              <SquarePen className="w-[15px] h-[15px]" strokeWidth={1.9} />
+              <SquarePen className="w-[14px] h-[14px]" strokeWidth={2} />
               <span>Chat nou</span>
             </button>
 
-            <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
               <AriaMark size={24} />
               <span className="relative">
-                <span className="absolute -top-[7px] left-0 text-[7px] font-bold leading-none tracking-[0.08em] text-[var(--aria-text-5)]">
+                {/* „BETA" ca superscript peste numele mărcii: la 7px era o pată, iar
+                    tracking-ul îl face să se citească ca etichetă, nu ca zgomot. */}
+                <span className="absolute -top-[7px] left-0 text-[7.5px] font-bold leading-none tracking-[0.14em] text-[var(--aria-text-5)]">
                   BETA
                 </span>
-                <span className="aria-heading text-[19px] leading-none text-[var(--aria-text)]">
+                <span className="aria-heading text-[20px] leading-none tracking-[-0.022em] text-[var(--aria-text)]">
                   {BRAND.assistant}
                 </span>
               </span>
@@ -715,7 +742,7 @@ export default function ChatWidget() {
               <button
                 onClick={() => setOpen(false)}
                 title="Închide"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--aria-text-4)] hover:bg-[var(--aria-surface-2)] hover:text-[var(--aria-text-2)] transition-colors"
               >
                 <X className="w-[18px] h-[18px]" />
               </button>
@@ -725,14 +752,17 @@ export default function ChatWidget() {
           {/* "Rețin" memory bar — the criteria Aria has extracted so far. Hidden
               until the bot actually sends `criteria` on a reply. */}
           {criteria.length > 0 && !showCart && (
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--aria-border-2)] bg-[var(--aria-surface-2)] overflow-x-auto flex-shrink-0">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--aria-text-3)] shrink-0">Rețin</span>
+            // Pastilele erau tentate cu VERDELE magazinului (`rgba(47,102,76,…)`) și
+            // scriau cu violet peste el, iar bulina era cyan (#38BDF8) — trei culori
+            // străine într-o bară de 28px. Totul vine acum din accent.
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--aria-border-2)] bg-[var(--aria-surface-3)] overflow-x-auto flex-shrink-0">
+              <span className="aria-eyebrow text-[9px] text-[var(--aria-text-4)] shrink-0">Rețin</span>
               {criteria.map((c, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(47,102,76,0.07)] border border-[rgba(47,102,76,0.22)] rounded-full text-[11px] text-[var(--aria-purple)] whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[var(--aria-tint)] border border-[var(--aria-tint-line)] rounded-full text-[11px] font-medium text-[var(--aria-purple)] whitespace-nowrap shrink-0"
                 >
-                  <span className="w-1 h-1 rounded-full bg-[#38BDF8] shrink-0" />
+                  <span className="w-1 h-1 rounded-full bg-[var(--aria-purple)] shrink-0" />
                   {c}
                 </span>
               ))}
@@ -745,25 +775,27 @@ export default function ChatWidget() {
           ) : /* Welcome state — shown until the first user message, matching the design's
                  left-aligned intro + vertical list of suggested prompts (not centered pills). */
           !hasConversation ? (
-            <div className="flex-1 overflow-y-auto flex flex-col justify-center gap-5 min-[380px]:gap-6 px-4 min-[380px]:px-6 py-6 min-[380px]:py-8 bg-[var(--aria-bg)]">
-              <AriaMark size={52} innerSize={38} className="mx-auto" />
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h3 className="aria-heading text-2xl text-[var(--aria-text)]">Bună! Sunt {BRAND.assistant}.</h3>
-                <p className="text-[13.5px] leading-relaxed text-[var(--aria-text-4)] max-w-[320px]">
+            <div className="flex-1 overflow-y-auto flex flex-col justify-center gap-6 min-[380px]:gap-7 px-4 min-[380px]:px-6 py-6 min-[380px]:py-8 bg-[var(--aria-bg)]">
+              <AriaMark size={56} innerSize={40} className="mx-auto" />
+              <div className="flex flex-col items-center gap-2.5 text-center">
+                <h3 className="aria-display text-[var(--aria-text)]">Bună! Sunt {BRAND.assistant}.</h3>
+                <p className="aria-small text-[var(--aria-text-4)] max-w-[310px]">
                   Spune-mi ce cauți. Analizez catalogul, compar opțiunile și îți explic exact de ce recomand ceva,
                   nu doar ce.
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
+              {/* Sugestiile intră decalat, ca o listă care se așază, nu ca patru
+                  dreptunghiuri apărute deodată. */}
+              <div className="aria-stagger flex flex-col gap-2">
                 {INITIAL_SUGGESTIONS.map((s, j) => (
                   <button
                     key={j}
                     onClick={() => send(s)}
-                    className="flex items-center gap-3 text-left px-3.5 min-[380px]:px-4 py-3 min-[380px]:py-3.5 bg-white border border-[var(--aria-border)] rounded-[13px] text-[13px] text-[var(--aria-text-2)] shadow-sm hover:border-[var(--aria-purple)] hover:shadow-md transition-all"
+                    className="group flex items-center gap-3 text-left px-3.5 min-[380px]:px-4 py-3 min-[380px]:py-3.5 aria-card aria-card-interactive text-[13.5px] leading-snug text-[var(--aria-text-2)] hover:text-[var(--aria-text)]"
                   >
                     <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg shrink-0" />
                     <span className="flex-1">{s}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[var(--aria-text-5)] shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-[var(--aria-text-5)] shrink-0 transition-all group-hover:translate-x-0.5 group-hover:text-[var(--aria-purple)]" />
                   </button>
                 ))}
               </div>
@@ -772,7 +804,7 @@ export default function ChatWidget() {
           <div
             ref={scrollRef}
             onScroll={(e) => setAtBottom(isScrolledToEnd(e.currentTarget))}
-            className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-4 min-[380px]:py-5 space-y-6 bg-[var(--aria-bg)]"
+            className="flex-1 overflow-y-auto px-3 min-[380px]:px-4 py-5 min-[380px]:py-6 space-y-7 bg-[var(--aria-bg)]"
           >
             {visibleMessages.map((msg, i) => (
               <div key={i} ref={i === visibleMessages.length - 1 ? lastMsgRef : null}>
@@ -794,7 +826,7 @@ export default function ChatWidget() {
               disclaimer is no longer pinned here — it sits under each bot answer
               (ChatMessage), the way the reference design shows it. */}
           {!showCart && (
-            <div className="relative flex-shrink-0 bg-white px-3 pt-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="relative flex-shrink-0 bg-[var(--aria-surface)] border-t border-[var(--aria-border-2)] px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               {/* Jump to the end — floats over the conversation just above the composer,
                   and only while there is something below the fold. */}
               {hasConversation && !atBottom && (
@@ -806,7 +838,7 @@ export default function ChatWidget() {
                     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
                   }}
                   title="Mergi la sfârșitul conversației"
-                  className="absolute -top-5 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-white border border-[var(--aria-border-2)] shadow-[0_2px_10px_rgba(22,33,62,0.16)] flex items-center justify-center text-[var(--aria-text-3)] hover:text-[var(--aria-text)] transition-colors"
+                  className="absolute -top-5 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-[var(--aria-surface)] border border-[var(--aria-border)] shadow-[var(--aria-shadow-2)] flex items-center justify-center text-[var(--aria-text-4)] hover:text-[var(--aria-purple)] transition-colors"
                 >
                   <ChevronDown className="w-[18px] h-[18px]" />
                 </button>
@@ -829,13 +861,13 @@ export default function ChatWidget() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Caută produse sau inspirație"
                   aria-invalid={inputOverLimit}
-                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[15px] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2 disabled:opacity-60"
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[15px] tracking-[-0.008em] text-[var(--aria-text)] placeholder:text-[var(--aria-text-5)] py-2.5 disabled:opacity-60"
                 />
                 {inputLength > COMPOSER_COUNTER_VISIBLE_AT ? (
                   <span
                     aria-hidden="true"
-                    className={`text-[11px] tabular-nums shrink-0 ${
-                      inputOverLimit ? "text-red-600 font-semibold" : "text-[var(--aria-text-5)]"
+                    className={`aria-num text-[11px] shrink-0 ${
+                      inputOverLimit ? "text-[var(--aria-danger)] font-semibold" : "text-[var(--aria-text-5)]"
                     }`}
                   >
                     {inputLength}/{COMPOSER_MAX_LENGTH}
@@ -853,7 +885,7 @@ export default function ChatWidget() {
                   type="submit"
                   disabled={sending || !input.trim() || inputOverLimit}
                   title="Trimite"
-                  className="ml-1 w-9 h-9 rounded-full aria-gradient-bg disabled:opacity-50 text-white flex items-center justify-center shrink-0 transition-opacity hover:opacity-90"
+                  className="ml-1 w-9 h-9 rounded-full aria-gradient-bg text-white flex items-center justify-center shrink-0 shadow-[0_3px_10px_-2px_rgba(109,40,217,0.55)] disabled:shadow-none disabled:opacity-40 transition-all"
                 >
                   <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
                 </button>
@@ -864,8 +896,10 @@ export default function ChatWidget() {
           {/* Add-to-cart confirmation toast */}
           {toast && (
             <div className="pointer-events-none absolute bottom-20 left-1/2 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-bottom-2">
-              <div className="flex items-center gap-2 bg-gray-900 text-white text-sm font-medium pl-3 pr-4 py-2 rounded-full shadow-lg whitespace-nowrap">
-                <Check className="w-4 h-4 text-green-400" />
+              <div className="flex items-center gap-2 bg-[var(--aria-text)] text-white text-[13px] font-medium pl-3 pr-4 py-2.5 rounded-full shadow-[0_10px_30px_-8px_rgba(23,18,46,0.6)] whitespace-nowrap">
+                <span className="w-4 h-4 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+                  <Check className="w-2.5 h-2.5" strokeWidth={3.5} />
+                </span>
                 {toast}
               </div>
             </div>

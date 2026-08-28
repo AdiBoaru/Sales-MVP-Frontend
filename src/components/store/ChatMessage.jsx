@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Heart, Package, User } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, ArrowUpRight, Heart, Package, User } from "lucide-react";
 import { useWished, toggleWish, keyOfProduct } from "@/lib/wishlist";
 import RichText, { ReplyBody, ReplySummary, replySplit } from "@/components/store/RichText";
 import ChatProductCard from "@/components/store/ChatProductCard";
@@ -8,8 +8,8 @@ import ChatOffer from "@/components/store/ChatOffer";
 // Stock-status tone -> palette (dot + badge). The bot picks a tone per row ('ok'/'warn');
 // the frontend owns the colors here. Unknown tones degrade to neutral.
 const STATUS_TONES = {
-  ok: { dot: "#22C55E", badgeBg: "rgba(34,197,94,0.14)", badgeText: "var(--aria-success)" },
-  warn: { dot: "#F59E0B", badgeBg: "rgba(245,158,11,0.14)", badgeText: "var(--aria-warning)" },
+  ok: { dot: "#16a34a", badgeBg: "rgba(22,163,74,0.12)", badgeText: "var(--aria-success)" },
+  warn: { dot: "#d97706", badgeBg: "rgba(217,119,6,0.13)", badgeText: "var(--aria-warning)" },
 };
 const statusTone = (t) =>
   STATUS_TONES[t] || { dot: "var(--aria-text-5)", badgeBg: "var(--aria-surface-2)", badgeText: "var(--aria-text-3)" };
@@ -69,7 +69,7 @@ function ComparisonTable({ comparison }) {
     // repeating the price in the header would state it twice, differently.
     const head = (
       <>
-        <div className="w-10 h-10 bg-white overflow-hidden flex items-center justify-center">
+        <div className="w-[46px] h-[46px] rounded-[10px] bg-[var(--aria-surface-2)] border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center p-1">
           {col.image_url ? (
             <img src={col.image_url} alt="" className="w-full h-full object-contain" />
           ) : (
@@ -93,16 +93,14 @@ function ComparisonTable({ comparison }) {
     <div className="flex flex-col gap-3">
       {/* The heading that names the table. Server-owned copy, localised there: a hardcoded
           "Diferențe principale" here would stay Romanian for a Hungarian tenant. */}
-      {comparison.heading && (
-        <h4 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{comparison.heading}</h4>
-      )}
-      <div className="bg-white border border-[var(--aria-border)] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
+      {comparison.heading && <h4 className="aria-h text-[var(--aria-text)]">{comparison.heading}</h4>}
+      <div className="aria-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse" style={n > 2 ? { minWidth: `${n * 155}px` } : undefined}>
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i} scope="col" className="px-3 pt-3 pb-2.5 align-top font-normal" style={{ width: `${100 / n}%` }}>
+                <th key={i} scope="col" className="px-3 pt-3.5 pb-3 align-top font-normal" style={{ width: `${100 / n}%` }}>
                   <ProductHead col={col} />
                 </th>
               ))}
@@ -112,22 +110,28 @@ function ComparisonTable({ comparison }) {
             {rows.map((row, r) => (
               <React.Fragment key={r}>
                 {/* Each dimension is a tinted full-width label band, then one value per
-                    column on white — the reference's banding, which is what keeps a
-                    long value readable instead of squeezed into a narrow labelled cell. */}
+                    column on white — banding is what keeps a long value readable
+                    instead of squeezed into a narrow labelled cell.
+                    Banda era #f8f7f8 cu text #9a8b80: un gri-cald cu tentă de nisip,
+                    singura suprafață maro dintr-un panel violet. Acum e o treaptă din
+                    aceeași familie ca restul widgetului, iar eticheta e eyebrow —
+                    citește ca antet de secțiune, nu ca o valoare ștearsă. */}
                 <tr>
                   <td
                     colSpan={n}
-                    className="px-3 py-[7px] border-t border-[var(--aria-border-2)] bg-[#f8f7f8] text-[11.5px] text-[#9a8b80]"
+                    className="px-3 py-[7px] border-t border-[var(--aria-border-2)] bg-[var(--aria-surface-2)]"
                   >
-                    {row.label}
+                    <span className="aria-eyebrow text-[9.5px] text-[var(--aria-text-4)]">{row.label}</span>
                   </td>
                 </tr>
                 <tr>
                   {columns.map((_, i) => (
                     <td
                       key={i}
-                      className={`px-3 pt-2.5 pb-3 align-top text-[14px] leading-snug font-bold ${
-                        row.winner === i ? "text-[var(--aria-purple)]" : "text-[var(--aria-text)]"
+                      className={`px-3 pt-2.5 pb-3 align-top text-[13.5px] leading-[1.45] ${
+                        row.winner === i
+                          ? "font-bold text-[var(--aria-purple)]"
+                          : "font-semibold text-[var(--aria-text-2)]"
                       }`}
                     >
                       {cell(row.values?.[i])}
@@ -143,18 +147,20 @@ function ComparisonTable({ comparison }) {
       {/* "Verdictul Ariei" — only when the bot sends an actual verdict; the
           confidence bar only accompanies a real number, never a guess. */}
       {comparison.verdict && (
-        <div className="flex flex-col gap-2 px-3.5 py-3 border-t border-[var(--aria-border-2)] bg-[linear-gradient(90deg,#f6effe,#fdf0f7)]">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--aria-purple)]">Verdictul Ariei</span>
-          <p className="text-[13px] leading-relaxed text-[var(--aria-text-2)]">{comparison.verdict}</p>
+        <div className="flex flex-col gap-2.5 px-3.5 py-3.5 border-t border-[var(--aria-border-2)] bg-[var(--aria-tint)]">
+          <span className="aria-eyebrow text-[var(--aria-purple)]">Verdictul Ariei</span>
+          <p className="text-[13.5px] leading-[1.55] text-[var(--aria-text-2)]">{comparison.verdict}</p>
           {comparison.confidence != null && (
             <div className="flex items-center gap-2.5">
-              <div className="flex-1 h-1.5 rounded-full bg-[rgba(124,58,237,0.12)] overflow-hidden">
+              <div className="flex-1 h-1 rounded-full bg-[var(--aria-tint-2)] overflow-hidden">
                 <div
                   className="aria-confidence-bar h-full rounded-full aria-gradient-bg"
                   style={{ width: `${comparison.confidence}%` }}
                 />
               </div>
-              <span className="text-xs font-bold text-[var(--aria-purple)] shrink-0">{comparison.confidence}%</span>
+              <span className="aria-num text-[11.5px] font-bold text-[var(--aria-purple)] shrink-0">
+                {comparison.confidence}%
+              </span>
             </div>
           )}
         </div>
@@ -168,27 +174,21 @@ function ComparisonTable({ comparison }) {
 // would POST { client_msg_id, vote } to the bot. Resets on reload by design.
 function MessageFeedback() {
   const [vote, setVote] = useState(/** @type {null | "up" | "down"} */ (null));
+  const cls = (mine) =>
+    `w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+      vote === mine
+        ? "text-[var(--aria-purple)] bg-[var(--aria-tint)]"
+        : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)] hover:bg-[var(--aria-surface-2)]"
+    }`;
   return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => setVote("up")}
-        title="Răspuns util"
-        className={`p-1 rounded-md transition-colors ${
-          vote === "up" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
-        }`}
-      >
-        <ThumbsUp className="w-[18px] h-[18px]" strokeWidth={1.75} />
+    <div className="flex items-center gap-1">
+      <button onClick={() => setVote("up")} title="Răspuns util" className={cls("up")}>
+        <ThumbsUp className="w-[15px] h-[15px]" strokeWidth={1.9} />
       </button>
-      <button
-        onClick={() => setVote("down")}
-        title="Răspuns neutil"
-        className={`p-1 rounded-md transition-colors ${
-          vote === "down" ? "text-[var(--aria-purple)]" : "text-[var(--aria-text-5)] hover:text-[var(--aria-text-3)]"
-        }`}
-      >
-        <ThumbsDown className="w-[18px] h-[18px]" strokeWidth={1.75} />
+      <button onClick={() => setVote("down")} title="Răspuns neutil" className={cls("down")}>
+        <ThumbsDown className="w-[15px] h-[15px]" strokeWidth={1.9} />
       </button>
-      {vote && <span className="text-[11px] text-[var(--aria-text-4)]">Mulțumesc!</span>}
+      {vote && <span className="aria-meta text-[var(--aria-text-4)] ml-1">Mulțumesc!</span>}
     </div>
   );
 }
@@ -198,7 +198,7 @@ function MessageFeedback() {
 function ProductStack({ products, onToast, onAsk }) {
   const onAdd = () => onToast?.("Produsul a fost adăugat în coș");
   return (
-    <div className="flex flex-col gap-4">
+    <div className="aria-stagger flex flex-col gap-5">
       {products.map((p, i) => (
         <ChatProductCard key={i} product={p} onAdd={onAdd} onAsk={onAsk} />
       ))}
@@ -210,22 +210,23 @@ function ProductStack({ products, onToast, onAsk }) {
 // note. A soft accent-tinted card, matching the design's understanding block.
 function UnderstandingCard({ data }) {
   return (
-    <div className="flex flex-col gap-2.5 px-4 py-3.5 rounded-[12px] border border-[rgba(124,58,237,0.18)] bg-[linear-gradient(90deg,#f8f2ff,#fdf2f8)]">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--aria-purple)]">
-        {data.title || "Am înțeles ce cauți"}
-      </span>
+    // Rail de accent + tentă plată, în locul gradientului lila→roz care intra pe toată
+    // lățimea: cardul ăsta e o CONFIRMARE, nu o reclamă. Railul îl leagă vizual de
+    // linia de sumar a răspunsului, deci se citește ca aceeași voce.
+    <div className="flex flex-col gap-3 pl-3.5 pr-4 py-3.5 rounded-[var(--aria-r-md)] border border-[var(--aria-tint-line)] border-l-[3px] border-l-[var(--aria-purple)] bg-[var(--aria-tint)]">
+      <span className="aria-eyebrow text-[var(--aria-purple)]">{data.title || "Am înțeles ce cauți"}</span>
       <div className="flex flex-wrap gap-1.5">
         {data.chips.map((c, i) => (
           <span
             key={i}
-            className="inline-flex items-baseline gap-1.5 px-2.5 py-1 bg-white border border-[var(--aria-border)] rounded-full text-[11.5px]"
+            className="inline-flex items-baseline gap-1.5 px-2.5 py-[5px] bg-[var(--aria-surface)] border border-[var(--aria-border)] rounded-full text-[11.5px] shadow-[var(--aria-shadow-1)]"
           >
-            <span className="text-[var(--aria-text-3)]">{c.k}</span>
+            <span className="text-[var(--aria-text-4)]">{c.k}</span>
             <span className="font-semibold text-[var(--aria-text)]">{c.v}</span>
           </span>
         ))}
       </div>
-      {data.note && <p className="text-[12px] leading-relaxed text-[var(--aria-text-2)]">{data.note}</p>}
+      {data.note && <p className="text-[12.5px] leading-[1.55] text-[var(--aria-text-2)]">{data.note}</p>}
     </div>
   );
 }
@@ -240,16 +241,21 @@ function StatusRows({ status }) {
         return (
           <div
             key={i}
-            className="flex items-center gap-2.5 px-3 py-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]"
+            className="flex items-center gap-3 px-3.5 py-3 bg-[var(--aria-surface)] border border-[var(--aria-border)] rounded-[var(--aria-r-sm)] shadow-[var(--aria-shadow-1)]"
           >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: t.dot }} />
-            <div className="flex-1 min-w-0 flex flex-col gap-px">
-              <span className="text-[12.5px] font-semibold leading-snug text-[var(--aria-text)]">{s.name}</span>
-              {s.sub && <span className="text-[11px] leading-snug text-[var(--aria-text-2)]">{s.sub}</span>}
+            {/* Bulina primește un halo din propriul ton: la 8px, un punct plin pe alb
+                e o scamă, iar starea de stoc e exact ce se caută dintr-o privire. */}
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: t.dot, boxShadow: `0 0 0 3px ${t.badgeBg}` }}
+            />
+            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+              <span className="text-[12.5px] font-semibold leading-[1.35] text-[var(--aria-text)]">{s.name}</span>
+              {s.sub && <span className="aria-meta text-[var(--aria-text-3)]">{s.sub}</span>}
             </div>
             {s.badge && (
               <span
-                className="shrink-0 px-2.5 py-1 rounded-full text-[10.5px] font-semibold"
+                className="shrink-0 px-2.5 py-1 rounded-full text-[10.5px] font-bold"
                 style={{ background: t.badgeBg, color: t.badgeText }}
               >
                 {s.badge}
@@ -258,7 +264,9 @@ function StatusRows({ status }) {
           </div>
         );
       })}
-      <span className="text-[10.5px] text-[var(--aria-text-5)]">Stoc verificat în timp real, acum câteva secunde</span>
+      <span className="aria-meta text-[var(--aria-text-5)] pl-0.5">
+        Stoc verificat în timp real, acum câteva secunde
+      </span>
     </div>
   );
 }
@@ -267,14 +275,14 @@ function StatusRows({ status }) {
 // level (a comparison carries its own separate bar in ComparisonTable).
 function ConfidenceBar({ value }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-[var(--aria-text-3)]">
-          Încredere în recomandare
-        </span>
-        <span className="aria-heading text-sm text-[var(--aria-purple)]">{value}%</span>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="aria-eyebrow text-[var(--aria-text-4)]">Încredere în recomandare</span>
+        <span className="aria-num text-[13px] font-bold text-[var(--aria-purple)]">{value}%</span>
       </div>
-      <div className="h-[5px] rounded-full bg-[var(--aria-border-2)] overflow-hidden">
+      {/* 4px, nu 5: bara e o notă de subsol a răspunsului, iar la 5px cu gradient
+          concura vizual cu butonul principal de sub carduri. */}
+      <div className="h-1 rounded-full bg-[var(--aria-border-2)] overflow-hidden">
         <div className="aria-confidence-bar h-full rounded-full aria-gradient-bg" style={{ width: `${value}%` }} />
       </div>
     </div>
@@ -285,13 +293,15 @@ function ConfidenceBar({ value }) {
 // ("niciun ser nu șterge ridurile în 3 zile"). Never a fabricated product.
 function NoResultsCard({ data }) {
   return (
-    <div className="flex flex-col gap-2.5 px-4 py-3.5 rounded-[12px] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.06)]">
-      <div className="flex items-center gap-2.5">
-        <AlertTriangle className="w-[15px] h-[15px] text-[var(--aria-warning)] shrink-0" />
-        {data.title && <span className="aria-heading text-[15px] text-[var(--aria-text)]">{data.title}</span>}
+    <div className="flex flex-col gap-2.5 pl-3.5 pr-4 py-3.5 rounded-[var(--aria-r-md)] border border-[rgba(180,83,9,0.28)] border-l-[3px] border-l-[var(--aria-warning)] bg-[rgba(217,119,6,0.05)]">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4 text-[var(--aria-warning)] shrink-0" strokeWidth={2.2} />
+        {data.title && <span className="aria-h text-[15px] text-[var(--aria-text)]">{data.title}</span>}
       </div>
-      {data.text && <p className="text-[13px] leading-relaxed text-[var(--aria-text-2)]">{data.text}</p>}
-      <span className="text-[11px] text-[var(--aria-text-3)]">
+      {data.text && <p className="text-[13.5px] leading-[1.55] text-[var(--aria-text-2)]">{data.text}</p>}
+      {/* Rândul ăsta e semnătura onestității asistentului — italic ca să se audă ca o
+          remarcă a lui, nu ca încă o linie de interfață. */}
+      <span className="aria-meta italic text-[var(--aria-text-4)]">
         {data.note || "Prefer să-ți spun adevărul decât să-ți vând orice."}
       </span>
     </div>
@@ -303,26 +313,26 @@ function NoResultsCard({ data }) {
 function RoutineStepCard({ product }) {
   const wished = useWished(keyOfProduct(product));
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[var(--aria-surface-3)] border border-[var(--aria-border-2)] rounded-[10px]">
-      <div className="w-[42px] h-[42px] rounded-[8px] bg-white border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center shrink-0">
+    <div className="flex items-center gap-3 px-3 py-2.5 bg-[var(--aria-surface)] border border-[var(--aria-border)] rounded-[var(--aria-r-sm)] shadow-[var(--aria-shadow-1)]">
+      <div className="w-[44px] h-[44px] rounded-[9px] bg-[var(--aria-surface-2)] border border-[var(--aria-border-2)] overflow-hidden flex items-center justify-center shrink-0 p-1">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
         ) : (
           <Package className="w-4 h-4 text-[var(--aria-text-5)]" />
         )}
       </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-px">
-        {product.brand && (
-          <span className="text-[9px] uppercase tracking-[0.14em] text-[var(--aria-text-5)]">{product.brand}</span>
-        )}
-        <span className="text-[12.5px] font-bold leading-snug line-clamp-2 text-[var(--aria-title)]">{product.name}</span>
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        {product.brand && <span className="aria-eyebrow text-[9px] text-[var(--aria-text-5)]">{product.brand}</span>}
+        <span className="text-[12.5px] font-semibold leading-[1.35] line-clamp-2 text-[var(--aria-title)]">
+          {product.name}
+        </span>
       </div>
-      <div className="shrink-0 flex flex-col items-end gap-0.5">
-        <span className="text-[13.5px] font-extrabold text-[var(--aria-price)]">
+      <div className="shrink-0 flex flex-col items-end gap-1">
+        <span className="aria-num text-[13.5px] font-extrabold text-[var(--aria-price)]">
           {money(product.price, product.currency)}
         </span>
         {product.score != null && (
-          <span className="px-1.5 py-px rounded-full bg-[rgba(124,58,237,0.1)] text-[9px] font-bold text-[var(--aria-purple)]">
+          <span className="aria-num px-1.5 py-px rounded-full bg-[var(--aria-tint)] text-[9.5px] font-bold text-[var(--aria-purple)]">
             AI {product.score}
           </span>
         )}
@@ -330,7 +340,7 @@ function RoutineStepCard({ product }) {
       <button
         onClick={() => toggleWish(product)}
         title={wished ? "Scoate de la favorite" : "Adaugă la favorite"}
-        className="shrink-0 p-0.5 text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] transition-colors"
+        className="shrink-0 p-1 rounded-full text-[var(--aria-text-5)] hover:text-[var(--aria-purple)] hover:bg-[var(--aria-tint)] transition-colors"
       >
         <Heart className={`w-4 h-4 ${wished ? "fill-current text-[var(--aria-purple)]" : ""}`} />
       </button>
@@ -342,13 +352,13 @@ function RoutineStepCard({ product }) {
 // with a role/why and its recommended product. Total + footnote are optional.
 function RoutineTimeline({ routine }) {
   return (
-    <div className="flex flex-col gap-3.5 p-4 bg-white border border-[var(--aria-border)] rounded-[12px] shadow-[0_1px_3px_rgba(22,33,62,0.06)]">
-      <div className="flex items-baseline justify-between gap-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.16em] aria-gradient-text">
-          {routine.title || "Rutina ta"}
-        </span>
+    <div className="aria-card flex flex-col gap-4 p-4">
+      <div className="flex items-baseline justify-between gap-2.5 pb-3 border-b border-[var(--aria-border-2)]">
+        <span className="aria-eyebrow aria-gradient-text">{routine.title || "Rutina ta"}</span>
         {routine.total && (
-          <span className="shrink-0 text-[11px] font-semibold text-[var(--aria-purple)]">Total {routine.total}</span>
+          <span className="aria-num shrink-0 text-[11.5px] font-bold text-[var(--aria-purple)]">
+            Total {routine.total}
+          </span>
         )}
       </div>
       <div className="flex flex-col">
@@ -357,24 +367,20 @@ function RoutineTimeline({ routine }) {
           return (
             <div key={i} className="flex gap-3">
               <div className="shrink-0 flex flex-col items-center w-[26px]">
-                <span className="shrink-0 w-6 h-6 rounded-full aria-gradient-bg text-white aria-heading text-xs flex items-center justify-center">
+                <span className="aria-num shrink-0 w-[26px] h-[26px] rounded-full aria-gradient-bg text-white text-[12px] font-bold flex items-center justify-center shadow-[0_2px_8px_-2px_rgba(109,40,217,0.6)]">
                   {i + 1}
                 </span>
                 {!last && (
                   <span
                     className="flex-1 w-0.5 min-h-[14px] rounded-full my-[3px]"
-                    style={{ background: "linear-gradient(180deg,rgba(155,92,246,0.4),rgba(232,121,199,0.3))" }}
+                    style={{ background: "linear-gradient(180deg,rgba(109,40,217,0.35),rgba(109,40,217,0.08))" }}
                   />
                 )}
               </div>
-              <div className="flex-1 min-w-0 flex flex-col gap-1.5 pb-3.5">
-                <div className="flex flex-col gap-px">
-                  {st.role && (
-                    <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-[var(--aria-purple)]">
-                      {st.role}
-                    </span>
-                  )}
-                  {st.why && <span className="text-[11.5px] leading-snug text-[var(--aria-text-2)]">{st.why}</span>}
+              <div className="flex-1 min-w-0 flex flex-col gap-2 pb-4">
+                <div className="flex flex-col gap-1">
+                  {st.role && <span className="aria-eyebrow text-[9.5px] text-[var(--aria-purple)]">{st.role}</span>}
+                  {st.why && <span className="text-[12px] leading-[1.5] text-[var(--aria-text-2)]">{st.why}</span>}
                 </div>
                 <RoutineStepCard product={st.product} />
               </div>
@@ -382,7 +388,11 @@ function RoutineTimeline({ routine }) {
           );
         })}
       </div>
-      {routine.note && <span className="text-[12px] leading-relaxed text-[var(--aria-text-2)]">{routine.note}</span>}
+      {routine.note && (
+        <p className="pt-3.5 border-t border-[var(--aria-border-2)] text-[12.5px] leading-[1.55] text-[var(--aria-text-2)]">
+          {routine.note}
+        </p>
+      )}
     </div>
   );
 }
@@ -413,12 +423,16 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
   // The visitor's own message keeps a bubble; the bot's answer does not.
   if (isUser) {
     return hasContent ? (
-      <div className="flex justify-end items-start gap-2">
-        <div className="max-w-[82%] text-[14px] leading-relaxed px-4 py-2.5 rounded-[18px] bg-[var(--aria-user-bubble)] text-[var(--aria-text)]">
+      // Colțul din dreapta-jos e mai strâns decât celelalte trei: e „coada" bulei, iar
+      // fără ea două bule consecutive citesc ca două casete, nu ca replici. Nu poate fi
+      // `rounded-2xl` (suita de contract verifică absența clasei ăleia pe răspunsuri) și
+      // nici nu trebuie să fie — forma e a bulei OMULUI, nu a răspunsului.
+      <div className="flex justify-end items-end gap-2 aria-msg-in">
+        <div className="max-w-[82%] text-[14.5px] leading-[1.5] tracking-[-0.008em] px-4 py-2.5 rounded-[18px] rounded-br-[6px] bg-[var(--aria-user-bubble)] text-[var(--aria-text)]">
           <RichText text={m.content} />
         </div>
-        <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--aria-user-bubble)] flex items-center justify-center">
-          <User className="w-3.5 h-3.5 text-[var(--aria-text-3)]" />
+        <span className="shrink-0 mb-0.5 w-7 h-7 rounded-full bg-[var(--aria-user-bubble)] border border-[var(--aria-border-2)] flex items-center justify-center">
+          <User className="w-3.5 h-3.5 text-[var(--aria-text-4)]" />
         </span>
       </div>
     ) : null;
@@ -443,8 +457,8 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
   const comparisonClosing = m.comparison?.closing ?? [];
 
   return (
-    <div className="flex flex-col gap-4">
-      {hasTitle && <h3 className="aria-heading text-[17px] leading-snug text-[var(--aria-text)]">{m.title}</h3>}
+    <div className="flex flex-col gap-[18px] aria-msg-in">
+      {hasTitle && <h3 className="aria-h text-[var(--aria-text)]">{m.title}</h3>}
 
       {/* The answer body — lead paragraph, accent summary line, sections, lists. */}
       {hasContent && (
@@ -464,7 +478,7 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       {m.noResults && <NoResultsCard data={m.noResults} />}
 
       {/* Wholly empty bot reply -> graceful fallback line (never a blank bubble / crash). */}
-      {!renderable && <p className="text-xs italic text-[var(--aria-text-4)]">{EMPTY_REPLY_FALLBACK}</p>}
+      {!renderable && <p className="aria-small italic text-[var(--aria-text-4)]">{EMPTY_REPLY_FALLBACK}</p>}
 
       {/* A comparison renders a TABLE (not the products re-listed as cards); the table
           header IS the compared products, so we don't duplicate them. */}
@@ -488,25 +502,30 @@ export default function ChatMessage({ message, isFirst, onSuggestion, onQuickRep
       {/* Call-to-action button (open_url / checkout / quick_reply / book). */}
       {m.offer && <ChatOffer offer={m.offer} onQuickReply={onQuickReply} />}
 
-      {/* Follow-up chips — soft pink pills, stacked left, matching the reference. */}
+      {/* Follow-up chips — stacked left. Pastilele erau roz (#fce8ef): a treia culoare
+          din răspuns, pentru controlul cel mai des apăsat. Acum sunt din familia
+          accentului, cu o linie de păr care le dă margine pe canvasul tentat. */}
       {hasSuggestions && (
         <div className="flex flex-col items-start gap-2">
           {m.suggestions.map((s, j) => (
             <button
               key={j}
               onClick={() => onSuggestion?.(s)}
-              className="text-left px-[18px] py-[11px] bg-[var(--aria-chip)] hover:bg-[var(--aria-chip-hover)] rounded-full text-[14px] leading-snug text-[var(--aria-chip-ink)] transition-colors"
+              className="group flex items-center gap-2 text-left pl-4 pr-3.5 py-[10px] bg-[var(--aria-chip)] hover:bg-[var(--aria-chip-hover)] border border-[var(--aria-tint-line)] rounded-full text-[13.5px] leading-[1.35] font-medium text-[var(--aria-chip-ink)] transition-colors"
             >
-              {s}
+              <span>{s}</span>
+              <ArrowUpRight className="w-3.5 h-3.5 shrink-0 opacity-45 group-hover:opacity-80 transition-opacity" />
             </button>
           ))}
         </div>
       )}
 
-      {/* Disclaimer + 👍/👎 under every bot reply except the opening greeting. */}
+      {/* Disclaimer + 👍/👎 under every bot reply except the opening greeting.
+          Linia de sus le desparte de răspuns: fără ea, avertismentul „pot greși"
+          atârna de ultimul paragraf ca și cum ar fi făcut parte din el. */}
       {!isFirst && (
-        <div className="flex flex-col gap-1">
-          <p className="text-[11.5px] text-[var(--aria-text-5)]">{AI_DISCLAIMER}</p>
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--aria-border-2)]">
+          <p className="aria-meta text-[var(--aria-text-5)] max-w-[70%]">{AI_DISCLAIMER}</p>
           <MessageFeedback />
         </div>
       )}

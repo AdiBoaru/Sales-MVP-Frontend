@@ -87,15 +87,19 @@ export function parseBlocks(text) {
   return blocks;
 }
 
-// The first two paragraphs of an answer carry the izi rhythm — a bold navy lead,
-// then one accent-blue line summarising it. Everything after a heading or a list
-// is ordinary body copy.
-// One 15px size across the answer, as in the reference — the lead is set apart by
-// weight and ink, not by scale. Calibrated against the reference's line breaks at
-// 405px: any smaller and each line swallows an extra word.
-const LEAD_CLASS = "text-[15px] font-bold leading-[1.45] text-[var(--aria-text)]";
-const SUMMARY_CLASS = "text-[15px] leading-[1.5] text-[var(--aria-accent-line)]";
-const BODY_CLASS = "text-[15px] leading-[1.55] text-[var(--aria-text-2)]";
+// The first two paragraphs of an answer carry the reply's rhythm — a lead set in
+// full ink, then one accent line summarising it. Everything after a heading or a
+// list is ordinary body copy.
+//
+// The three classes come from the widget's type scale (`aria-lead` / `aria-copy`,
+// index.css) rather than from arbitrary Tailwind sizes. They used to be three
+// hand-tuned triples of size/leading/colour, which is how the widget accumulated
+// 15px/1.45, 15px/1.5 and 15px/1.55 as three different "body" settings — a
+// difference nobody can see but everybody has to maintain. One size across the
+// answer, as before: the lead is set apart by weight and ink, not by scale.
+const LEAD_CLASS = "aria-lead text-[var(--aria-text)]";
+const SUMMARY_CLASS = "aria-copy font-medium text-[var(--aria-accent-line)]";
+const BODY_CLASS = "aria-copy text-[var(--aria-text-2)]";
 
 // The reference interleaves the answer with the products: the bold lead and its
 // accent summary line introduce them, everything else follows them. That's the
@@ -123,12 +127,12 @@ function Reply({ text, part, split }) {
   let structured = part === "rest";
 
   return (
-    <div className="aria-reply flex flex-col gap-3">
+    <div className="aria-reply flex flex-col gap-3.5">
       {blocks.map((b, i) => {
         if (b.type === "h") {
           structured = true;
           return (
-            <h4 key={i} className="aria-heading text-[17px] leading-snug text-[var(--aria-text)] pt-2">
+            <h4 key={i} className="aria-h text-[var(--aria-text)] pt-1.5">
               <Inline text={b.text} />
             </h4>
           );
@@ -136,10 +140,16 @@ function Reply({ text, part, split }) {
         if (b.type === "ul") {
           structured = true;
           return (
-            <ul key={i} className="flex flex-col gap-2">
+            <ul key={i} className="flex flex-col gap-2.5">
               {b.items.map((it, j) => (
-                <li key={j} className="flex gap-2">
-                  <Check className="w-4 h-4 mt-[4px] shrink-0 text-[var(--aria-success)]" strokeWidth={2.75} />
+                <li key={j} className="flex gap-2.5">
+                  {/* Bifa e ACCENT, nu verde. Verdele era singurul loc din răspuns care
+                      folosea o a doua culoare de brand, iar într-o listă de cinci
+                      rânduri se vedea ca o eroare de temă, nu ca o confirmare. Cercul
+                      tentat îi dă ancoră optică: fără el, bifele plutesc lângă text. */}
+                  <span className="mt-[3px] shrink-0 w-[17px] h-[17px] rounded-full bg-[var(--aria-tint)] flex items-center justify-center">
+                    <Check className="w-[11px] h-[11px] text-[var(--aria-purple)]" strokeWidth={3} />
+                  </span>
                   <span className={BODY_CLASS}>
                     <Inline text={it} />
                   </span>
@@ -176,7 +186,7 @@ export function ReplySummary({ text }) {
 export function ReplyBody({ paragraphs }) {
   if (!paragraphs?.length) return null;
   return (
-    <div className="aria-reply flex flex-col gap-3">
+    <div className="aria-reply flex flex-col gap-3.5">
       {paragraphs.map((p, i) => (
         <p key={i} className={BODY_CLASS}>
           <Inline text={p} />

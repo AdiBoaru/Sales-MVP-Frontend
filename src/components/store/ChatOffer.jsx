@@ -13,8 +13,12 @@ const ICONS = {
   quick_reply: CornerDownRight,
 };
 
+// Butonul principal al unui răspuns. `shadow-brand-200` era umbra VERDE a
+// magazinului (din tailwind.config) pusă sub un buton violet — se vedea ca un halo
+// murdar. Umbra vine acum din accentul propriu, iar hoverul ridică butonul în loc
+// să-l estompeze: `opacity` pe un gradient îl spală, nu îl face să pară apăsabil.
 const BTN =
-  "inline-flex items-center justify-center gap-2 w-full text-sm font-semibold px-4 py-2.5 rounded-xl aria-gradient-bg hover:opacity-90 text-white shadow-sm shadow-brand-200 transition-opacity";
+  "inline-flex items-center justify-center gap-2 w-full text-[14px] font-semibold tracking-[-0.008em] px-4 py-3 rounded-[var(--aria-r-md)] aria-gradient-bg text-white shadow-[0_6px_18px_-6px_rgba(109,40,217,0.65)] hover:shadow-[0_10px_24px_-6px_rgba(109,40,217,0.75)] hover:-translate-y-px active:translate-y-0 transition-all";
 
 export default function ChatOffer({ offer, onQuickReply }) {
   if (!offer) return null;

@@ -266,8 +266,11 @@ describe('tokenii de prezentare există în CSS (verificabil fără browser)', (
   it('focusul e vizibil pe orice fundal, inclusiv pe launcherul cu gradient', () => {
     expect(css).toMatch(/\.aria-widget :focus-visible/)
     expect(css).toMatch(/\.nx-chat-launcher:focus-visible/)
-    // Navy, nu violetul de accent: violet pe gradient violet→roz coboară sub 3:1.
-    expect(css).toMatch(/outline:\s*3px solid #16213e/)
+    // Cerneala widgetului (`--aria-text`), nu violetul de accent: violet pe gradientul violet
+    // coboară sub 3:1, adică indicatorul de focus dispare fix pe controlul cel mai important.
+    // Valoarea s-a mutat de la #16213e la #17122e odată cu paleta (aceeași rațiune, cerneală mai
+    // închisă: ~15:1 pe alb, ~4.7:1 pe gradient); ce apără testul e că e o cerneală, nu accentul.
+    expect(css).toMatch(/outline:\s*3px solid #17122e/)
   })
 
   it('regiunea live e ascunsă vizual, dar NU scoasă din arborele de accesibilitate', () => {
