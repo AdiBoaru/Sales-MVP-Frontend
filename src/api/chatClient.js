@@ -641,27 +641,3 @@ export async function sendChatMessage(message, options = {}) {
 
   return normalizeReply(await res.json());
 }
-
-// ── NX-243: granița v1 / v2 ────────────────────────────────────────────────────────────────
-// Tot ce e deasupra rămâne calea v1 și rămâne NEATINSĂ până la cutoverul NX-249. Modulul acesta
-// NU mai e proprietarul lifecycle-ului v2: acceptul, recovery-ul, SSE-ul și sesiunea aparțin lui
-// `src/chat/transport/webTurnTransport.js` + `src/chat/state/useWebChatController.js`. Aici rămâne
-// doar configurația comună (aceeași bază de API, același token public) și comutatorul.
-//
-// Comutatorul e EXPLICIT, la build: nu există auto-detectare după forma payloadului și nicio
-// conversie v1→v2. Un client care „ghicește" protocolul din răspuns e un client care va ghici
-// greșit exact în ziua migrării.
-export {
-  WEB_VIEW_V2_SCHEMA_HASH,
-  WEB_VIEW_V2_SCHEMA_VERSION,
-} from "../chat/contract/generated/webViewV2SchemaHash.js";
-
-/** Configurația de transport, împărțită de ambele protocoale. */
-export const CHAT_TRANSPORT_CONFIG = Object.freeze({
-  apiBase: API_BASE,
-  publicToken: PUBLIC_TOKEN,
-});
-
-/** Protocolul v2 e pornit? OFF implicit — rolloutul e al NX-249. */
-export const isChatProtocolV2Enabled =
-  import.meta.env.VITE_CHAT_PROTOCOL_V2 === "1" && Boolean(PUBLIC_TOKEN);

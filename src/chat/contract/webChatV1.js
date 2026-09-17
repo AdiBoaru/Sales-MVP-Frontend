@@ -1,20 +1,14 @@
 // Punctul UNIC de intrare pentru un rezultat terminal servit pe contractul `web-chat.v1` prin
 // transportul asincron (accept 202 → SSE/poll → 200).
 //
-// De ce e separat de `webViewV2.js` și de ce e MULT mai mic: cele două contracte au modele de
-// încredere diferite, iar amestecarea lor ar fi produs un decoder care nu e corect pentru niciunul.
+// De ce e strict pe PLIC și permisiv pe CORP: contractul v1 e, prin proiectare, ADITIV — „câmp
+// absent ⇒ nu se randează". Un decoder strict pe corp ar transforma fix proprietatea aia într-un
+// defect: un câmp nou adăugat de backend mâine ar face ca răspunsul de azi să nu mai fie livrat
+// deloc. Plicul e altceva: versiunea, identitatea turului și statusul terminal sunt lucruri de
+// care depinde CORECTITUDINEA transportului, deci acolo o abatere trebuie să oprească turul.
 //
-//   • `web-view.v2` e display-ready: serverul trimite prețul FORMATAT, tonul badge-ului, eticheta
-//     butonului. Acolo o abatere de formă e un bug de contract care trebuie să EXPLODEZE, fiindcă
-//     browserul nu are voie să repare nimic — de-aia validatorul e generat din schemă.
-//   • `web-chat.v1` e, prin proiectare, ADITIV: „câmp absent ⇒ nu se randează". Un decoder strict
-//     pe corp ar transforma fix proprietatea aia într-un defect: un câmp nou adăugat de backend
-//     mâine ar face ca răspunsul de azi să nu mai fie livrat deloc.
-//
-// Deci granița e trasă unde chiar e: PLICUL se verifică strict (versiune, identitatea turului,
-// statusul terminal — lucruri de care depinde corectitudinea transportului), iar CORPUL trece
-// neatins către `normalizeReply`, singurul proprietar al mapării câmpurilor v1. Nicio a doua
-// copie a acelei mapări nu se naște aici.
+// Corpul trece neatins către `normalizeReply`, singurul proprietar al mapării câmpurilor v1.
+// Nicio a doua copie a acelei mapări nu se naște aici.
 
 /** Versiunea de contract pe care o vorbește proiecția v1 (`RESPONSE_CONTRACT_SYNC_V1`). */
 export const WEB_CHAT_V1_SCHEMA_VERSION = 'web-chat.v1'

@@ -6,7 +6,6 @@
 // niciodată ținta unui request.
 
 import { describe, expect, it, vi } from 'vitest'
-import validViews from './fixtures/web-v2/valid_views.json'
 import {
   TURN_STATUS_RANK,
   createWebTurnTransport,
@@ -19,15 +18,17 @@ import { WEB_TURN_ERROR_CODES, WebTurnTransportError } from '@/chat/transport/we
 const SESSION = { token: 'pub_tok', visitor_id: 'web_abc', sig: 'v2.claims.mac' }
 const CLIENT_TURN_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
 
-/**
- * NX-244 — copy-ul de shell, DERIVAT dintr-o fixtură de view sincronizată din backend. Scris de
- * mână ar fi al doilea contract, care poate diverge tăcut de cel real; așa, dacă backendul schimbă
- * forma lui `chrome`, fixtura se schimbă odată cu el.
- */
-const SHELL_COPY = {
-  composer: validViews.greeting.composer,
-  chrome: validViews.greeting.chrome,
-  a11y: validViews.greeting.a11y,
+/** Un rezultat terminal pe contractul pe care serverul chiar îl servește. */
+function terminalView(overrides = {}) {
+  return {
+    schema_version: 'web-chat.v1',
+    conversation: { id: 'conv_1', revision: 2 },
+    turn: { id: 'opq_turn_1', client_turn_id: CLIENT_TURN_ID, status: 'completed' },
+    content: 'Uite trei creme potrivite.',
+    products: [],
+    suggestions: [],
+    ...overrides,
+  }
 }
 
 function statusPayload(overrides = {}) {
@@ -146,52 +147,6 @@ describe('decodeSseStatus — alt contract decât payloadul 202', () => {
   })
 })
 
-describe('bootstrap', () => {
-  it('cere tokenul public și întoarce handle-ul opac', async () => {
-    const { transport, calls } = makeTransport(() =>
-      jsonResponse(200, { token: 'pub_tok', visitor_id: 'web_x', sig: 'v2.a.b', sse_url: '/web/stream' }),
-    )
-    const { session, shellCopy } = await transport.bootstrap({})
-    expect(calls[0].url).toBe('https://bot.example.invalid/web/bootstrap?token=pub_tok')
-    // Handle-ul rămâne EXACT cele trei câmpuri opace: atât se persistă și atât se retrimite.
-    expect(session).toEqual({ token: 'pub_tok', visitor_id: 'web_x', sig: 'v2.a.b' })
-    // NX-244: `view_copy` absent (rută v2 stinsă) e o stare validă, nu o eroare.
-    expect(shellCopy).toBeNull()
-  })
-
-  it('un bootstrap fără semnătură e eroare de contract, nu o sesiune pe jumătate', async () => {
-    const { transport } = makeTransport(() => jsonResponse(200, { token: 'a', visitor_id: 'b' }))
-    await expect(transport.bootstrap({})).rejects.toMatchObject({
-      code: WEB_TURN_ERROR_CODES.CONTRACT,
-    })
-  })
-
-  // NX-244 — copy-ul de shell vine de la server sau nu vine deloc; FE-ul nu-l compune.
-  it('decodează `view_copy` și îl întoarce alături de handle', async () => {
-    const { transport } = makeTransport(() =>
-      jsonResponse(200, {
-        token: 'pub_tok', visitor_id: 'web_x', sig: 'v2.a.b', view_copy: SHELL_COPY,
-      }),
-    )
-    const { shellCopy } = await transport.bootstrap({})
-    expect(shellCopy.chrome.dialog_title).toBe(SHELL_COPY.chrome.dialog_title)
-    expect(shellCopy.composer.placeholder).toBe(SHELL_COPY.composer.placeholder)
-    expect(shellCopy.a11y.announcements.working).toBe(SHELL_COPY.a11y.announcements.working)
-  })
-
-  it('un `view_copy` stricat oprește bootstrapul — nu îl repară și nu îl ignoră', async () => {
-    // Un shell fără nume e un defect de contract. Dacă l-am ignora, widgetul ar porni „aproape
-    // bine" și cineva ar pune la loc un default local ca să acopere gaura.
-    const broken = { ...SHELL_COPY, chrome: { ...SHELL_COPY.chrome, dialog_title: '' } }
-    const { transport } = makeTransport(() =>
-      jsonResponse(200, { token: 'a', visitor_id: 'b', sig: 'c', view_copy: broken }),
-    )
-    await expect(transport.bootstrap({})).rejects.toMatchObject({
-      code: WEB_TURN_ERROR_CODES.CONTRACT,
-    })
-  })
-})
-
 describe('createTurn', () => {
   it('trimite exact contractul web-turn.v2 și autentifică prin query string', async () => {
     const { transport, calls } = makeTransport(() => jsonResponse(202, statusPayload()))
@@ -247,20 +202,30 @@ describe('createTurn', () => {
     expect(body).not.toHaveProperty('message')
   })
 
-  it('200 = replay al aceluiași client_turn_id → view decodat prin NX-242', async () => {
-    const { transport } = makeTransport(() => jsonResponse(200, validViews.recommendation))
+  it('200 = replay al aceluiași client_turn_id → view decodat', async () => {
+    const view = terminalView()
+    const { transport } = makeTransport(() => jsonResponse(200, view))
     const result = await transport.createTurn({
       session: SESSION,
-      clientTurnId: validViews.recommendation.turn.client_turn_id,
+      clientTurnId: CLIENT_TURN_ID,
       input: { type: 'text', text: 'x' },
     })
     expect(result.outcome).toBe('terminal')
-    expect(result.view).toBe(validViews.recommendation) // aceeași referință: zero normalizare
+    expect(result.view).toBe(view) // aceeași referință: zero normalizare
   })
 
   it('un view care nu trece contractul NU iese din transport', async () => {
-    const broken = { ...validViews.recommendation, conversation: { id: 'x' } } // fără `revision`
+    // Status ne-terminal pe 200: turul ar fi încheiat pe un răspuns care încă se scrie.
+    const broken = terminalView({ turn: { id: 't', client_turn_id: CLIENT_TURN_ID, status: 'working' } })
     const { transport } = makeTransport(() => jsonResponse(200, broken))
+    await expect(
+      transport.createTurn({ session: SESSION, clientTurnId: CLIENT_TURN_ID, input: { type: 'text', text: 'x' } }),
+    ).rejects.toMatchObject({ code: WEB_TURN_ERROR_CODES.CONTRACT })
+  })
+
+  it('un envelope de altă versiune e refuzat, nu interpretat best-effort', async () => {
+    const foreign = { ...terminalView(), schema_version: 'web-view.v2' }
+    const { transport } = makeTransport(() => jsonResponse(200, foreign))
     await expect(
       transport.createTurn({ session: SESSION, clientTurnId: CLIENT_TURN_ID, input: { type: 'text', text: 'x' } }),
     ).rejects.toMatchObject({ code: WEB_TURN_ERROR_CODES.CONTRACT })
@@ -419,7 +384,12 @@ describe('getTurn', () => {
   })
 
   it('terminalul se decodează prin contract', async () => {
-    const { transport } = makeTransport(() => jsonResponse(200, validViews.terminal_failed))
+    const failed = terminalView({
+      turn: { id: 'opq_turn_9', client_turn_id: CLIENT_TURN_ID, status: 'failed' },
+      content: 'A apărut o problemă.',
+      error: { code: 'processing_error', message: 'A apărut o problemă.', retryable: true },
+    })
+    const { transport } = makeTransport(() => jsonResponse(200, failed))
     const result = await transport.getTurn({ session: SESSION, turnId: 'opq_turn_9' })
     expect(result.outcome).toBe('terminal')
     expect(result.view.turn.status).toBe('failed')
@@ -458,7 +428,7 @@ describe('subscribe (SSE)', () => {
     )
   })
 
-  it('`status` decodat, `result` decodat prin NX-242, conexiunea se închide la terminal', async () => {
+  it('`status` decodat, `result` decodat prin contract, conexiunea se închide la terminal', async () => {
     const source = fakeEventSource()
     const { transport } = makeTransport(() => jsonResponse(200, {}), {
       eventSourceFactory: () => source,
@@ -474,8 +444,9 @@ describe('subscribe (SSE)', () => {
       '1',
     )
 
-    source.emit('result', validViews.greeting, '3')
-    await vi.waitFor(() => expect(onResult).toHaveBeenCalledWith(validViews.greeting, '3'))
+    const view = terminalView()
+    source.emit('result', view, '3')
+    await vi.waitFor(() => expect(onResult).toHaveBeenCalledWith(view, '3'))
     expect(source.closed).toBe(true)
   })
 
@@ -510,16 +481,5 @@ describe('subscribe (SSE)', () => {
     delete globalThis.EventSource
     expect(transport.subscribe({ session: SESSION, turnId: 't', onStatus: () => {} })).toBeNull()
     if (previous) globalThis.EventSource = previous
-  })
-})
-
-describe('renewSession', () => {
-  it('backendul nu are lineage: singurul outcome onest e `new_session`', async () => {
-    const { transport } = makeTransport(() =>
-      jsonResponse(200, { token: 'pub_tok', visitor_id: 'web_new', sig: 'v2.new.mac' }),
-    )
-    const result = await transport.renewSession({})
-    expect(result.outcome).toBe('new_session')
-    expect(result.session.visitor_id).toBe('web_new')
   })
 })
