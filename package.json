@@ -11,10 +11,7 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview",
-    "chat:contract:generate": "node scripts/generate-chat-contract-validator.mjs",
-    "chat:contract:check": "node scripts/generate-chat-contract-validator.mjs --check",
-    "chat:contract:sync": "node scripts/sync-chat-contract-from-backend.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

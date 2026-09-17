@@ -136,16 +136,16 @@ describe('sursa: mountul a plecat din pagini', () => {
   })
 })
 
-describe('calea v1 rămâne neatinsă cât timp v2 e stins', () => {
-  it('widgetul nu pornește niciun request v2 cu flagul OFF', () => {
-    // `VITE_CHAT_PROTOCOL_V2` nu e setat în teste ⇒ controllerul e inert (`enabled: false`).
+describe('un singur protocol de vedere', () => {
+  it('nu mai există comutator de build și nici urmă de envelope-ul de blocuri', () => {
+    // Vederea `web-view.v2` a fost ȘTEARSĂ din produs: nu se mai alege nimic la build, iar
+    // clientul nu are de ce să cunoască numele contractului dispărut.
     const source = readSource('src/api/chatClient.js')
-    expect(source).toContain('import.meta.env.VITE_CHAT_PROTOCOL_V2 === "1"')
-    // Nicio auto-detectare după forma payloadului: comutarea e explicită, la build.
-    expect(source).not.toMatch(/schema_version\s*===\s*["']web-view\.v2["']/)
+    expect(source).not.toContain('VITE_CHAT_PROTOCOL_V2')
+    expect(source).not.toContain('web-view.v2')
   })
 
-  it('calea v1 (`/web/chat` + normalizeReply) e neschimbată', () => {
+  it('calea sincronă (`/web/chat` + normalizeReply) rămâne fallbackul', () => {
     const source = readSource('src/api/chatClient.js')
     expect(source).toContain('url("/web/chat")')
     expect(source).toContain('export function normalizeReply')

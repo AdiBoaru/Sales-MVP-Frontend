@@ -16,14 +16,14 @@
 // 2. Autentificarea e în query string (token/visitor_id/sig) fiindcă exact așa o cere backendul
 //    pe rutele v2 — nu e un workaround inventat ca să meargă `EventSource`. Sesiunea rămâne opacă:
 //    `sig` e semnat server-side (v2 poartă claims în el) și nu se decodează niciodată aici.
-// 3. Fiecare payload de view trece prin decoderul strict NX-242 înainte să existe pentru restul
-//    aplicației; payload-ul de status are propriul decoder strict, mai jos. Nimic nu iese
-//    „reparat".
+// 3. Fiecare payload trece printr-un decoder STRICT înainte să existe pentru restul aplicației:
+//    plicul terminal (`web-chat.v1`) și payloadul de status au fiecare decoderul lui. Nimic nu
+//    iese „reparat".
 //
 // Ce NU face transportul: nu ține stare, nu decide când să reîncerce, nu inventează un turn nou,
 // nu inspectează `action_token` și nu transformă un label în text. Politica e a controllerului.
 
-import { decodeShellCopy } from '../contract/shellCopy.js'
+import { decodeWebChatV1 } from '../contract/webChatV1.js'
 import { WEB_TURN_ERROR_CODES as E, WebTurnTransportError, asTransportError } from './webTurnErrors.js'
 
 /**
@@ -158,27 +158,16 @@ export function decodeSseStatus(input) {
   }
 }
 
-// ── Decoderul de view (NX-242), încărcat la cerere ──────────────────────────────────────────
-// Import DINAMIC memoizat: validatorul generat e mare și NX-242 l-a ținut deliberat în afara
-// chunkului principal. Toate call-site-urile de aici sunt oricum async.
-let decoderPromise = null
-function loadDecoder() {
-  if (decoderPromise === null) decoderPromise = import('../contract/webViewV2.js')
-  return decoderPromise
-}
+// ── Decoderul de view ───────────────────────────────────────────────────────────────────────
+// O SINGURĂ vedere: `web-chat.v1`. Envelope-ul de blocuri `web-view.v2` a fost șters din produs,
+// deci nu mai există dispatch pe `schema_version` și nici validator generat de încărcat lazy.
 
-/** Testele injectează decoderul ca să nu depindă de ordinea import-urilor dinamice. */
-export function __setViewDecoderForTests(mod) {
-  decoderPromise = mod === null ? null : Promise.resolve(mod)
-}
-
-async function decodeView(payload, onDiagnostic) {
-  const { decodeWebViewV2 } = await loadDecoder()
+function decodeView(payload, onDiagnostic) {
   try {
-    return decodeWebViewV2(payload, { onDiagnostic })
+    return decodeWebChatV1(payload, { onDiagnostic })
   } catch (err) {
     throw new WebTurnTransportError(E.CONTRACT, {
-      serverCode: err?.reason || err?.code || 'view_invalid',
+      serverCode: err?.reason || 'view_invalid',
       cause: err,
     })
   }
@@ -267,13 +256,15 @@ function withTimeout(signal, timeoutMs) {
 }
 
 /**
- * @param {{apiBase?: string, publicToken?: string, fetchImpl?: Function,
+ * Sesiunea NU se emite de aici: bootstrapul e al lui `src/api/chatClient.js`, care poartă și
+ * headerele porții de demo. Transportul primește un handle deja opac și atât.
+ *
+ * @param {{apiBase?: string, fetchImpl?: Function,
  *   eventSourceFactory?: ((url: string) => any)|null,
  *   onDiagnostic?: (diagnostic: object) => void}} [config]
  */
 export function createWebTurnTransport({
   apiBase = '',
-  publicToken,
   fetchImpl,
   eventSourceFactory,
   onDiagnostic,
@@ -321,7 +312,7 @@ export function createWebTurnTransport({
    */
   async function readTurnResponse(response) {
     if (response.status === 200) {
-      const view = await decodeView(await response.json(), onDiagnostic)
+      const view = decodeView(await response.json(), onDiagnostic)
       return { outcome: /** @type {'terminal'} */ ('terminal'), view }
     }
     if (response.status === 202) {
@@ -331,45 +322,7 @@ export function createWebTurnTransport({
     throw httpError(response, await readErrorBody(response))
   }
 
-  /**
-   * Sesiune nouă de vizitator + copy-ul de shell. Nu întoarce nicio conversație și niciun turn
-   * activ: backendul nu are (încă) un snapshot de conversație pe v2 — recovery-ul după refresh
-   * pornește din `active_turn_id`-ul tehnic salvat local și se CONFIRMĂ cu `getTurn`.
-   *
-   * NX-244: `view_copy` e copy-ul RAMEI (chrome/composer/a11y), de care widgetul are nevoie
-   * înainte să existe primul view. Absent = ruta v2 e stinsă pe server; invalid = defect de
-   * contract, care oprește bootstrapul. Handle-ul rămâne separat de copy: `session` are EXACT
-   * cele trei câmpuri opace, fiindcă exact atât se persistă și se retrimite.
-   *
-   * @returns {Promise<{session: {token: string, visitor_id: string, sig: string},
-   *   shellCopy: object|null}>}
-   */
-  /** @param {RequestOptions} [options] */
-  async function bootstrap({ signal, timeoutMs } = {}) {
-    const response = await request(buildUrl('/web/bootstrap', { token: publicToken }), {
-      signal,
-      timeoutMs,
-    })
-    if (!response.ok) throw httpError(response, await readErrorBody(response))
-    const data = await response.json()
-    if (!isNonEmptyString(data?.token) || !isNonEmptyString(data?.visitor_id) || !isNonEmptyString(data?.sig)) {
-      throw contractError('bootstrap_invalid')
-    }
-    let shellCopy
-    try {
-      shellCopy = decodeShellCopy(data?.view_copy)
-    } catch (err) {
-      throw contractError(err?.reason ? `bootstrap_${err.reason}` : 'bootstrap_shell_copy_invalid')
-    }
-    // Handle OPAC: cele trei câmpuri se retrimit ca atare, niciodată interpretate.
-    return {
-      session: { token: data.token, visitor_id: data.visitor_id, sig: data.sig },
-      shellCopy,
-    }
-  }
-
   return {
-    bootstrap,
 
     /**
      * Acceptul unui turn. Idempotent pe `clientTurnId`: același ID + același body → același
@@ -378,6 +331,10 @@ export function createWebTurnTransport({
      *
      * @returns {Promise<{outcome:'accepted', status:object} | {outcome:'terminal', view:object}
      *   | {outcome:'active_turn', status:object|null}>}
+     */
+    /**
+     * @param {{session: object, clientTurnId: string, input: object, context?: object|null,
+     *   idToken?: string|null, signal?: AbortSignal, timeoutMs?: number}} args
      */
     async createTurn({ session, clientTurnId, input, context, idToken, signal, timeoutMs }) {
       const body = {
@@ -472,8 +429,8 @@ export function createWebTurnTransport({
 
       source.addEventListener('result', (event) => {
         if (closed) return
-        // `result` e singurul frame care poartă un view; decodarea e async, deci închidem
-        // conexiunea ÎNAINTE (turul e terminal — nu mai urmează nimic după el).
+        // `result` e singurul frame care poartă un view. Închidem conexiunea ÎNAINTE de decodare:
+        // turul e terminal, deci nu mai urmează nimic după el, indiferent cum iese decodarea.
         const lastEventId = event.lastEventId
         let raw
         try {
@@ -484,10 +441,11 @@ export function createWebTurnTransport({
           return
         }
         close()
-        decodeView(raw, onDiagnostic).then(
-          (view) => onResult?.(view, lastEventId),
-          (err) => onError?.(asTransportError(err, E.CONTRACT)),
-        )
+        try {
+          onResult?.(decodeView(raw, onDiagnostic), lastEventId)
+        } catch (err) {
+          onError?.(asTransportError(err, E.CONTRACT))
+        }
       })
 
       source.onerror = () => {
@@ -500,17 +458,5 @@ export function createWebTurnTransport({
       return close
     },
 
-    /**
-     * „Reînnoirea" sesiunii. Backendul NU are lineage de sesiune: nu există proof opac,
-     * `session_family` sau outcome `continuity_preserved` (vezi `src/web/session.py`, NX-229) —
-     * o sesiune expirată se înlocuiește cu un bootstrap nou, iar `visitor_id`-ul nou înseamnă
-     * altă conversație. Deci singurul outcome onest e `new_session`, iar apelantul TREBUIE să
-     * curețe corelația veche. Metoda există ca să existe UN singur loc care spune asta.
-     */
-    /** @param {RequestOptions} [options] */
-    async renewSession({ signal, timeoutMs } = {}) {
-      const { session, shellCopy } = await this.bootstrap({ signal, timeoutMs })
-      return { outcome: 'new_session', session, shellCopy }
-    },
   }
 }
