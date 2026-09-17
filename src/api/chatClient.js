@@ -15,6 +15,8 @@
 // hits the bot directly via VITE_CHAT_API_BASE, and the real origin is the storefront itself.
 
 import { supabase } from "@/api/supabaseClient";
+import { WEB_CHAT_V1_SCHEMA_VERSION } from "../chat/contract/webChatV1.js";
+import { createWebTurnTransport } from "../chat/transport/webTurnTransport.js";
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 const PUBLIC_TOKEN = import.meta.env.VITE_CHAT_PUBLIC_TOKEN || "";
@@ -81,18 +83,61 @@ async function bootstrap() {
     visitor_id: data.visitor_id,
     sig: data.sig,
     sse_url: data.sse_url,
+    // Serverul ANUNȚĂ transportul; clientul nu-l ghicește și nu-l alege la build. Cheia lipsește
+    // ⇒ mergem sincron pe /web/chat, exact ca înainte. Asta E rollbackul: se stinge un flag pe
+    // server, sesiunea următoare cade înapoi, zero rebuild de frontend.
+    async_turns: normalizeAsyncTurns(data.async_turns),
   };
   saveSession(session);
   return session;
+}
+
+// Capabilitatea de transport asincron, citită STRICT: un anunț malformat e tratat ca absent, nu
+// „reparat". Preferăm calea sincronă (care merge sigur) unei căi asincrone construite pe un anunț
+// pe jumătate înțeles.
+function normalizeAsyncTurns(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  if (raw.view_contract !== WEB_CHAT_V1_SCHEMA_VERSION) return null; // v2 = alt widget, nu al nostru
+  const pollAfterMs = Number(raw.poll_after_ms);
+  const progress = {};
+  if (raw.progress && typeof raw.progress === "object") {
+    for (const [phase, label] of Object.entries(raw.progress)) {
+      if (typeof label === "string" && label.trim()) progress[phase] = label.trim();
+    }
+  }
+  return {
+    viewContract: raw.view_contract,
+    sse: raw.sse === true,
+    pollAfterMs: Number.isFinite(pollAfterMs) && pollAfterMs > 0 ? Math.round(pollAfterMs) : 1000,
+    // Etichetele fazelor, localizate de server. Gol ⇒ indicatorul rămâne pe copy-ul lui — nu
+    // inventăm traduceri, dar nici nu lăsăm widgetul mut dacă serverul nu le-a trimis.
+    progress,
+  };
+}
+
+/** Etichetele de progres ale sesiunii curente (lookup pe status), sau `{}` dacă nu avem. */
+export function chatProgressCopy() {
+  return loadSession()?.async_turns?.progress || {};
 }
 
 async function ensureSession() {
   return loadSession() || (await bootstrap());
 }
 
+// Trebuie să fie un UUID REAL, nu „ceva unic". Backendul persistă `client_turn_id` într-o coloană
+// `uuid` și îl folosește drept cheie de idempotency; forma veche (`m_<ts>_<rand>`) trecea tăcut pe
+// lângă poarta `_valid_turn_uuid`, deci exact retry-ul pe care cheia trebuia să-l facă sigur rula
+// turul a doua oară. Pe transportul asincron ar fi fost și mai rău: accept respins cu 422.
 function newClientMsgId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return `m_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  // Fallback RFC 4122 v4 pentru browserele fără `randomUUID` (Safari < 15.4, contexte non-secure).
+  const bytes = new Uint8Array(16);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for (let i = 0; i < 16; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 // The bot may send price as a number or a localized string ("49,90", "49.90 RON").
@@ -416,12 +461,172 @@ async function postChat(session, message, clientMsgId) {
   });
 }
 
+// ── Transportul ASINCRON pe contractul v1 ──────────────────────────────────────────────────
+//
+// Ce rezolvă: un tur real durează ~35s. Sincron, browserul ține o conexiune HTTP deschisă atât
+// (periculos de aproape de timeoutul oricărui proxy) și nu confirmă nimic între timp, iar dacă
+// procesul care rula turul moare la mijloc, turul e pierdut — clientul primește o eroare pentru o
+// muncă pe care serverul chiar o făcuse.
+//
+// Cu acceptul durabil: POST întoarce în milisecunde un id de tur scris în ledger; rezultatul vine
+// prin SSE (sau polling, fallback) și e REJUCABIL — refresh, alt tab, sau un worker care moare și
+// e reluat de sweeper duc la ACELAȘI răspuns, nu la altul. GET rămâne autoritatea; SSE e doar
+// optimizare, deci o conexiune care cade nu pierde nimic.
+//
+// Corpul terminal e EXACT payload-ul pe care îl servea `/web/chat` (`web-chat.v1`), plus un plic
+// de tur. De-aia mai jos se cheamă ACELAȘI `normalizeReply`: randarea nu știe și nu trebuie să
+// știe pe ce transport a sosit răspunsul.
+
+/** Cât așteptăm un terminal înainte să renunțăm. Peste `WEB_TURN_DEADLINE_S` (120s) al serverului:
+ *  turul are deadline propriu și se închide onest, deci clientul n-are motiv să renunțe primul. */
+const ASYNC_TURN_TIMEOUT_MS = 150_000;
+
+function transportFor() {
+  return createWebTurnTransport({
+    apiBase: API_BASE,
+    // Poarta de demo e pe TOATE rutele `/web/*`, deci și pe cele asincrone. Fără headerul ăsta,
+    // acceptul ar primi 403 și am fi „descoperit" că v2 nu merge, deși de fapt nu era autorizat.
+    fetchImpl: async (u, init) => {
+      const headers = { ...(init?.headers || {}), ...(await demoAuthHeaders()) };
+      return fetch(u, { ...init, headers });
+    },
+  });
+}
+
+/**
+ * Așteaptă terminalul unui tur acceptat. SSE când serverul îl oferă, polling ca plasă — amândouă
+ * în paralel, deliberat: SSE poate cădea tăcut (proxy, suspend de tab, reconectare fără cursor),
+ * iar GET-ul e singurul care poate AFIRMA că turul s-a terminat.
+ */
+async function awaitTerminal(transport, session, status, { onStatus, signal, capability }) {
+  onStatus?.(status.status);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stopSse = null;
+    let pollTimer = null;
+
+    const cleanup = () => {
+      if (stopSse) stopSse();
+      if (pollTimer) clearTimeout(pollTimer);
+      signal?.removeEventListener?.("abort", onAbort);
+    };
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      fn(value);
+    };
+    function onAbort() {
+      finish(reject, new Error("aborted"));
+    }
+    signal?.addEventListener?.("abort", onAbort);
+
+    const deadline = setTimeout(
+      () => finish(reject, new Error("turn timed out")),
+      ASYNC_TURN_TIMEOUT_MS,
+    );
+    const done = (view) => {
+      clearTimeout(deadline);
+      finish(resolve, view);
+    };
+    const fail = (err) => {
+      clearTimeout(deadline);
+      finish(reject, err);
+    };
+
+    if (capability.sse && status.sseOffered) {
+      stopSse = transport.subscribe({
+        session,
+        turnId: status.turnId,
+        onStatus: (s) => onStatus?.(s.status),
+        onResult: (view) => done(view),
+        // O eroare de SSE NU e o eroare de tur: pollingul de mai jos rămâne pornit și decide.
+        onError: () => {},
+      });
+    }
+
+    const pollMs = Math.max(500, capability.pollAfterMs);
+    const poll = async () => {
+      if (settled) return;
+      try {
+        const res = await transport.getTurn({ session, turnId: status.turnId, signal });
+        if (res.outcome === "terminal") return done(res.view);
+        onStatus?.(res.status.status);
+      } catch (err) {
+        // 404 = turul nu mai e al acestei sesiuni / a fost purjat: nu-l mai putem afla niciodată.
+        if (err?.code === "not_found") return fail(err);
+        // Rețea/timeout: reîncercăm. Serverul are deadline propriu, deci nu putem aștepta la infinit.
+      }
+      pollTimer = setTimeout(poll, pollMs);
+    };
+    pollTimer = setTimeout(poll, pollMs);
+  });
+}
+
+async function sendChatMessageAsync(session, message, clientMsgId, { onStatus, signal }) {
+  const transport = transportFor();
+  const accepted = await transport.createTurn({
+    session,
+    clientTurnId: clientMsgId,
+    input: { type: "text", text: message },
+    signal,
+  });
+  if (accepted.outcome === "terminal") return accepted.view; // replay exact (retry, alt tab)
+  if (accepted.outcome === "active_turn") {
+    // Conversația are deja un tur în lucru. Serverul spune AUTORIZAT care e; ne atașăm la el în loc
+    // să pornim al doilea (ar fi un al doilea apel de model pentru o singură întrebare).
+    if (!accepted.status) throw new Error("active turn without a handle");
+    return awaitTerminal(transport, session, accepted.status, {
+      onStatus,
+      signal,
+      capability: session.async_turns,
+    });
+  }
+  return awaitTerminal(transport, session, accepted.status, {
+    onStatus,
+    signal,
+    capability: session.async_turns,
+  });
+}
+
 // Send a message; returns the fully normalized reply (content/title, products,
 // suggestions, comparison, offer, understanding, status, confidence, routine,
 // noResults, criteria) — every field additive, missing => not rendered.
-export async function sendChatMessage(message) {
+//
+// `onStatus` primește fazele REALE ale serverului (`accepted` → `working` → `validating`) când
+// transportul asincron e pornit. Nu e cosmetic: indicatorul din widget își simula până acum
+// etapele cu timere locale, adică browserul afirma ce face serverul.
+/**
+ * @param {string} message
+ * @param {{onStatus?: (phase: string) => void, signal?: AbortSignal}} [options]
+ */
+export async function sendChatMessage(message, options = {}) {
+  const { onStatus, signal } = options;
   let session = await ensureSession();
   const clientMsgId = newClientMsgId();
+
+  if (session.async_turns) {
+    try {
+      return normalizeReply(await sendChatMessageAsync(session, message, clientMsgId, { onStatus, signal }));
+    } catch (err) {
+      if (err?.code === "session") {
+        // Sesiune expirată: re-bootstrap o dată, exact ca pe calea sincronă.
+        resetChatSession();
+        session = await bootstrap();
+        if (session.async_turns) {
+          return normalizeReply(
+            await sendChatMessageAsync(session, message, newClientMsgId(), { onStatus, signal }),
+          );
+        }
+      } else if (err?.code !== "unsupported") {
+        throw err;
+      }
+      // `unsupported` = rutele asincrone s-au stins între bootstrap și accept (rollback pe server).
+      // Uităm capabilitatea și livrăm turul pe calea sincronă — clientul nu pierde mesajul.
+      saveSession({ ...session, async_turns: null });
+      session = { ...session, async_turns: null };
+    }
+  }
 
   let res = await postChat(session, message, clientMsgId);
 

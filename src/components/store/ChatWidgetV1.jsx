@@ -17,6 +17,7 @@ import {
   sendChatMessage,
   resetChatSession,
   isChatConfigured,
+  chatProgressCopy,
 } from "@/api/chatClient";
 import { addToCart, useCart, useCartCount, setQuantity, removeItem } from "@/lib/cart";
 import { useWishlist, removeWish } from "@/lib/wishlist";
@@ -98,22 +99,34 @@ function isDemoMode() {
 // reasoning steps today), revealed in sequence; collapsible while running, like the
 // design prototype's timeline card.
 //
-// ⚠️ Progres SIMULAT cu timere locale. Rămâne aici fiindcă v1 rămâne, dar e exact ce NX-244 a
-// refuzat pe v2: o afirmație despre ce face serverul, făcută de browser.
+// Pe transportul SINCRON nu există niciun semnal despre ce face serverul, deci pașii ăștia sunt
+// simulați cu timere — o afirmație a browserului despre server, exact ce NX-244 a refuzat pe v2.
+// Rămân ca fallback: cu acceptul asincron pornit, indicatorul primește fazele REALE (`accepted` →
+// `working` → `validating`) și etichetele localizate de server, iar timerele nu mai rulează deloc.
 const THINKING_STEPS = ["Analizez cerința ta", "Caut în catalogul magazinului", "Pregătesc răspunsul"];
 
-function ThinkingIndicator() {
+/** Ordinea fazelor de lifecycle, oglindind `STATUS_ORDINAL` din backend. */
+const PHASE_ORDER = ["accepted", "working", "validating"];
+
+function ThinkingIndicator({ phase = null, progressCopy = null }) {
   const [stage, setStage] = useState(0);
   const [expanded, setExpanded] = useState(true);
 
+  // Fazele reale ale serverului, când le avem: etichetele vin de la el (localizate pe tenant),
+  // iar pasul curent e cel pe care serverul tocmai l-a anunțat — nimic nu se ghicește din timp.
+  const live = phase !== null && progressCopy && PHASE_ORDER.some((p) => progressCopy[p]);
+  const steps = live ? PHASE_ORDER.map((p) => progressCopy[p]).filter(Boolean) : THINKING_STEPS;
+  const liveStage = live ? Math.max(0, PHASE_ORDER.indexOf(phase)) : stage;
+
   useEffect(() => {
+    if (live) return undefined; // fără timere când avem adevărul
     const toStep1 = setTimeout(() => setStage(1), 1500);
     const toStep2 = setTimeout(() => setStage(2), 4500);
     return () => {
       clearTimeout(toStep1);
       clearTimeout(toStep2);
     };
-  }, []);
+  }, [live]);
 
   return (
     <div className="flex justify-start">
@@ -128,7 +141,7 @@ function ThinkingIndicator() {
         >
           <span className="w-[14px] h-[14px] rounded-full border-2 border-[var(--aria-tint-2)] border-t-[var(--aria-purple)] aria-think-spinner shrink-0" />
           <span className="flex-1 text-[12.5px] font-semibold truncate text-[var(--aria-purple)]">
-            {THINKING_STEPS[stage]}…
+            {steps[Math.min(liveStage, steps.length - 1)]}…
           </span>
           <ChevronDown
             className={`w-3.5 h-3.5 text-[var(--aria-text-5)] shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -136,20 +149,20 @@ function ThinkingIndicator() {
         </button>
         {expanded && (
           <div className="px-3.5 pb-3.5 flex flex-col gap-2">
-            {THINKING_STEPS.map((label, i) => (
+            {steps.map((label, i) => (
               <div key={i} className="flex items-center gap-2.5">
-                {i < stage ? (
+                {i < liveStage ? (
                   <Check className="w-3 h-3 text-[var(--aria-purple)] shrink-0" strokeWidth={3} />
-                ) : i === stage ? (
+                ) : i === liveStage ? (
                   <span className="w-1.5 h-1.5 rounded-full aria-gradient-bg aria-think-dot shrink-0" />
                 ) : (
                   <span className="w-1.5 h-1.5 rounded-full border border-[var(--aria-border-3)] shrink-0" />
                 )}
                 <span
                   className={`text-[11.5px] ${
-                    i === stage
+                    i === liveStage
                       ? "text-[var(--aria-text)] font-semibold"
-                      : i < stage
+                      : i < liveStage
                         ? "text-[var(--aria-text-4)]"
                         : "text-[var(--aria-text-5)]"
                   }`}
@@ -521,6 +534,9 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState(() => (DEMO ? demoMessages() : loadMessages()));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  // Faza turului, asa cum o ANUNTA serverul pe transportul asincron (`accepted`/`working`/
+  // `validating`). `null` = nu avem semnal (calea sincrona) -> indicatorul cade pe pasii lui.
+  const [turnPhase, setTurnPhase] = useState(/** @type {string | null} */ (null));
 
   // Plafonul de lungime al mesajului, aceeași sursă ca pe calea v2. Se măsoară pe textul trimis
   // (deci trimmed), ca butonul să nu se închidă pentru spații de la coadă.
@@ -651,7 +667,9 @@ export default function ChatWidget() {
         ]);
         return;
       }
-      const reply = await sendChatMessage(message);
+      // `onStatus` primește fazele REALE ale turului când transportul asincron e pornit pe
+      // server. Fără el (calea sincronă), `turnPhase` rămâne null și indicatorul cade pe pașii lui.
+      const reply = await sendChatMessage(message, { onStatus: setTurnPhase });
       // reply already normalized: { content, products, suggestions, comparison, offer }.
       setMessages((m) => [...m, { role: "assistant", ...reply }]);
     } catch {
@@ -661,6 +679,7 @@ export default function ChatWidget() {
       ]);
     } finally {
       setSending(false);
+      setTurnPhase(null);
     }
   };
 
@@ -818,7 +837,9 @@ export default function ChatWidget() {
               </div>
             ))}
 
-            {sending && <ThinkingIndicator />}
+            {sending && (
+              <ThinkingIndicator phase={turnPhase} progressCopy={chatProgressCopy()} />
+            )}
           </div>
           )}
 

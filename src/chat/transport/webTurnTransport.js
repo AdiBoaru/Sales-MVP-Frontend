@@ -24,6 +24,7 @@
 // nu inspectează `action_token` și nu transformă un label în text. Politica e a controllerului.
 
 import { decodeShellCopy } from '../contract/shellCopy.js'
+import { WEB_CHAT_V1_SCHEMA_VERSION, decodeWebChatV1 } from '../contract/webChatV1.js'
 import { WEB_TURN_ERROR_CODES as E, WebTurnTransportError, asTransportError } from './webTurnErrors.js'
 
 /**
@@ -173,6 +174,21 @@ export function __setViewDecoderForTests(mod) {
 }
 
 async function decodeView(payload, onDiagnostic) {
+  // Transportul și CONTRACTUL DE VEDERE sunt două axe. Serverul alege vederea (o anunță pe
+  // bootstrap, `async_turns.view_contract`) și, mai important, o declară ÎN corp — deci aici nu
+  // se ghicește nimic din configurație: se citește ce a sosit. Un client care ar decide decoderul
+  // după un flag de build ar decoda cu schema greșită exact în ziua în care cineva schimbă
+  // serverul, adică fix când nimeni nu se uită.
+  if (payload?.schema_version === WEB_CHAT_V1_SCHEMA_VERSION) {
+    try {
+      return decodeWebChatV1(payload, { onDiagnostic })
+    } catch (err) {
+      throw new WebTurnTransportError(E.CONTRACT, {
+        serverCode: err?.reason || 'view_invalid',
+        cause: err,
+      })
+    }
+  }
   const { decodeWebViewV2 } = await loadDecoder()
   try {
     return decodeWebViewV2(payload, { onDiagnostic })
@@ -378,6 +394,10 @@ export function createWebTurnTransport({
      *
      * @returns {Promise<{outcome:'accepted', status:object} | {outcome:'terminal', view:object}
      *   | {outcome:'active_turn', status:object|null}>}
+     */
+    /**
+     * @param {{session: object, clientTurnId: string, input: object, context?: object|null,
+     *   idToken?: string|null, signal?: AbortSignal, timeoutMs?: number}} args
      */
     async createTurn({ session, clientTurnId, input, context, idToken, signal, timeoutMs }) {
       const body = {
